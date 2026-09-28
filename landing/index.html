@@ -3,6 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The site lives only on fhecat.com; the old Render copy forwards there until it is deleted.
+      if (/\.onrender\.com$/.test(location.hostname)) location.replace('https://fhecat.com' + location.pathname + location.search + location.hash);
+    </script>
     <title>FheCat · Pixel cats, born encrypted</title>
     <meta name="description" content="FheCat is a collection of pixel cats powered by Fhenix FHE. Every cat's traits are encrypted from the moment it's minted." />
     <meta name="theme-color" content="#032842" />

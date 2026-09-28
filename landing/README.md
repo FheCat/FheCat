@@ -5,12 +5,11 @@ Derleme veya kurulum gerekmez: düz HTML, CSS ve JavaScript.
 
 ## Yayında
 
-- **Ana adres:** https://fhecat.com (Vercel; `www.fhecat.com` buraya yönlenir)
-- **Vercel'in kendi adresi:** https://fhecat.vercel.app
-- **Render (yedek kopya):** https://fhecat.onrender.com
+Site yalnızca **https://fhecat.com** adresinde (Vercel). Bu dala her push'ta kendini günceller.
 
-Hepsi bu dala her push'ta kendini günceller. `index.html` içindeki canonical adres ve
-paylaşım görseli `https://fhecat.com` üzerinden verilir.
+- `www.fhecat.com` ve `fhecat.vercel.app`, fhecat.com'a kalıcı olarak yönlenir (`vercel.json`).
+- Eski Render kopyası (`fhecat.onrender.com`) silinene kadar ziyaretçiyi fhecat.com'a gönderir
+  (`index.html` başındaki küçük betik). Render panelinden silindikten sonra bu betik kaldırılabilir.
 
 ## Sayfanın akışı
 

@@ -1,6 +1,6 @@
 # FheCat · Tanıtım sayfası
 
-Logo ve banner'ın piksel tarzında, FheCat'i yüzeysel olarak anlatan tek sayfalık site.
+Logo ve banner'ın piksel tarzında, FheCat'i anlatan tek sayfalık site (İngilizce).
 Derleme veya kurulum gerekmez: düz HTML, CSS ve JavaScript.
 
 ## Yayında
@@ -12,10 +12,36 @@ Derleme veya kurulum gerekmez: düz HTML, CSS ve JavaScript.
 projeye eklenir; ardından `index.html` içindeki `https://fhecat.vercel.app` adreslerini
 (canonical ve paylaşım görseli) yeni alan adıyla değiştirmek yeterli.
 
+## Sayfanın akışı
+
+Sayfa bir gece yürüyüşü gibi ilerler; her bölümün kendine ait küçük bir piksel sahnesi var:
+
+1. **Giriş:** banner'daki gökyüzü canlı. "FheCat" yazısı gürültüden çözülerek belirir,
+   kediye dokununca önce şifreli, sonra "Meow" der.
+2. **Every cat is a secret:** şifreli kedi kartı. "Try to peek" denemesi hep "Access denied" ile biter.
+3. **Math on locked boxes:** FHE'nin mantığı: `enc(3) + enc(4)` makineye girer, `enc(7)` çıkar,
+   yalnızca izni olan açabilir.
+4. **Every star is a cat:** yıldızların üstüne gelince zincirin gördüğü tek şey çıkar: şifreli veri.
+5. **The night walk:** yol haritası. Kaydırdıkça kedi yürür, fenerler yanar.
+6. **Encrypted messages:** SSS. Her cevap tıklanınca şifresi çözülen bir mesaj.
+
+Koleksiyonun çizimleri sayfada hiçbir yerde açığa çıkmaz. Klavyede "reveal" yazmayı dene.
+
+## Teknik doğruluk
+
+FHE / Fhenix ile ilgili ifadeler, projedeki `@fhenixprotocol/cofhe-contracts` (0.2.0) kütüphanesine
+göre kontrol edildi. Kontrol edilenler:
+
+- şifreli tipler (`ebool`, `euint8`–`euint128`, `eaddress`),
+- `FHE.add`, `FHE.allow` ve `FHE.randomEuint*` fonksiyonları,
+- kendi verini imzalı bir izinle (permit) çözme.
+
+Koleksiyonun nasıl çalışacağına dair cümleler "planlanan" olarak yazıldı.
+
 ## Açmak için
 
 - `index.html` dosyasına çift tıkla (tarayıcıda doğrudan açılır), ya da
-- klasörü herhangi bir statik barındırmaya yükle (GitHub Pages, Vercel, Netlify…).
+- klasörü herhangi bir statik barındırmaya yükle.
 
 Yerelde bir sunucuyla denemek istersen:
 
@@ -28,19 +54,25 @@ python3 -m http.server 8080   # sonra http://localhost:8080
 
 | Dosya | Ne yapar |
 |---|---|
-| `index.html` | Bölümler: giriş, hakkında, Fhenix, nasıl çalışır, koleksiyon, yol haritası, SSS |
-| `css/styles.css` | Tüm stil ve küçük animasyonlar |
-| `js/pixel.js` | ASCII piksel haritalarını keskin SVG'ye çeviren küçük yardımcı |
-| `js/sprites.js` | Sayfadaki tüm piksel çizimler (logo, kedi, ikonlar, örnek kediler) |
-| `js/scene.js` | Giriş bölümündeki canlı gece gökyüzü (ay, yıldızlar, bulutlar, kedi) |
-| `js/i18n.js` | Türkçe / İngilizce metinler |
-| `js/main.js` | Dil düğmesi, animasyonlar, şifresi çözülen kediler, yol haritası kedisi |
-| `assets/` | Logo, banner ve X/sosyal medya paylaşım görseli (`og.png`, 1200×630) |
-| `fonts/` | Press Start 2P ve Space Grotesk (SIL Open Font License) |
+| `index.html` | Sayfanın metinleri ve bölümleri |
+| `css/styles.css` | Piksel tasarım sistemi ve animasyonlar |
+| `js/pixel.js` | Metin halindeki piksel çizimleri keskin SVG'ye çeviren küçük yardımcı |
+| `js/sprites.js` | Tüm piksel çizimler: logo, "FheCat" yazısı, kediler, fener, sandık, makine, zarf, ikonlar |
+| `js/scene.js` | Gece sahneleri (giriş ve kapanış), yıldızlar ve bulut şeritleri |
+| `js/main.js` | Etkileşimler ve animasyonlar |
+| `assets/` | Favicon'lar, paylaşım görseli (`og.png`, 1200×630), orijinal logo ve banner |
+| `fonts/` | Tiny5, Silkscreen, Press Start 2P (SIL Open Font License) |
+
+## Keskin kalması için kurallar
+
+- Fontlar yalnızca 8'in katı boyutlarda kullanılır (8, 16, 24, 32, 40, 48 px). Ara boyutlar pikselleri bulanıklaştırır.
+- Çizimler tam sayı ölçekle büyütülür (`--u: 4px` gibi). `4.5px` gibi değerler kullanılmaz.
+- Bulanık gölge, `blur` veya `filter` yok; gölgeler sert piksel gölgeler.
+- Hareketler `steps()` ile tam piksel adımlarla ilerler.
 
 ## Düzenleme ipuçları
 
-- **Metinler:** `js/i18n.js` içinde, her dil için ayrı. Anahtarlar `index.html`'deki `data-i18n` ile eşleşir.
+- **Metinler:** doğrudan `index.html` içinde.
 - **Çizimler:** `js/sprites.js` içinde satır satır yazılı. Her harf bir renk, `.` boş piksel demek
   (renkler `js/pixel.js` içindeki `PALETTE`'te). `'3.S2C'` gibi kısaltmalar "3 boş, 1 S, 2 C" anlamına gelir.
 - **Hareketi azalt:** İşletim sisteminde "hareketi azalt" açıksa animasyonlar kendiliğinden durur.

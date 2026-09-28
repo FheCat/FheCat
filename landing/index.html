@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FheCat · Şifreli doğan piksel kediler</title>
+    <meta name="description" content="FheCat: Fhenix ağında, özellikleri şifreli doğan piksel kedilerden oluşan bir NFT koleksiyonu." />
+    <meta name="theme-color" content="#032842" />
+    <link rel="icon" type="image/jpeg" href="assets/logo.jpg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FheCat" />
+    <meta property="og:description" content="Şifreli doğan piksel kediler. Pixel cats, born encrypted." />
+    <meta property="og:image" content="assets/banner.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@FheCat" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap bar">
+        <a class="brand" href="#top" aria-label="FheCat">
+          <img src="assets/logo.jpg" alt="" width="36" height="36" />
+          <span>FheCat</span>
+        </a>
+        <nav class="nav" id="nav">
+          <a href="#about" data-i18n="nav.about">Hakkında</a>
+          <a href="#fhenix" data-i18n="nav.fhenix">Fhenix</a>
+          <a href="#how" data-i18n="nav.how">Nasıl çalışır</a>
+          <a href="#collection" data-i18n="nav.collection">Koleksiyon</a>
+          <a href="#roadmap" data-i18n="nav.roadmap">Yol haritası</a>
+          <a href="#faq" data-i18n="nav.faq">SSS</a>
+        </nav>
+        <div class="actions">
+          <button class="lang" id="lang" type="button" aria-label="Switch language">EN</button>
+          <a class="btn btn-small btn-x" href="https://x.com/FheCat" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20Z" /></svg>
+            <span data-i18n="cta.follow">X’te takip et</span>
+          </a>
+          <button class="menu-btn" id="menuBtn" type="button" aria-controls="nav" aria-expanded="false">
+            <span class="sr" data-i18n="nav.menu">Menü</span>
+            <i></i><i></i><i></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero: the banner's night sky, alive -->
+      <section class="hero" id="top">
+        <div class="scene" aria-hidden="true"></div>
+        <div class="hero-content">
+          <i data-sprite="logo" class="hero-logo"></i>
+          <p class="kicker" data-i18n="hero.kicker">Fhenix ağında bir NFT koleksiyonu</p>
+          <h1 class="hero-title" data-decrypt>FheCat</h1>
+          <p class="tagline" data-i18n="hero.tagline" data-decrypt>Şifreli doğan piksel kediler.</p>
+          <p class="lead" data-i18n="hero.text">
+            Her FheCat, Fhenix’in şifreli hesaplama teknolojisiyle doğar. Açığa çıkana kadar kedinin neye benzediğini kimse bilemez; ilk bakan, sahibi olur.
+          </p>
+          <div class="cta-row">
+            <a class="btn" href="https://x.com/FheCat" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20Z" /></svg>
+              <span data-i18n="cta.follow">X’te takip et</span>
+            </a>
+            <a class="btn btn-ghost" href="#about" data-i18n="hero.explore">Keşfet</a>
+          </div>
+          <p class="status"><span class="dot" aria-hidden="true"></span><span data-i18n="hero.status">Yakında · Fhenix</span></p>
+        </div>
+        <p class="sky-hint" aria-hidden="true" data-i18n="hero.hint">Gökyüzüne dokun</p>
+        <a class="scroll-hint" href="#about" aria-label="Aşağı kaydır"><i data-sprite="paw"></i></a>
+      </section>
+
+      <!-- About -->
+      <section class="section" id="about">
+        <div class="wrap two-col">
+          <div class="about-art reveal">
+            <div class="window">
+              <div class="window-bar"><span></span><span></span><span></span><b>fhecat.enc</b></div>
+              <div class="window-body">
+                <i data-sprite="logo" class="about-logo"></i>
+                <pre class="cipher" id="cipher" aria-hidden="true"></pre>
+              </div>
+            </div>
+          </div>
+          <div class="about-copy">
+            <p class="kicker" data-i18n="about.kicker">Hakkında</p>
+            <h2 data-i18n="about.title" data-decrypt>Parantezlerin içindeki kedi</h2>
+            <p data-i18n="about.p1">Logomuzdaki parantezler şifrelemeyi, ortadaki pati ise kediyi temsil ediyor. FheCat’in fikri de bu: her kedi, şifrelenmiş bir sır olarak doğar.</p>
+            <p data-i18n="about.p2">Koleksiyon, Ethereum’a gizlilik getiren Fhenix üzerinde yaşayacak. Kedilerin özellikleri zincirde şifreli durur, zamanı gelince açığa çıkar.</p>
+          </div>
+        </div>
+        <div class="wrap cards3">
+          <article class="card reveal">
+            <i data-sprite="helix" class="icon"></i>
+            <h3 data-i18n="about.c1.title">Gizli DNA</h3>
+            <p data-i18n="about.c1.text">Her kedinin özellikleri şifreli üretilir. Zincirde bile yalnızca şifreli hali görünür.</p>
+          </article>
+          <article class="card reveal">
+            <i data-sprite="die" class="icon"></i>
+            <h3 data-i18n="about.c2.title">Adil başlangıç</h3>
+            <p data-i18n="about.c2.text">Hangi kedinin nadir olduğunu kimse önceden bilemez. Ne botlar ne de ekip.</p>
+          </article>
+          <article class="card reveal">
+            <i data-sprite="key" class="icon icon-wide"></i>
+            <h3 data-i18n="about.c3.title">Sahibine özel</h3>
+            <p data-i18n="about.c3.text">Kedini ilk sen görürsün. Herkese ne zaman göstereceğine sen karar verirsin.</p>
+          </article>
+        </div>
+      </section>
+
+      <div class="divider" data-divider aria-hidden="true"></div>
+
+      <!-- Fhenix / FHE -->
+      <section class="section alt" id="fhenix">
+        <div class="wrap">
+          <div class="head">
+            <p class="kicker" data-i18n="fhenix.kicker">Teknoloji</p>
+            <h2 data-i18n="fhenix.title" data-decrypt>Fhenix ile şifreli</h2>
+            <p class="lead" data-i18n="fhenix.text">Fhenix, FHE (Tam Homomorfik Şifreleme) sayesinde verilerin şifreliyken bile işlenebilmesini sağlıyor. Yani blokzincir, verinin ne olduğunu görmeden onunla çalışabiliyor.</p>
+          </div>
+          <ol class="pipeline">
+            <li class="stage reveal">
+              <div class="stage-art"><i data-sprite="head"></i></div>
+              <h3 data-i18n="fhenix.s1.title">Veri</h3>
+              <p data-i18n="fhenix.s1.text">Kedinin özellikleri</p>
+            </li>
+            <li class="flow" aria-hidden="true"><span></span></li>
+            <li class="stage reveal">
+              <div class="stage-art"><i data-sprite="cipher"></i></div>
+              <h3 data-i18n="fhenix.s2.title">Şifrele</h3>
+              <p data-i18n="fhenix.s2.text">Özellikler şifrelenir</p>
+            </li>
+            <li class="flow" aria-hidden="true"><span></span></li>
+            <li class="stage reveal">
+              <div class="stage-art"><i data-sprite="chip"></i></div>
+              <h3 data-i18n="fhenix.s3.title">Şifreliyken işle</h3>
+              <p data-i18n="fhenix.s3.text">Ağ, görmeden çalışır</p>
+            </li>
+            <li class="flow" aria-hidden="true"><span></span></li>
+            <li class="stage reveal">
+              <div class="stage-art"><i data-sprite="lock"></i></div>
+              <h3 data-i18n="fhenix.s4.title">Sadece sen açarsın</h3>
+              <p data-i18n="fhenix.s4.text">Anahtar sende</p>
+            </li>
+          </ol>
+          <p class="center">
+            <a class="link" href="https://www.fhenix.io" target="_blank" rel="noopener"><span data-i18n="fhenix.link">fhenix.io’yu ziyaret et</span> ↗</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- How it will work -->
+      <section class="section" id="how">
+        <div class="wrap">
+          <div class="head">
+            <p class="kicker" data-i18n="how.kicker">Süreç</p>
+            <h2 data-i18n="how.title" data-decrypt>Nasıl çalışacak?</h2>
+          </div>
+          <ol class="steps">
+            <li class="step reveal">
+              <span class="step-no">01</span>
+              <div class="step-art"><i data-sprite="box"></i></div>
+              <h3 data-i18n="how.s1.title">Mint</h3>
+              <p data-i18n="how.s1.text">Kedini al. İçinden ne çıkacağını henüz kimse bilmiyor.</p>
+            </li>
+            <li class="step reveal">
+              <span class="step-no">02</span>
+              <div class="step-art"><i data-sprite="logo" class="mini-logo"></i></div>
+              <h3 data-i18n="how.s2.title">Şifreli doğum</h3>
+              <p data-i18n="how.s2.text">Kedinin DNA’sı zincire şifreli olarak yazılır.</p>
+            </li>
+            <li class="step reveal">
+              <span class="step-no">03</span>
+              <div class="step-art"><i data-sprite="eye"></i></div>
+              <h3 data-i18n="how.s3.title">Gizlice bak</h3>
+              <p data-i18n="how.s3.text">Cüzdanınla imzala, kedini yalnızca sen gör.</p>
+            </li>
+            <li class="step reveal">
+              <span class="step-no">04</span>
+              <div class="step-art"><i data-sprite="reveal"></i></div>
+              <h3 data-i18n="how.s4.title">Açığa çıkar</h3>
+              <p data-i18n="how.s4.text">Hazır olduğunda kedini herkese göster.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <div class="divider" data-divider aria-hidden="true"></div>
+
+      <!-- Collection teaser -->
+      <section class="section alt" id="collection">
+        <div class="wrap">
+          <div class="head">
+            <p class="kicker" data-i18n="collection.kicker">Koleksiyon</p>
+            <h2 data-i18n="collection.title" data-decrypt>Şifreli kediler</h2>
+            <p class="lead" data-i18n="collection.text">Bu kediler şimdilik şifreli. Üzerine gel ya da dokun, şifreyi çöz!</p>
+          </div>
+          <div class="cat-grid" id="catGrid"></div>
+          <dl class="stats">
+            <div><dt data-i18n="collection.network">Ağ</dt><dd>Fhenix</dd></div>
+            <div><dt data-i18n="collection.supply">Arz</dt><dd data-i18n="collection.soon">Yakında</dd></div>
+            <div><dt data-i18n="collection.price">Fiyat</dt><dd data-i18n="collection.soon">Yakında</dd></div>
+            <div><dt data-i18n="collection.style">Stil</dt><dd data-i18n="collection.pixel">Piksel sanat</dd></div>
+          </dl>
+          <p class="note" data-i18n="collection.note">Örnek tasarımlardır; koleksiyonun son hali farklı olabilir.</p>
+        </div>
+      </section>
+
+      <!-- Roadmap -->
+      <section class="section" id="roadmap">
+        <div class="wrap">
+          <div class="head">
+            <p class="kicker" data-i18n="roadmap.kicker">Yol haritası</p>
+            <h2 data-i18n="roadmap.title" data-decrypt>Kedilerin yolculuğu</h2>
+          </div>
+          <div class="track" id="track" aria-hidden="true">
+            <div class="track-line"></div>
+            <div class="walker" id="walker"><i data-sprite="walk"></i></div>
+          </div>
+          <ol class="phases">
+            <li class="phase is-now reveal">
+              <i data-sprite="paw" class="phase-paw"></i>
+              <span class="badge" data-i18n="roadmap.now">Şimdi</span>
+              <h3><span class="phase-no">01</span> <span data-i18n="roadmap.p1.title">Topluluk</span></h3>
+              <p data-i18n="roadmap.p1.text">X hesabı, ilk duyurular ve büyüyen bir topluluk.</p>
+            </li>
+            <li class="phase reveal">
+              <i data-sprite="paw" class="phase-paw"></i>
+              <h3><span class="phase-no">02</span> <span data-i18n="roadmap.p2.title">Sanat</span></h3>
+              <p data-i18n="roadmap.p2.text">Kedilerin, özelliklerin ve nadirliklerin son hali.</p>
+            </li>
+            <li class="phase reveal">
+              <i data-sprite="paw" class="phase-paw"></i>
+              <h3><span class="phase-no">03</span> <span data-i18n="roadmap.p3.title">Testnet mint</span></h3>
+              <p data-i18n="roadmap.p3.text">Fhenix testnet üzerinde ilk şifreli mint.</p>
+            </li>
+            <li class="phase reveal">
+              <i data-sprite="paw" class="phase-paw"></i>
+              <h3><span class="phase-no">04</span> <span data-i18n="roadmap.p4.title">Büyük reveal</span></h3>
+              <p data-i18n="roadmap.p4.text">Kediler tek tek açığa çıkar, galeri dolar.</p>
+            </li>
+            <li class="phase reveal">
+              <i data-sprite="paw" class="phase-paw"></i>
+              <h3><span class="phase-no">05</span> <span data-i18n="roadmap.p5.title">Ve ötesi</span></h3>
+              <p data-i18n="roadmap.p5.text">Topluluk etkinlikleri ve sürprizler…</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <div class="divider" data-divider aria-hidden="true"></div>
+
+      <!-- FAQ -->
+      <section class="section alt" id="faq">
+        <div class="wrap narrow">
+          <div class="head">
+            <p class="kicker" data-i18n="faq.kicker">SSS</p>
+            <h2 data-i18n="faq.title" data-decrypt>Merak edilenler</h2>
+          </div>
+          <div class="faq">
+            <details class="reveal"><summary data-i18n="faq.q1">FheCat nedir?</summary><p data-i18n="faq.a1">Fhenix üzerinde, özellikleri şifreli doğan piksel kedilerden oluşan bir NFT koleksiyonu.</p></details>
+            <details class="reveal"><summary data-i18n="faq.q2">Fhenix nedir?</summary><p data-i18n="faq.a2">Ethereum ekosistemine FHE ile şifreli hesaplama getiren bir proje. Veriler şifreliyken bile işlenebiliyor.</p></details>
+            <details class="reveal"><summary data-i18n="faq.q3">Mint ne zaman?</summary><p data-i18n="faq.a3">Tarih, fiyat ve arz X hesabımızdan duyurulacak. Takipte kal!</p></details>
+            <details class="reveal"><summary data-i18n="faq.q4">Kedimi nasıl göreceğim?</summary><p data-i18n="faq.a4">Cüzdanınla küçük bir imza atarak kedini gizlice görebileceksin. Herkese göstermek tamamen sana kalmış.</p></details>
+            <details class="reveal"><summary data-i18n="faq.q5">Nadir kediyi önceden bilen olur mu?</summary><p data-i18n="faq.a5">Hayır. Özellikler şifreli rastgelelikle üretilir; ekip dahil kimse önceden bilemez.</p></details>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing scene -->
+      <section class="end">
+        <div class="wrap end-copy">
+          <h2 data-i18n="end.title" data-decrypt>Kediler yolda.</h2>
+          <p data-i18n="end.text">Duyurular ve mint tarihi için bizi X’te takip et.</p>
+          <a class="btn" href="https://x.com/FheCat" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20Z" /></svg>
+            <span data-i18n="cta.follow">X’te takip et</span>
+          </a>
+        </div>
+        <div class="end-ground" aria-hidden="true">
+          <div class="stroller"><i data-sprite="walk"></i></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap foot">
+        <a class="brand" href="#top"><img src="assets/logo.jpg" alt="" width="28" height="28" /><span>FheCat</span></a>
+        <p>© <span id="year">2026</span> FheCat · <span data-i18n="footer.note">Fhenix üzerinde inşa ediliyor.</span></p>
+        <a class="link" href="https://x.com/FheCat" target="_blank" rel="noopener">X / @FheCat</a>
+      </div>
+    </footer>
+
+    <script src="js/pixel.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

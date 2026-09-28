@@ -32,7 +32,8 @@
     y: '#b8860b', // gold shadow
     R: '#ff5d73', // red
     V: '#8a74d6', // violet
-    G: '#3ddc84' // green
+    G: '#3ddc84', // green
+    X: 'currentColor' // icons: inherit the text colour
   };
 
   /** '3.S2C' -> '...SCC' (a char without a count is one pixel). */

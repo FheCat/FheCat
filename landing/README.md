@@ -5,12 +5,12 @@ Derleme veya kurulum gerekmez: düz HTML, CSS ve JavaScript.
 
 ## Yayında
 
-- **Vercel (ana adres):** https://fhecat.vercel.app
+- **Ana adres:** https://fhecat.com (Vercel; `www.fhecat.com` buraya yönlenir)
+- **Vercel'in kendi adresi:** https://fhecat.vercel.app
 - **Render (yedek kopya):** https://fhecat.onrender.com
 
-İkisi de bu dala her push'ta kendini günceller. Alan adı (domain) alınınca Vercel'de
-projeye eklenir; ardından `index.html` içindeki `https://fhecat.vercel.app` adreslerini
-(canonical ve paylaşım görseli) yeni alan adıyla değiştirmek yeterli.
+Hepsi bu dala her push'ta kendini günceller. `index.html` içindeki canonical adres ve
+paylaşım görseli `https://fhecat.com` üzerinden verilir.
 
 ## Sayfanın akışı
 

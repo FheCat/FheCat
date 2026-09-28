@@ -1,0 +1,7 @@
+node_modules
+dist
+src/config/deployments.local.json
+test-results
+playwright-report
+test-results-node.log
+*.tsbuildinfo

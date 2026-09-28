@@ -1,0 +1,10 @@
+node_modules
+.env
+cache
+artifacts
+typechain-types
+coverage
+coverage.json
+# local chain deployments are throwaway
+deployments/localhost.json
+deployments/hardhat.json

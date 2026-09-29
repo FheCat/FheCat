@@ -33,7 +33,9 @@ Koleksiyonun çizimleri sayfada hiçbir yerde açığa çıkmaz. Klavyede "revea
 
 1. **Follow @FheCat:** X'te takip.
 2. **Get your card:** X kullanıcı adını yazar, kendi piksel WL kartını kaydeder (PNG, 1280×720).
-   Kart numarası, DNA ve kartın üstündeki gürültülü kedi kullanıcı adından üretilir; herkesinki farklıdır.
+   Kart, gece gökyüzü altında sahibine adreslenmiş bir kargo kasası: içinde şifreli kedi var, sadece gözleri
+   ve kuyruğu görünüyor. Kart numarası, barkod, yıldızlar ve tahtaların arasından sızan ışık kullanıcı adından
+   üretilir; herkesinki farklıdır. İsim her zaman büyük yazılır (2x ya da 3x).
 3. **Post your card:** hazır metinle X'te paylaşır, kartı ekler, postun linkini yapıştırır.
 4. **Like, repost & reply:** lansman postunu beğenir, RT'ler ve kartı ekleyerek yanıtlar, yanıtın linkini yapıştırır.
 5. **Add your wallet:** EVM cüzdan adresini girer, kayıt gönderilir.

@@ -1,0 +1,9 @@
+{
+  "name": "fhecat-site",
+  "private": true,
+  "type": "module",
+  "description": "fhecat.com: static pixel site plus the waitlist API (Vercel function in api/)",
+  "dependencies": {
+    "@neondatabase/serverless": "1.1.0"
+  }
+}

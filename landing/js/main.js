@@ -236,6 +236,7 @@
       ['Born encrypted', true],
       ['Powered by Fhenix FHE', false],
       ['Mainnet mint: October 2026', true],
+      ['Waitlist: fhecat.com/waitlist', false],
       ['Supply: encrypted', false],
       ['Traits: ' + '0x' + hex(8), false],
       ['Reveal: soon', true],

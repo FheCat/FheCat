@@ -1945,7 +1945,8 @@ h2 {
   font: 16px/24px var(--f-label);
   text-transform: uppercase;
 }
-.wl-field input {
+.wl-field input,
+.adm-search input {
   width: calc(100% - 8px);
   height: 48px;
   margin: 0 4px;
@@ -1964,11 +1965,13 @@ h2 {
   -webkit-appearance: none;
   appearance: none;
 }
-.wl-field input::placeholder {
+.wl-field input::placeholder,
+.adm-search input::placeholder {
   color: var(--steel-2);
   opacity: 1;
 }
-.wl-field input:focus {
+.wl-field input:focus,
+.adm-search input:focus {
   outline: none;
   box-shadow:
     0 -4px 0 0 var(--cyan),
@@ -2091,5 +2094,518 @@ h2 {
   }
   .wl-done {
     padding: 24px 16px;
+  }
+}
+
+/* ---------- admin page ---------- */
+
+.adm {
+  position: relative;
+  min-height: 100vh;
+  padding: 120px 0 128px;
+}
+.adm-tag {
+  padding: 4px 8px;
+  background: var(--cloud);
+  color: var(--cyan);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.adm-signout {
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.adm-boot {
+  position: relative;
+  margin: 120px 0;
+  color: var(--cyan-dim);
+  text-align: center;
+}
+.adm-title {
+  margin: 0 0 24px;
+  font: 40px/48px var(--f-text);
+  font-weight: 400;
+  color: var(--white);
+}
+.adm-login {
+  max-width: 560px;
+  margin: 48px auto 0;
+  padding: 32px;
+}
+.adm-login .wl-field input {
+  font-family: var(--f-mono);
+}
+.adm-panel {
+  position: relative;
+}
+.adm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px 48px;
+  margin-bottom: 40px;
+}
+.adm-head .adm-title {
+  margin: 0;
+}
+.adm-export {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.adm-export-what {
+  margin: 0 4px;
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.adm-export-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+/* counts; each tile is also the status filter */
+.adm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0 0 32px;
+}
+.adm-stat {
+  --bd: var(--cloud);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin: 4px;
+  padding: 20px 20px 16px;
+  border: 0;
+  background: var(--deep);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    0 -4px 0 0 var(--bd),
+    0 4px 0 0 var(--bd),
+    -4px 0 0 0 var(--bd),
+    4px 0 0 0 var(--bd);
+}
+.adm-stat:hover {
+  --bd: var(--steel-3);
+}
+.adm-stat.on {
+  --bd: var(--cyan);
+  background: var(--ink);
+}
+.adm-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.adm-stat.on .adm-stat-label {
+  color: var(--cyan);
+}
+.adm-stat-value {
+  color: var(--white);
+  font: 48px/48px var(--f-text);
+  font-weight: 400;
+}
+.adm-stat-note {
+  color: var(--steel);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+.adm-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--steel);
+}
+.adm-dot.is-approved {
+  background: var(--cyan);
+}
+.adm-dot.is-rejected {
+  background: var(--red);
+}
+
+.adm-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin: 0 0 24px;
+}
+.adm-search {
+  flex: 1 1 360px;
+  max-width: 560px;
+}
+.adm-search input {
+  margin: 4px;
+}
+.adm-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.adm-shown {
+  margin: 0 4px;
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+
+/* the list: one grid row per application */
+.adm-table {
+  margin: 4px;
+  background: var(--deep);
+  box-shadow:
+    0 -4px 0 0 var(--cloud),
+    0 4px 0 0 var(--cloud),
+    -4px 0 0 0 var(--cloud),
+    4px 0 0 0 var(--cloud);
+}
+.adm-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adm-row {
+  display: grid;
+  grid-template-columns: 16px 48px minmax(0, 1fr) 152px 128px 104px 112px 208px;
+  grid-template-areas: 'sel num who wallet posts at status act';
+  align-items: center;
+  gap: 12px 16px;
+  padding: 12px 16px;
+}
+.adm-rows .adm-row {
+  border-top: 4px solid var(--ink);
+}
+.adm-rows .adm-row:hover {
+  background: var(--night);
+}
+.adm-row-head {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  background: var(--ink);
+  color: var(--muted);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+.adm-row.adm-row-head > * {
+  color: var(--muted);
+  font: 8px/16px var(--f-mono);
+}
+.adm-head-all {
+  display: none;
+  cursor: pointer;
+}
+.adm-sel {
+  grid-area: sel;
+  display: flex;
+  cursor: pointer;
+}
+.adm-sel input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  background: var(--ink);
+  cursor: pointer;
+  box-shadow:
+    0 -2px 0 0 var(--steel-2),
+    0 2px 0 0 var(--steel-2),
+    -2px 0 0 0 var(--steel-2),
+    2px 0 0 0 var(--steel-2);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.adm-sel input:checked {
+  background: var(--cyan);
+  box-shadow:
+    inset 0 0 0 4px var(--ink),
+    0 -2px 0 0 var(--cyan),
+    0 2px 0 0 var(--cyan),
+    -2px 0 0 0 var(--cyan),
+    2px 0 0 0 var(--cyan);
+}
+.adm-sel input:indeterminate {
+  background: linear-gradient(var(--cyan), var(--cyan)) center / 8px 4px no-repeat var(--ink);
+}
+.adm-num {
+  grid-area: num;
+  color: var(--steel);
+  font: 8px/16px var(--f-mono);
+}
+.adm-who {
+  grid-area: who;
+  display: grid;
+  min-width: 0;
+}
+.adm-handle {
+  overflow: hidden;
+  color: var(--white);
+  font: 16px/24px var(--f-text);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+a.adm-handle:hover {
+  color: var(--cyan);
+}
+.adm-card {
+  color: var(--steel);
+  font: 8px/16px var(--f-mono);
+}
+.adm-wallet {
+  grid-area: wallet;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 16px/24px var(--f-text);
+}
+.adm-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cyan-dim);
+  cursor: pointer;
+}
+.adm-icon:hover {
+  background: var(--cloud);
+  color: var(--cyan);
+}
+.adm-icon .px,
+.adm-link .px,
+.adm-btn .px {
+  --u: 2px;
+}
+.adm-posts {
+  grid-area: posts;
+  display: flex;
+  gap: 16px;
+}
+.adm-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cyan);
+  font: 8px/16px var(--f-mono);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.adm-link:hover {
+  color: var(--white);
+}
+.adm-link.is-missing {
+  color: var(--red);
+}
+.adm-at {
+  grid-area: at;
+  color: var(--muted);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+.adm-at-num {
+  display: none;
+}
+.adm-status {
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+.adm-act {
+  grid-area: act;
+  display: flex;
+  gap: 12px;
+}
+.adm-btn {
+  --c: var(--steel);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  margin: 2px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--c);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    0 -2px 0 0 var(--c),
+    0 2px 0 0 var(--c),
+    -2px 0 0 0 var(--c),
+    2px 0 0 0 var(--c);
+}
+.adm-btn.is-approve {
+  --c: var(--cyan);
+}
+.adm-btn.is-reject {
+  --c: var(--red);
+}
+.adm-btn.is-plain {
+  --c: var(--muted);
+}
+.adm-btn:hover {
+  background: var(--c);
+  color: var(--ink);
+}
+.adm-btn:disabled {
+  opacity: 0.45;
+  cursor: progress;
+}
+.adm-empty {
+  margin: 0;
+  padding: 48px 16px;
+  border-top: 4px solid var(--ink);
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-align: center;
+  text-transform: uppercase;
+}
+.adm-more {
+  margin-top: 32px;
+  text-align: center;
+}
+.adm-bulk {
+  position: sticky;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  width: max-content;
+  max-width: calc(100% - 8px);
+  margin: 32px auto 0;
+  padding: 12px 20px;
+  background: var(--ink);
+  box-shadow:
+    0 -4px 0 0 var(--cyan),
+    0 4px 0 0 var(--cyan),
+    -4px 0 0 0 var(--cyan),
+    4px 0 0 0 var(--cyan);
+}
+.adm-bulk-count {
+  margin-right: 8px;
+  color: var(--cyan);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  .adm-row {
+    grid-template-columns: 16px 48px minmax(0, 1fr) minmax(0, 1fr) 208px;
+    grid-template-areas:
+      'sel num who wallet status'
+      '. . posts at act';
+  }
+  .adm-row-head {
+    grid-template-areas: 'sel num who wallet status';
+  }
+  .adm-row-head .adm-posts,
+  .adm-row-head .adm-at,
+  .adm-row-head .adm-act {
+    display: none;
+  }
+}
+@media (max-width: 860px) {
+  .adm-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+  }
+}
+@media (max-width: 720px) {
+  .adm {
+    padding: 104px 0 96px;
+  }
+  .adm-title {
+    font-size: 32px;
+    line-height: 40px;
+  }
+  .adm-login {
+    padding: 24px 16px;
+  }
+  .adm-stat {
+    padding: 16px 16px 12px;
+  }
+  .adm-stat-value {
+    font-size: 32px;
+    line-height: 40px;
+  }
+  .adm-rows .adm-row {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 16px 16px 16px 48px;
+  }
+  .adm-rows .adm-sel {
+    position: absolute;
+    top: 20px;
+    left: 16px;
+  }
+  .adm-rows .adm-who {
+    flex: 1 1 0;
+  }
+  .adm-rows .adm-status {
+    order: 1;
+  }
+  .adm-rows .adm-wallet {
+    order: 2;
+    flex-basis: 100%;
+  }
+  .adm-rows .adm-posts {
+    order: 3;
+  }
+  .adm-rows .adm-at {
+    order: 4;
+  }
+  .adm-rows .adm-act {
+    order: 5;
+    flex-basis: 100%;
+  }
+  .adm-row-head {
+    grid-template-areas: 'sel all';
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+  .adm-row-head > span {
+    display: none;
+  }
+  .adm-row-head .adm-head-all {
+    display: block;
+    grid-area: all;
+  }
+  .adm-num {
+    display: none;
+  }
+  .adm-at-num {
+    display: inline;
+  }
+  .adm-bulk {
+    padding: 12px 16px;
+  }
+}
+@media (max-width: 400px) {
+  .adm-tag {
+    display: none;
   }
 }

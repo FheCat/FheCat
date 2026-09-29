@@ -1839,9 +1839,8 @@ h2 {
 }
 .wl-card-note {
   margin: 16px 0 0;
-  color: var(--cyan-dim);
-  font-size: 8px;
-  line-height: 16px;
+  color: var(--muted);
+  font: 16px/24px var(--f-text);
   text-align: center;
 }
 .wl-steps,
@@ -2026,8 +2025,7 @@ h2 {
 }
 .wl-done .wl-done-meta {
   color: var(--cyan);
-  font-size: 8px;
-  line-height: 16px;
+  font: 16px/24px var(--f-text);
 }
 .wl-reset {
   position: relative;

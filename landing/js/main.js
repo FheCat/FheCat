@@ -235,6 +235,7 @@
       ['Pixel cats', false],
       ['Born encrypted', true],
       ['Powered by Fhenix FHE', false],
+      ['Mainnet mint: October 2026', true],
       ['Supply: encrypted', false],
       ['Traits: ' + '0x' + hex(8), false],
       ['Reveal: soon', true],

@@ -386,7 +386,13 @@
     down: rows('2.X2.', '2.X2.', '2.X2.', '2.X2.', 'X.X.X', '.3X.', '2.X2.'),
     diamond: rows('2.X2.', '.3X.', '5X', '.3X.', '2.X2.'),
     lock: rows('.3X.', 'X3.X', '5X', '2X.2X', '5X'),
-    star: rows('.X.', '3X', '.X.')
+    star: rows('.X.', '3X', '.X.'),
+    // admin panel: approve, reject, back to pending, copy, open link
+    check: rows('5.2X', '4.2X.', '2X.2X2.', '.3X3.', '2.X4.'),
+    cross: rows('2X2.2X', '.4X.', '2.2X2.', '.4X.', '2X2.2X'),
+    back: rows('2.X4.', '.X5.', '7X', '.X5.', '2.X4.'),
+    copy: rows('4X2.', 'X2.X2.', 'X.4X', 'X.X2.X', '3X2.X', '2.X2.X', '2.4X'),
+    ext: rows('2.4X', '4.2X', '3.X.X', '2.X2.X', '.X4.', 'X5.')
   };
 
   // Small paw print and sparkle.
@@ -423,7 +429,12 @@
     'i-down': ICON.down,
     'i-diamond': ICON.diamond,
     'i-lock': ICON.lock,
-    'i-star': ICON.star
+    'i-star': ICON.star,
+    'i-check': ICON.check,
+    'i-cross': ICON.cross,
+    'i-back': ICON.back,
+    'i-copy': ICON.copy,
+    'i-ext': ICON.ext
   };
   NS.art = {
     rows: rows,

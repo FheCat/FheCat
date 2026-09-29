@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Waitlist admin · FheCat</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#032842" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="page-adm">
+    <header class="topbar solid" id="topbar">
+      <div class="wrap bar">
+        <a class="brand" href="index.html" aria-label="FheCat home">
+          <i data-sprite="logo" class="brand-logo"></i>
+          <span class="brand-word" data-wordmark aria-hidden="true"></span>
+        </a>
+        <span class="adm-tag">Admin</span>
+        <button type="button" class="link adm-signout" id="admSignOut" hidden>Sign out</button>
+      </div>
+    </header>
+
+    <main class="adm">
+      <div class="stars" data-stars="0.4" aria-hidden="true"></div>
+      <div class="wrap">
+        <p class="adm-boot mono" id="admBoot">Decrypting…</p>
+
+        <!-- sign in -->
+        <section class="adm-login box" id="admLogin" hidden>
+          <p class="label"><i data-sprite="i-lock"></i>Waitlist admin</p>
+          <h1 class="adm-title">Decrypt the list.</h1>
+          <form id="admLoginForm">
+            <label class="wl-field">
+              <span>Password</span>
+              <input type="password" id="admPass" autocomplete="current-password" required />
+            </label>
+            <div class="wl-actions">
+              <button type="submit" class="btn" id="admSignIn"><span>Sign in</span></button>
+            </div>
+            <p class="wl-error" id="admLoginError" role="alert"></p>
+          </form>
+        </section>
+
+        <!-- the panel -->
+        <section class="adm-panel" id="admPanel" hidden>
+          <div class="adm-head">
+            <div>
+              <p class="label"><i data-sprite="i-diamond"></i>Waitlist admin</p>
+              <h1 class="adm-title">Applications</h1>
+            </div>
+            <div class="adm-export">
+              <p class="adm-export-what" id="admExportWhat">Export all</p>
+              <div class="adm-export-btns">
+                <button type="button" class="btn btn-sm" data-export="applications"><i data-sprite="i-down"></i><span>Applications .csv</span></button>
+                <button type="button" class="btn btn-sm btn-ghost" data-export="wallets-csv"><span>Wallets .csv</span></button>
+                <button type="button" class="btn btn-sm btn-ghost" data-export="wallets-txt"><span>Wallets .txt</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- counts; each tile filters the list -->
+          <div class="adm-stats" aria-label="Filter by status">
+            <button type="button" class="adm-stat" aria-pressed="false" data-status="">
+              <span class="adm-stat-label">All</span>
+              <b class="adm-stat-value" data-count="total">0</b>
+              <span class="adm-stat-note" id="admToday">&nbsp;</span>
+            </button>
+            <button type="button" class="adm-stat" aria-pressed="false" data-status="pending">
+              <span class="adm-stat-label"><i class="adm-dot is-pending"></i>Pending</span>
+              <b class="adm-stat-value" data-count="pending">0</b>
+              <span class="adm-stat-note">to review</span>
+            </button>
+            <button type="button" class="adm-stat" aria-pressed="false" data-status="approved">
+              <span class="adm-stat-label"><i class="adm-dot is-approved"></i>Approved</span>
+              <b class="adm-stat-value" data-count="approved">0</b>
+              <span class="adm-stat-note">on the list</span>
+            </button>
+            <button type="button" class="adm-stat" aria-pressed="false" data-status="rejected">
+              <span class="adm-stat-label"><i class="adm-dot is-rejected"></i>Rejected</span>
+              <b class="adm-stat-value" data-count="rejected">0</b>
+              <span class="adm-stat-note">left out</span>
+            </button>
+          </div>
+
+          <div class="adm-tools">
+            <label class="adm-search">
+              <span class="sr">Search</span>
+              <input type="search" id="admSearch" autocomplete="off" spellcheck="false" placeholder="Search handle, wallet or card #" />
+            </label>
+            <p class="adm-shown" id="admShown"></p>
+          </div>
+
+          <div class="adm-table">
+            <div class="adm-row adm-row-head">
+              <label class="adm-sel"><input type="checkbox" id="admSelAll" /><span class="sr">Select all shown</span></label>
+              <label class="adm-head-all" for="admSelAll">Select all shown</label>
+              <span class="adm-num">#</span>
+              <span class="adm-who">Holder</span>
+              <span class="adm-wallet">Wallet</span>
+              <span class="adm-posts">Posts</span>
+              <span class="adm-at">Joined</span>
+              <span class="adm-status">Status</span>
+              <span class="adm-act">Review</span>
+            </div>
+            <ol class="adm-rows" id="admRows"></ol>
+            <p class="adm-empty" id="admEmpty" hidden></p>
+          </div>
+          <div class="adm-more">
+            <button type="button" class="btn btn-ghost" id="admMore" hidden><span>Load more</span></button>
+          </div>
+
+          <!-- appears while rows are selected -->
+          <div class="adm-bulk" id="admBulk" hidden>
+            <span class="adm-bulk-count" id="admBulkCount">0 selected</span>
+            <button type="button" class="adm-btn is-approve" data-bulk="approved"><i data-sprite="i-check"></i>Approve</button>
+            <button type="button" class="adm-btn is-reject" data-bulk="rejected"><i data-sprite="i-cross"></i>Reject</button>
+            <button type="button" class="adm-btn" data-bulk="pending"><i data-sprite="i-back"></i>Pending</button>
+            <button type="button" class="adm-btn is-plain" data-bulk="">Clear</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap foot-inner">
+        <span>© <span id="year">2026</span> FheCat</span>
+        <span>Waitlist admin</span>
+        <a class="link" href="index.html">fhecat.com</a>
+      </div>
+    </footer>
+
+    <p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+    <script src="js/pixel.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/admin.js"></script>
+  </body>
+</html>

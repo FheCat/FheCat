@@ -55,7 +55,23 @@ iki linkin de o kullanıcının postu olması, aynı kullanıcı adı / cüzdan 
 
 **Elle kontrol:** takip, beğeni, RT ve kartın eklenmiş olması X'in ücretli API'si olmadan bir web sayfasından
 doğrulanamaz. Bu yüzden her kayıt `pending` olarak gelir; linklere bakılıp `approved` ya da `rejected` yapılır.
-Neon panelindeki SQL Editor'da:
+
+## Admin paneli
+
+**https://fhecat.com/admin** (arama motorlarına kapalı). Şifre Vercel'de `ADMIN_PASSWORD` ortam değişkeninde durur;
+giriş 12 saat geçerli bir oturum açar. Panelde:
+
+- **Sayaçlar:** tümü, bekleyen, onaylı, reddedilen ve son 24 saatte gelenler. Kutucuklar aynı zamanda filtredir.
+- **Arama:** kullanıcı adı, cüzdan ya da kart numarasıyla.
+- **İnceleme:** her başvuruda X profili, kart postu ve yanıt linki. Tek tıkla Approve / Reject / Pending,
+  kutucukları işaretleyerek toplu işlem.
+- **Dışa aktarma** (seçili sekme için, tüm sayfalar): başvurular `.csv`, cüzdanlar `.csv` ya da `.txt`
+  (satır başına bir adres, küçük harf). Mint için: Approved sekmesi → Wallets.
+
+Şifreyi değiştirmek için Vercel → Project → Settings → Environment Variables → `ADMIN_PASSWORD`, sonra yeniden
+deploy. Şifre değişince açık oturumlar kapanır.
+
+Aynı işler Neon panelindeki SQL Editor'dan da yapılabilir:
 
 ```sql
 -- bekleyenler
@@ -107,6 +123,8 @@ python3 -m http.server 8080   # sonra http://localhost:8080
 | `js/wlcard.js` | Piksel WL kartını çizer (kart numarası kullanıcı adından, `api/waitlist.js` ile aynı hesap) |
 | `js/waitlist.js` | Waitlist adımları; `LAUNCH_POST` burada |
 | `api/waitlist.js` | Kaydı doğrulayıp veritabanına yazan Vercel fonksiyonu |
+| `admin.html`, `js/admin.js` | Admin paneli: inceleme ve dışa aktarma |
+| `api/admin.js` | Admin API'si: şifreyle giriş, liste, durum değiştirme |
 | `package.json` | Fonksiyonun tek bağımlılığı (`@neondatabase/serverless`) |
 | `assets/` | Favicon'lar, paylaşım görseli (`og.png`, 1200×630), orijinal logo ve banner |
 | `fonts/` | Tiny5, Silkscreen, Press Start 2P (SIL Open Font License) |

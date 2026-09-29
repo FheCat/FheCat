@@ -1,14 +1,25 @@
 {
+  "cleanUrls": true,
   "redirects": [
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "fhecat.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "fhecat.vercel.app"
+        }
+      ],
       "destination": "https://fhecat.com/",
       "permanent": true
     },
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "fhecat.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "fhecat.vercel.app"
+        }
+      ],
       "destination": "https://fhecat.com/:path*",
       "permanent": true
     }

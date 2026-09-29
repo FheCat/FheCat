@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The site lives only on fhecat.com; the old Render copy forwards there until it is deleted.
+      if (/\.onrender\.com$/.test(location.hostname)) location.replace('https://fhecat.com' + location.pathname + location.search + location.hash);
+    </script>
+    <title>Join the waitlist · FheCat</title>
+    <meta name="description" content="Join the FheCat waitlist: follow @FheCat, make your pixel waitlist card, share it and add your wallet. Mainnet mint in October 2026." />
+    <meta name="theme-color" content="#032842" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="canonical" href="https://fhecat.com/waitlist" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fhecat.com/waitlist" />
+    <meta property="og:title" content="Join the FheCat waitlist" />
+    <meta property="og:description" content="Make your pixel waitlist card and get on the list. Mainnet mint in October 2026." />
+    <meta property="og:image" content="https://fhecat.com/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@FheCat" />
+    <meta name="twitter:image" content="https://fhecat.com/assets/og.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="page-wl">
+    <header class="topbar solid" id="topbar">
+      <div class="wrap bar">
+        <a class="brand" href="index.html" aria-label="FheCat home">
+          <i data-sprite="logo" class="brand-logo"></i>
+          <span class="brand-word" data-wordmark aria-hidden="true"></span>
+        </a>
+        <a class="link hide-sm" href="index.html">Back to the site</a>
+        <a class="btn btn-sm" href="https://x.com/FheCat" target="_blank" rel="noopener">
+          <i data-sprite="i-x"></i><span class="hide-sm">Follow</span><span class="sr">FheCat on X</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="wl">
+      <div class="stars" data-stars="0.7" aria-hidden="true"></div>
+      <div class="wrap">
+        <div class="wl-head">
+          <p class="label"><i data-sprite="i-diamond"></i>Waitlist · Mainnet mint October 2026</p>
+          <h1 class="wl-title">Join the waitlist.</h1>
+          <p class="wl-lead">Five short steps. You get a pixel card with your own encrypted cat on it, and your wallet goes on the list.</p>
+        </div>
+
+        <div class="wl-grid">
+          <!-- the card, updated live -->
+          <aside class="wl-card-col">
+            <figure class="wl-card box">
+              <canvas id="wlCanvas" width="1280" height="720" role="img" aria-label="Your FheCat waitlist card"></canvas>
+              <span class="scanline" aria-hidden="true"></span>
+            </figure>
+            <p class="wl-card-note mono" id="wlCardNote">Card #0x???????? · waiting for your handle</p>
+          </aside>
+
+          <!-- the steps -->
+          <ol class="wl-steps" id="wlSteps">
+            <li class="wl-step" data-step="1">
+              <button type="button" class="wl-step-head"><span class="wl-no mono">1</span><span class="wl-name">Follow @FheCat</span><span class="wl-state"></span></button>
+              <div class="wl-body">
+                <p>Everything lands on X first: the launch post, the mint date, the reveal.</p>
+                <div class="wl-actions">
+                  <a class="btn" href="https://x.com/intent/follow?screen_name=FheCat" target="_blank" rel="noopener"><i data-sprite="i-x"></i><span>Follow @FheCat</span></a>
+                  <button type="button" class="btn btn-ghost" data-done="1">I follow</button>
+                </div>
+              </div>
+            </li>
+
+            <li class="wl-step" data-step="2">
+              <button type="button" class="wl-step-head"><span class="wl-no mono">2</span><span class="wl-name">Get your card</span><span class="wl-state"></span></button>
+              <div class="wl-body">
+                <label class="wl-field">
+                  <span>Your X handle</span>
+                  <input type="text" id="wlHandle" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="16" placeholder="@yourname" />
+                </label>
+                <p class="wl-hint">Your card, its number and the cat's noise are made from your handle.</p>
+                <div class="wl-actions">
+                  <button type="button" class="btn" id="wlSave" disabled><i data-sprite="i-down"></i><span>Save card</span></button>
+                  <button type="button" class="btn btn-ghost" data-done="2" disabled>Next</button>
+                </div>
+                <p class="wl-error" role="alert"></p>
+              </div>
+            </li>
+
+            <li class="wl-step" data-step="3">
+              <button type="button" class="wl-step-head"><span class="wl-no mono">3</span><span class="wl-name">Post your card</span><span class="wl-state"></span></button>
+              <div class="wl-body">
+                <p>Post it from your account with the card attached, then paste the link to your post.</p>
+                <div class="wl-actions">
+                  <a class="btn" id="wlPostIntent" href="https://x.com/intent/tweet" target="_blank" rel="noopener"><i data-sprite="i-x"></i><span>Post on X</span></a>
+                </div>
+                <p class="wl-hint"><b>Attach the card you saved.</b> X can't add images for you.</p>
+                <label class="wl-field">
+                  <span>Link to your post</span>
+                  <input type="url" id="wlPost" autocomplete="off" spellcheck="false" placeholder="https://x.com/yourname/status/…" />
+                </label>
+                <div class="wl-actions">
+                  <button type="button" class="btn btn-ghost" data-done="3">Next</button>
+                </div>
+                <p class="wl-error" role="alert"></p>
+              </div>
+            </li>
+
+            <li class="wl-step" data-step="4">
+              <button type="button" class="wl-step-head"><span class="wl-no mono">4</span><span class="wl-name">Like, repost &amp; reply</span><span class="wl-state"></span></button>
+              <div class="wl-body">
+                <div class="wl-locked" id="wlLocked">
+                  <p><i class="blink-dot"></i>Our launch post drops soon on @FheCat. This step opens the moment it's live.</p>
+                  <a class="btn btn-ghost" href="https://x.com/FheCat" target="_blank" rel="noopener"><i data-sprite="i-x"></i><span>Watch @FheCat</span></a>
+                </div>
+                <div class="wl-open" id="wlOpen" hidden>
+                  <p>Like and repost our launch post, then reply to it <b>with your card attached</b>.</p>
+                  <div class="wl-actions">
+                    <a class="btn btn-ghost" id="wlLike" target="_blank" rel="noopener"><span>Like</span></a>
+                    <a class="btn btn-ghost" id="wlRepost" target="_blank" rel="noopener"><span>Repost</span></a>
+                    <a class="btn" id="wlReplyIntent" target="_blank" rel="noopener"><i data-sprite="i-x"></i><span>Reply with card</span></a>
+                  </div>
+                  <label class="wl-field">
+                    <span>Link to your reply</span>
+                    <input type="url" id="wlReply" autocomplete="off" spellcheck="false" placeholder="https://x.com/yourname/status/…" />
+                  </label>
+                  <div class="wl-actions">
+                    <button type="button" class="btn btn-ghost" data-done="4">Next</button>
+                  </div>
+                  <p class="wl-error" role="alert"></p>
+                </div>
+              </div>
+            </li>
+
+            <li class="wl-step" data-step="5">
+              <button type="button" class="wl-step-head"><span class="wl-no mono">5</span><span class="wl-name">Add your wallet</span><span class="wl-state"></span></button>
+              <div class="wl-body">
+                <label class="wl-field">
+                  <span>EVM wallet address</span>
+                  <input type="text" id="wlWallet" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="42" placeholder="0x…" />
+                </label>
+                <label class="wl-trap" aria-hidden="true">Website <input type="text" id="wlSite" tabindex="-1" autocomplete="off" /></label>
+                <p class="wl-hint">We keep your handle, wallet and the two links only to run the waitlist. Every entry is checked by hand before the mint.</p>
+                <div class="wl-actions">
+                  <button type="button" class="btn" id="wlSubmit"><span>Join the waitlist</span></button>
+                </div>
+                <p class="wl-error" role="alert"></p>
+              </div>
+            </li>
+          </ol>
+
+          <!-- done -->
+          <section class="wl-done box" id="wlDone" hidden aria-live="polite">
+            <p class="label"><i data-sprite="i-diamond"></i>Entry received</p>
+            <h2>You're on the list.</h2>
+            <p class="wl-done-meta mono" id="wlDoneMeta"></p>
+            <p>Every entry is checked by hand: the follow, the like, the repost, your card post and your reply. The mint date lands on @FheCat first. Until then your cat stays encrypted.</p>
+            <div class="wl-actions">
+              <button type="button" class="btn" id="wlSaveAgain"><i data-sprite="i-down"></i><span>Save card again</span></button>
+              <a class="btn btn-ghost" href="index.html"><span>Back to the site</span></a>
+            </div>
+          </section>
+        </div>
+
+        <p class="wl-reset"><button type="button" class="link" id="wlReset">Start over</button></p>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap foot-inner">
+        <span>© <span id="year">2026</span> FheCat</span>
+        <span>Powered by Fhenix FHE</span>
+        <a class="link" href="https://x.com/FheCat" target="_blank" rel="noopener">X / @FheCat</a>
+        <a class="link" href="index.html">fhecat.com</a>
+      </div>
+    </footer>
+
+    <p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+    <script src="js/pixel.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/wlcard.js"></script>
+    <script src="js/waitlist.js"></script>
+  </body>
+</html>

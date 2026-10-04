@@ -10,7 +10,7 @@
   'use strict';
 
   // The launch post everyone likes, reposts and replies to. Step 4 opens once this is set.
-  var LAUNCH_POST = 'https://x.com/FheCat/status/2105072662309478710';
+  var LAUNCH_POST = 'https://x.com/FheCat/status/2105240697620271388';
 
   var NS = window.FheCat;
   var P = NS.pixel;

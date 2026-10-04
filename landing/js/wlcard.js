@@ -102,69 +102,35 @@
     rect(ctx, cx + 2, cy + 3, 1, 1, COL.cloud);
   }
 
-  // Text goes through a scratch canvas and every pixel is snapped to on/off,
-  // then it is scaled by a whole number, so the pixel fonts stay exact.
-  var scratch = null;
-  function scratchCtx() {
-    if (!scratch) {
-      scratch = document.createElement('canvas');
-      scratch.width = W;
-      scratch.height = H;
-    }
-    return scratch.getContext('2d', { willReadFrequently: true });
+  // Text is drawn from bitmaps of the site's pixel fonts (js/pixelfont.js), one
+  // font pixel at a time, so it looks the same in every browser and never
+  // depends on a web font having loaded.
+  var FONT = { label: 'silkscreen', mono: 'ps2p', small: 'tiny5' };
+  function glyph(font, ch) {
+    var set = NS.pixelFonts[font];
+    return set[ch] || set['?'];
   }
   function width(str, font) {
-    var t = scratchCtx();
-    t.font = font;
-    return Math.ceil(t.measureText(str).width);
+    var w = 0;
+    for (var i = 0; i < str.length; i++) w += glyph(font, str[i])[0];
+    return w;
   }
   /** Draws `str` with its baseline at y, `n` times its native 8px; returns the width drawn. */
   function text(ctx, str, x, y, font, color, align, n) {
     n = n || 1;
-    var w = width(str, font) + 2;
-    var t = scratchCtx();
-    t.clearRect(0, 0, W, H);
-    t.font = font;
-    t.textBaseline = 'alphabetic';
-    t.textAlign = 'left';
-    t.fillStyle = '#ffffff';
-    t.fillText(str, 0, 12);
-    var img = t.getImageData(0, 0, w, 16);
-    var d = img.data;
-    var r = parseInt(color.slice(1, 3), 16);
-    var g = parseInt(color.slice(3, 5), 16);
-    var b = parseInt(color.slice(5, 7), 16);
-    for (var i = 0; i < d.length; i += 4) {
-      if (d[i + 3] >= 110) {
-        d[i] = r;
-        d[i + 1] = g;
-        d[i + 2] = b;
-        d[i + 3] = 255;
-      } else d[i + 3] = 0;
+    var drawn = width(str, font) * n;
+    var cx = align === 'right' ? x - drawn : align === 'center' ? x - Math.round(drawn / 2) : x;
+    ctx.fillStyle = color;
+    for (var i = 0; i < str.length; i++) {
+      var g = glyph(font, str[i]);
+      for (var r = 0; r < g[4].length; r++) {
+        for (var c = 0; c < g[3]; c++) {
+          if (g[4][r] & (1 << c)) ctx.fillRect(cx + (g[1] + c) * n, y + (r - g[2]) * n, n, n);
+        }
+      }
+      cx += g[0] * n;
     }
-    var strip = document.createElement('canvas');
-    strip.width = w;
-    strip.height = 16;
-    strip.getContext('2d').putImageData(img, 0, 0);
-    var drawn = (w - 2) * n;
-    var left = align === 'right' ? x - drawn : align === 'center' ? x - Math.round(drawn / 2) : x;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(strip, 0, 0, w, 16, left, y - 12 * n, w * n, 16 * n);
     return drawn;
-  }
-
-  var FONT = {
-    label: '8px Silkscreen',
-    mono: '8px "Press Start 2P"',
-    small: '8px Tiny5'
-  };
-  function fontsReady() {
-    if (!document.fonts || !document.fonts.load) return Promise.resolve();
-    return Promise.all([
-      document.fonts.load(FONT.label),
-      document.fonts.load(FONT.mono),
-      document.fonts.load(FONT.small)
-    ]).catch(function () {});
   }
 
   // ---------------------------------------------------------------------------
@@ -348,10 +314,9 @@
 
   /**
    * Renders the card for `handle` into `canvas` (sized 1280 x 720).
-   * Resolves once fonts are in, so the text is right on the first draw.
    */
   function render(canvas, handle) {
-    return fontsReady().then(function () {
+    return Promise.resolve().then(function () {
       var art = document.createElement('canvas');
       art.width = W;
       art.height = H;
@@ -361,6 +326,11 @@
       var ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(art, 0, 0, W * SCALE, H * SCALE);
+      // One corner pixel at 99.6% opacity: X then keeps the upload as a PNG
+      // instead of re-encoding it as a (blurry) JPEG.
+      var px = ctx.getImageData(0, 0, 1, 1);
+      px.data[3] = 254;
+      ctx.putImageData(px, 0, 0);
       return canvas;
     });
   }

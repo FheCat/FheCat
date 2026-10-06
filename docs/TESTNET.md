@@ -32,9 +32,10 @@ Bu prova, mainnet'te yapılacak işin birebir kopyasıdır. Tek fark ağdır: Ar
 ## Anahtar kuralları
 
 1. Yalnızca bu iş için yeni bir cüzdan oluştur. Gerçek varlık tutan ana cüzdanının anahtarını kullanma.
-2. Bu cüzdana Arbitrum Sepolia faucet'inden yaklaşık 0,02–0,05 ETH al.
+2. Bu cüzdana Arbitrum Sepolia faucet'inden yaklaşık 0,05 ETH al.
    - Deploy ve ilk ayarlar yaklaşık 8,9 milyon gas tutar.
-   - Bu, Arbitrum Sepolia'da 0,01 ETH'nin altına denk gelir.
+   - Bu genellikle 0,01 ETH'nin altındadır, ama Sepolia ücretleri dalgalandığı için pay bırak.
+   - Anahtar sızsa bile, sahipliği kendi cüzdanınla kabul ettikten sonra bu cüzdanın kontrat üzerinde hiçbir yetkisi kalmaz.
 3. Anahtarı sohbete yazma. Ortam ayarlarında (oturum başlığındaki ortam menüsü → Edit) `PRIVATE_KEY` adıyla ortam değişkeni olarak ekle.
 4. Değişken yalnızca yeni oturumlara geçer. Deploy bu yüzden ayrı ve kısa ömürlü bir oturumda yapılır.
 5. Deploy oturumu anahtarı:

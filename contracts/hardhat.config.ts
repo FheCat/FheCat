@@ -9,6 +9,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import './tasks/fhecat';
+import './tasks/arena';
 
 const accounts = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 

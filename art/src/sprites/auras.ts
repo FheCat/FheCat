@@ -4,15 +4,31 @@ import { BODY, HEAD } from './base';
 
 // Auras are painted right after the background, behind the cat.
 
+const SPARK = ['.c.', 'cwc', '.c.'];
+
 export const SPARKLES: Sprite = {
   colors: { w: { hex: '#ffffff' }, c: { hex: '#9cfbff' } },
   parts: [
-    { x: 0, y: 5, rows: ['..c..', '..c..', 'ccwcc', '..c..', '..c..'] },
-    { x: 27, y: 10, rows: ['..c..', '..c..', 'ccwcc', '..c..', '..c..'] },
-    { x: 13, y: 1, rows: ['.c.', 'cwc', '.c.'] },
-    { x: 1, y: 22, rows: ['.c.', 'cwc', '.c.'] },
-    { x: 29, y: 24, rows: ['w'] },
-    { x: 26, y: 1, rows: ['w'] },
+    { x: 0, y: 3, rows: SPARK },
+    { x: 29, y: 10, rows: SPARK },
+    { x: 1, y: 21, rows: SPARK },
+    { x: 28, y: 29, rows: SPARK },
+    { x: 17, y: 0, rows: ['..c..', '..c..', 'ccwcc', '..c..', '..c..'] },
+    ...[[12, 1], [31, 17], [0, 15], [24, 0], [4, 30]].map(([x, y]) => ({ x, y, rows: ['w'] })),
+  ],
+};
+
+const HEART = ['h.h', 'hhh', '.h.'];
+
+export const HEARTS: Sprite = {
+  colors: { h: { hex: '#ff5d9e' }, H: { hex: '#ffa3c8' } },
+  parts: [
+    { x: 0, y: 6, rows: HEART },
+    { x: 29, y: 2, rows: HEART.map((r) => r.replace(/h/g, 'H')) },
+    { x: 1, y: 24, rows: HEART.map((r) => r.replace(/h/g, 'H')) },
+    { x: 28, y: 29, rows: HEART },
+    { x: 13, y: 1, rows: HEART },
+    ...[[30, 15], [0, 18], [21, 0]].map(([x, y]) => ({ x, y, rows: ['H'] })),
   ],
 };
 
@@ -20,8 +36,8 @@ export const CIPHER_RAIN: Sprite = {
   colors: { g: { hex: '#1f9e5c' }, G: { hex: '#9cffb8' } },
   parts: [
     { x: 0, y: 0, rows: columnRain('1101001101011101100101101101001', 'G', 'g') },
-    { x: 2, y: 3, rows: columnRain('0110101101001011010110100110', 'G', 'g') },
-    { x: 29, y: 1, rows: columnRain('101101001011011001011101001011', 'G', 'g') },
+    { x: 1, y: 3, rows: columnRain('0110101101001011010110100110', 'G', 'g') },
+    { x: 30, y: 1, rows: columnRain('101101001011011001011101001011', 'G', 'g') },
     { x: 31, y: 4, rows: columnRain('0101101011010010110101101011', 'G', 'g') },
   ],
 };
@@ -32,9 +48,9 @@ function columnRain(bits: string, on: string, off: string): string[] {
 }
 
 /** Soft circular backlight behind the head. */
-export const BACKLIGHT: Sprite = disc(15.5, 14, [
-  [14.5, 'o'],
-  [12.5, 'i'],
+export const BACKLIGHT: Sprite = disc(15.5, 12, [
+  [15.5, 'o'],
+  [13.5, 'i'],
 ], { o: '#0a4d63', i: '#0c6a85' });
 
 function disc(cx: number, cy: number, radii: [number, string][], palette: Record<string, string>): Sprite {
@@ -55,7 +71,19 @@ function disc(cx: number, cy: number, radii: [number, string][], palette: Record
   };
 }
 
-/** A two-pixel glowing outline hugging the head-and-shoulders silhouette. */
+const BOLT = ['..Y', '.Y.', 'YYY', '.Yw', 'Y..', 'Y..'];
+
+export const LIGHTNING: Sprite = {
+  colors: { Y: { hex: '#ffe27a' }, w: { hex: '#ffffff' } },
+  parts: [
+    { x: 0, y: 2, rows: BOLT },
+    { x: 29, y: 5, rows: BOLT },
+    { x: 1, y: 22, rows: BOLT },
+    { x: 13, y: 0, rows: ['Y'] },
+  ],
+};
+
+/** A two-pixel glowing outline hugging the cat's silhouette. */
 export const ENCRYPTED_AURA: Sprite = (() => {
   const scratch = new ColorTable();
   const head = rasterize(HEAD, scratch);

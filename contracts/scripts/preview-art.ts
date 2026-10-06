@@ -6,7 +6,7 @@
  */
 import { mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { renderCatSvg, renderEncryptedSvg, renderMotifSvg, svgDataUri, traitsOf } from '../../art';
+import { renderCatSvg, renderMotifSvg, renderSealedSvg, svgDataUri, traitsOf } from '../../art';
 
 const count = Number(process.argv[2] ?? 48);
 let seed = BigInt(process.argv[3] ?? 42);
@@ -22,7 +22,8 @@ function next(): bigint {
 
 const cards: string[] = [];
 cards.push(card(renderMotifSvg(), 'Collection', ['logo mark']));
-cards.push(card(renderEncryptedSvg(next() << 192n), 'Encrypted', ['placeholder']));
+const handle = next() << 192n;
+(['Unopened', 'Peeked', 'Opened'] as const).forEach((name, state) => cards.push(card(renderSealedSvg(state as 0 | 1 | 2, handle), name, ['sealed box'])));
 for (let i = 0; i < count; i++) {
   const dna = next();
   cards.push(card(renderCatSvg(dna), '0x' + dna.toString(16).padStart(16, '0'), traitsOf(dna).map((t) => t.value)));

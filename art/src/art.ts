@@ -1,5 +1,6 @@
-import { ColorTable, compileSprite } from './compile';
+import { ColorTable, compileSprite, rasterize, SIZE } from './compile';
 import { BODY, HEAD, MOTIF } from './sprites/base';
+import { BOX, LID_OPENED, LID_PEEKED, LID_UNOPENED } from './sprites/box';
 import { BACKGROUNDS, FURS, TRAITS } from './traits';
 import { FUR_ROLES, type Layer } from './types';
 
@@ -19,11 +20,16 @@ export interface CompiledArt {
   bodyLayer: number;
   headLayer: number;
   motifLayer: number;
+  /** The sealed box, and its lid for each sealed state (Unopened, Peeked, Opened). */
+  boxLayer: number;
+  lidLayers: number[];
   traits: CompiledTrait[];
   /** Fixed-colour index of each background's flat fill. */
   backgroundFills: number[];
   /** Fixed-colour indices [outline, main, shade, light, ink] per fur. */
   furPalettes: number[][];
+  /** Pixels the cat's head and body never cover, row-major, as [x, y]. Stars go here. */
+  skyCells: [number, number][];
 }
 
 function compileArt(): CompiledArt {
@@ -39,6 +45,8 @@ function compileArt(): CompiledArt {
   const bodyLayer = add(compileSprite(BODY, colors));
   const headLayer = add(compileSprite(HEAD, colors));
   const motifLayer = add(compileSprite(MOTIF, colors));
+  const boxLayer = add(compileSprite(BOX, colors));
+  const lidLayers = [LID_UNOPENED, LID_PEEKED, LID_OPENED].map((lid) => add(compileSprite(lid, colors)));
 
   const traits = TRAITS.map((t) => ({
     key: t.key,
@@ -48,7 +56,25 @@ function compileArt(): CompiledArt {
     layers: t.options.map((o) => ('sprite' in o && o.sprite ? add(compileSprite(o.sprite, colors)) : -1)),
   }));
 
-  return { colors: colors.hexes, layers, bodyLayer, headLayer, motifLayer, traits, backgroundFills, furPalettes };
+  const scratch = new ColorTable();
+  const head = rasterize(HEAD, scratch);
+  const body = rasterize(BODY, scratch);
+  const skyCells: [number, number][] = [];
+  for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) if (head[y][x] < 0 && body[y][x] < 0) skyCells.push([x, y]);
+
+  return {
+    colors: colors.hexes,
+    layers,
+    bodyLayer,
+    headLayer,
+    motifLayer,
+    boxLayer,
+    lidLayers,
+    traits,
+    backgroundFills,
+    furPalettes,
+    skyCells,
+  };
 }
 
 export const ART: CompiledArt = compileArt();

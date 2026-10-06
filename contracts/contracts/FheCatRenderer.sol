@@ -54,7 +54,7 @@ contract FheCatRenderer is IFheCatRenderer {
                 '","description":"',
                 state == 0 ? Art.UNOPENED_DESCRIPTION : state == 1 ? Art.PEEKED_DESCRIPTION : Art.OPENED_DESCRIPTION,
                 '","image":"',
-                _svgDataUri(encryptedSvg(dnaHandle)),
+                _svgDataUri(sealedSvg(state, dnaHandle)),
                 '","attributes":[{"trait_type":"Status","value":"',
                 state == 0 ? "Unopened" : state == 1 ? "Peeked" : "Opened",
                 '"}]}'
@@ -128,8 +128,9 @@ contract FheCatRenderer is IFheCatRenderer {
         ptr = _putColor(ptr, ctx.colors, uint8(bytes(Art.BACKGROUND_FILLS)[idx[0]]));
         ptr = _putShort(ptr, '"/>', 3);
 
-        // Paint order: background decor, aura, body, head, pattern, eyes, mouth, accessory, headwear.
+        // Paint order: background decor, stars, aura, body, head, pattern, eyes, mouth, accessory, headwear.
         ptr = _putOption(ptr, ctx, base, idx, 0);
+        ptr = _putStars(ptr, dna);
         ptr = _putOption(ptr, ctx, base, idx, 7);
         ptr = _putLayer(ptr, ctx, Art.BODY_LAYER);
         ptr = _putLayer(ptr, ctx, Art.HEAD_LAYER);
@@ -143,25 +144,30 @@ contract FheCatRenderer is IFheCatRenderer {
         return _seal(buf, start, ptr, Art.MAX_CAT_SVG_BYTES);
     }
 
-    /// @notice The logo mark plus a barcode of the ciphertext handle, unique per token.
-    function encryptedSvg(bytes32 dnaHandle) public pure returns (string memory) {
+    /// @notice The sealed box of state 0 (Unopened), 1 (Peeked) or 2 (Opened), with a barcode of the
+    ///         token's ciphertext handle on its label, so every box is different.
+    function sealedSvg(uint8 state, bytes32 dnaHandle) public pure returns (string memory) {
+        require(state < 3, "FheCatRenderer: not sealed");
         Ctx memory ctx = _ctx(0);
-        (bytes memory buf, uint256 ptr) = _alloc(Art.MAX_ENCRYPTED_SVG_BYTES);
+        (bytes memory buf, uint256 ptr) = _alloc(Art.MAX_SEALED_SVG_BYTES);
         uint256 start = ptr;
-        ptr = _putMotif(ptr, ctx);
+        ptr = _putBackdrop(ptr);
+        ptr = _putLayer(ptr, ctx, Art.BOX_LAYER);
+        ptr = _putLayer(ptr, ctx, Art.LID_LAYER + state);
         ptr = _putBarcode(ptr, dnaHandle);
         ptr = _put(ptr, bytes(Art.SVG_CLOSE));
-        return _seal(buf, start, ptr, Art.MAX_ENCRYPTED_SVG_BYTES);
+        return _seal(buf, start, ptr, Art.MAX_SEALED_SVG_BYTES);
     }
 
     /// @notice The collection image.
     function motifSvg() public pure returns (string memory) {
         Ctx memory ctx = _ctx(0);
-        (bytes memory buf, uint256 ptr) = _alloc(Art.MAX_ENCRYPTED_SVG_BYTES);
+        (bytes memory buf, uint256 ptr) = _alloc(Art.MAX_MOTIF_SVG_BYTES);
         uint256 start = ptr;
-        ptr = _putMotif(ptr, ctx);
+        ptr = _putBackdrop(ptr);
+        ptr = _putLayer(ptr, ctx, Art.MOTIF_LAYER);
         ptr = _put(ptr, bytes(Art.SVG_CLOSE));
-        return _seal(buf, start, ptr, Art.MAX_ENCRYPTED_SVG_BYTES);
+        return _seal(buf, start, ptr, Art.MAX_MOTIF_SVG_BYTES);
     }
 
     // ---------------------------------------------------------------------
@@ -230,13 +236,37 @@ contract FheCatRenderer is IFheCatRenderer {
         return layer == Art.NO_LAYER ? ptr : _putLayer(ptr, ctx, layer);
     }
 
-    function _putMotif(uint256 ptr, Ctx memory ctx) private pure returns (uint256) {
+    /// @dev The SVG header and the night-blue fill behind sealed boxes and the logo.
+    function _putBackdrop(uint256 ptr) private pure returns (uint256) {
         ptr = _put(ptr, bytes(Art.SVG_OPEN));
         ptr = _putShort(ptr, '<rect width="32" height="32" ', 29);
         ptr = _putShort(ptr, 'fill="#', 7);
         ptr = _put(ptr, bytes(Art.ENCRYPTED_FILL));
-        ptr = _putShort(ptr, '"/>', 3);
-        return _putLayer(ptr, ctx, Art.MOTIF_LAYER);
+        return _putShort(ptr, '"/>', 3);
+    }
+
+    /// @dev One path of STAR_COUNT single pixels: sky cells picked by 16-bit slices of _mix64(dna).
+    function _putStars(uint256 ptr, uint64 dna) private pure returns (uint256) {
+        bytes memory sky = Art.SKY_CELLS;
+        uint256 n = sky.length / 2;
+        uint256 z = _mix64(dna);
+        ptr = _putShort(ptr, '<path fill="#', 13);
+        ptr = _put(ptr, bytes(Art.STAR_COLOR));
+        ptr = _putShort(ptr, '" d="', 5);
+        for (uint256 i; i < Art.STAR_COUNT; ++i) {
+            uint256 c = ((z >> (16 * i)) & 0xffff) % n;
+            ptr = _putRect(ptr, uint8(sky[2 * c]), uint8(sky[2 * c + 1]), 1, 1);
+        }
+        return _putShort(ptr, '"/>', 3);
+    }
+
+    /// @dev splitmix64's finaliser (as in the TypeScript renderer), so every DNA bit moves every star.
+    function _mix64(uint64 dna) private pure returns (uint256 z) {
+        uint256 m = 0xffffffffffffffff;
+        z = (uint256(dna) + 0x9e3779b97f4a7c15) & m;
+        z = ((z ^ (z >> 30)) * 0xbf58476d1ce4e5b9) & m;
+        z = ((z ^ (z >> 27)) * 0x94d049bb133111eb) & m;
+        z = z ^ (z >> 31);
     }
 
     /// @dev Layer = groups of [colour, rectCount, (x, y, w, h) * rectCount]; one <path> per group.

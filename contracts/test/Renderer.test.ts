@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { ART, contractUri, renderCatSvg, renderEncryptedSvg, renderMotifSvg, tokenUri, traitsOf } from '../../art';
+import { ART, contractUri, renderCatSvg, renderMotifSvg, renderSealedSvg, starsOf, tokenUri, traitsOf } from '../../art';
 import { decodeDataUri } from './helpers';
 import type { FheCatRenderer } from '../typechain-types';
 
@@ -71,13 +71,31 @@ describe('FheCatRenderer', () => {
     }
   });
 
-  it('draws the encrypted placeholder and collection image identically', async () => {
+  it('draws every sealed box and the collection image identically', async () => {
     const { renderer } = await loadFixture(fixture);
     const next = rng(99n);
     const handles = [ethers.ZeroHash, '0x' + 'ff'.repeat(32)];
-    for (let i = 0; i < 20; i++) handles.push(ethers.toBeHex((next() << 192n) | (next() << 128n) | next(), 32));
-    for (const h of handles) expect(await renderer.encryptedSvg(h), h).to.equal(renderEncryptedSvg(h));
+    for (let i = 0; i < 12; i++) handles.push(ethers.toBeHex((next() << 192n) | (next() << 128n) | next(), 32));
+    for (const h of handles) {
+      for (const state of [0, 1, 2] as const) {
+        expect(await renderer.sealedSvg(state, h), `${h} state ${state}`).to.equal(renderSealedSvg(state, h));
+      }
+    }
+    await expect(renderer.sealedSvg(3, ethers.ZeroHash)).to.be.revertedWith('FheCatRenderer: not sealed');
     expect(await renderer.motifSvg()).to.equal(renderMotifSvg());
+  });
+
+  it("gives every DNA its own stars, in the sky around the cat", async () => {
+    const next = rng(4444n);
+    const seen = new Set<string>();
+    const sky = new Set(ART.skyCells.map(([x, y]) => `${x},${y}`));
+    for (let i = 0; i < 4444; i++) {
+      const stars = starsOf(next());
+      for (const [x, y] of stars) expect(sky.has(`${x},${y}`)).to.equal(true);
+      seen.add(JSON.stringify(stars));
+    }
+    // 4444 random DNAs, 4444 different skies
+    expect(seen.size).to.equal(4444);
   });
 
   it('builds identical token and collection metadata', async () => {

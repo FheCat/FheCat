@@ -1,32 +1,33 @@
-import { useI18n } from '../i18n';
+import { useEffect, useState } from 'react';
+import { Sprite } from '../pixel/Sprite';
+import { Wordmark } from '../pixel/Sky';
 import { ConnectButton } from './ConnectButton';
 
-export function Header() {
-  const { t, lang, setLang } = useI18n();
+/** The homepage's top bar: see-through over the hero, solid once the page scrolls. */
+export function Header({ links }: { links: [href: string, label: string][] }) {
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    const update = () => setSolid(window.scrollY > 24);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
   return (
-    <header className="header">
-      <div className="container header-inner">
-        <a className="brand" href="#top">
-          <img src="/brand/logo.jpg" alt="" width={36} height={36} />
-          <span>FheCat</span>
+    <header className={`topbar ${solid ? 'solid' : ''}`} id="topbar">
+      <div className="wrap bar">
+        <a className="brand" href="#top" aria-label="FheCat, back to top">
+          <Sprite name="logo" className="brand-logo" />
+          <Wordmark className="brand-word" />
         </a>
-        <nav className="nav">
-          <a href="#mint">{t.nav.mint}</a>
-          <a href="#how">{t.nav.how}</a>
-          <a href="#cats">{t.nav.cats}</a>
-          <a href="#arena">{t.nav.arena}</a>
-          <a href="#traits">{t.nav.traits}</a>
+        <nav className="nav" aria-label="Sections">
+          {links.map(([href, label]) => (
+            <a key={href} href={href}>
+              {label}
+            </a>
+          ))}
         </nav>
-        <div className="header-actions">
-          <button
-            className="lang"
-            onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
-            aria-label={lang === 'tr' ? 'Switch to English' : 'Türkçeye geç'}
-          >
-            {lang === 'tr' ? 'EN' : 'TR'}
-          </button>
-          <ConnectButton />
-        </div>
+        <ConnectButton size="sm" />
       </div>
     </header>
   );

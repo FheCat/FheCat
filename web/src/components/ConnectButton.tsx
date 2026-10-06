@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useConnect, useConnection, useConnectors, useDisconnect, useSwitchChain } from 'wagmi';
-import { useI18n } from '../i18n';
 import { DEFAULT_CHAIN, chainInfo } from '../config/chains';
 import { useViewChain } from '../lib/hooks';
 import { shortAddress } from '../lib/format';
 
-export function ConnectButton() {
-  const { t } = useI18n();
+/** `sm` in the top bar, `wide` inside a panel. */
+export function ConnectButton({ size }: { size?: 'sm' | 'wide' }) {
   const { address, isConnected, chainId } = useConnection();
   const connectors = useConnectors();
   const connect = useConnect();
@@ -15,6 +14,8 @@ export function ConnectButton() {
   const { walletOnWrongChain } = useViewChain();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const btn = size ? `btn-${size}` : '';
+  const wrap = `wallet ${size === 'wide' ? 'wallet-wide' : ''}`;
 
   useEffect(() => {
     if (!open) return;
@@ -32,19 +33,25 @@ export function ConnectButton() {
   if (isConnected && address) {
     if (walletOnWrongChain) {
       return (
-        <button className="btn btn-warn" onClick={() => switchChain.mutate({ chainId: DEFAULT_CHAIN.id })}>
-          {t.wallet.switchTo(DEFAULT_CHAIN.name)}
+        <button
+          className={`btn btn-warn ${btn}`}
+          title={`Switch to ${DEFAULT_CHAIN.name}`}
+          onClick={() => switchChain.mutate({ chainId: DEFAULT_CHAIN.id })}
+        >
+          {/* The top bar has no room for a chain name. */}
+          <span>{size === 'sm' ? 'Switch network' : `Switch to ${DEFAULT_CHAIN.name}`}</span>
         </button>
       );
     }
     return (
-      <div className="wallet" ref={root}>
-        <button className="btn btn-ghost" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-          <span className="dot" /> {shortAddress(address)}
+      <div className={wrap} ref={root}>
+        <button className={`btn btn-ghost ${btn}`} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <i className="blink-dot" aria-hidden="true" />
+          <span className="mono">{shortAddress(address)}</span>
         </button>
         {open && (
-          <div className="menu" role="menu">
-            <div className="menu-note">{chainInfo(chainId)?.chain.name}</div>
+          <div className="menu box">
+            <p className="menu-note">{chainInfo(chainId)?.chain.name}</p>
             <button
               className="menu-item"
               onClick={() => {
@@ -52,7 +59,7 @@ export function ConnectButton() {
                 setOpen(false);
               }}
             >
-              {t.wallet.disconnect}
+              Disconnect
             </button>
           </div>
         )}
@@ -66,12 +73,12 @@ export function ConnectButton() {
   const hasBrowserWallet = typeof window !== 'undefined' && 'ethereum' in window;
 
   return (
-    <div className="wallet" ref={root}>
-      <button className="btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        {t.wallet.connect}
+    <div className={wrap} ref={root}>
+      <button className={`btn ${btn}`} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span>Connect wallet</span>
       </button>
       {open && (
-        <div className="menu" role="menu">
+        <div className="menu box">
           {choices.map((c) => (
             <button
               key={c.uid}
@@ -79,12 +86,14 @@ export function ConnectButton() {
               disabled={connect.isPending}
               onClick={() => connect.mutate({ connector: c }, { onSuccess: () => setOpen(false) })}
             >
-              {c.icon && <img src={c.icon} alt="" width={18} height={18} />}
-              {c.type === 'mock' ? t.wallet.devWallet : c.id === 'injected' ? t.wallet.browser : c.name}
+              {c.icon && <img src={c.icon} alt="" width={24} height={24} />}
+              {c.type === 'mock' ? 'Dev wallet' : c.id === 'injected' ? 'Browser wallet' : c.name}
             </button>
           ))}
-          {!hasBrowserWallet && discovered.length === 0 && <div className="menu-note">{t.wallet.noWallet}</div>}
-          {connect.error && <div className="menu-note error">{connect.error.message.split('\n')[0]}</div>}
+          {!hasBrowserWallet && discovered.length === 0 && (
+            <p className="menu-note">No browser wallet found. Install MetaMask or Rabby, or open this page in your wallet app.</p>
+          )}
+          {connect.error && <p className="menu-note error">{connect.error.message.split('\n')[0]}</p>}
         </div>
       )}
     </div>

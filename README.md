@@ -159,7 +159,7 @@ Tüm komutlar `contracts/` klasöründe, `--network <ağ>` ile çalıştırılı
 cd web && npm run build    # çıktı: web/dist
 ```
 
-`dist/` klasörü Vercel, Netlify, Cloudflare Pages veya GitHub Pages'e olduğu gibi yüklenebilir. Birden fazla ağda deploy varsa `VITE_DEFAULT_CHAIN_ID` hangi ağın önce gösterileceğini belirler. Site TR/EN dillerini destekler ve fontları kendi sunar. Analitik veya takip kodu yoktur; dışarıya yalnızca zincirin RPC'sine ve şifre çözme sırasında Fhenix servislerine istek gider. Kontrat deploy edilmeden önce "çok yakında" görünümüyle açılır.
+`dist/` klasörü Vercel, Netlify, Cloudflare Pages veya GitHub Pages'e olduğu gibi yüklenebilir. Birden fazla ağda deploy varsa `VITE_DEFAULT_CHAIN_ID` hangi ağın önce gösterileceğini belirler. Site İngilizcedir ve fhecat.com ile aynı piksel tasarımı kullanır: fontlar, renkler, sprite'lar ve gece sahnesi derleme sırasında doğrudan `landing/` klasöründen alınır (`art/` gibi). Bu yüzden `web/` deponun geri kalanıyla birlikte derlenmelidir. Fontları site kendisi sunar. Analitik veya takip kodu yoktur; dışarıya yalnızca zincirin RPC'sine ve şifre çözme sırasında Fhenix servislerine istek gider. Kontrat deploy edilmeden önce "çok yakında" görünümüyle açılır.
 
 ## Güvenlik notları ve sınırlamalar
 
@@ -176,7 +176,7 @@ cd web && npm run build    # çıktı: web/dist
 ```
 art/         Sprite'lar, özellik/nadirlik tabloları ve TypeScript SVG render'ı (tek doğruluk kaynağı)
 contracts/   Hardhat: FheCat.sol, FheCatRenderer.sol, FheCatArena.sol, üretilen FheCatArt.sol, testler, deploy ve yönetim komutları
-web/         Mint sitesi: Vite + React 19 + wagmi 3 + @cofhe/sdk 0.7, Playwright E2E
+web/         Mint sitesi (İngilizce, ana sayfanın piksel tasarımıyla): Vite + React 19 + wagmi 3 + @cofhe/sdk, Playwright E2E
 docs/        README görselleri
 ```
 
@@ -200,7 +200,7 @@ Art and metadata are rendered fully on-chain by `FheCatRenderer`: 8 traits with 
 **Testing:**
 - **Contracts:** 48 Hardhat tests against the CoFHE mocks.
 - **Fork test:** runs the production contract against the live TaskManager/ACL on Arbitrum Sepolia, Base Sepolia and Ethereum Sepolia.
-- **End to end:** a Playwright test covers the site's mint → peek → reveal flow.
+- **End to end:** Playwright tests cover the site's mint → peek → reveal flow, opening a box, and the arena.
 
 **Deploy:** `cd contracts && cp .env.example .env && npm run deploy:arb-sepolia`, then `npx hardhat fhecat:phase public --network arb-sepolia`. The site is a static Vite build (`cd web && npm run build`).
 

@@ -116,16 +116,30 @@ export function useLatestCats(totalSupply: bigint, count = 12n) {
 }
 
 type Dump = Parameters<typeof StandardMerkleTree.load<[string]>>[0];
+type AllowlistTree = StandardMerkleTree<[string]>;
 
-/** Merkle proof for `address` from /allowlist.json (written by `npx hardhat fhecat:allowlist`). */
-export function useAllowlistProof(address?: string): { proof?: `0x${string}`[]; listed: boolean } {
-  const [tree, setTree] = useState<StandardMerkleTree<[string]> | null>(null);
+let published: Promise<AllowlistTree | null> | undefined;
+
+/** The allowlist this site publishes at /allowlist.json (written by `npx hardhat fhecat:allowlist`), or null. */
+export function useAllowlistTree(): AllowlistTree | null {
+  const [tree, setTree] = useState<AllowlistTree | null>(null);
   useEffect(() => {
-    fetch('/allowlist.json')
+    let live = true;
+    published ??= fetch('/allowlist.json')
       .then((r) => (r.ok ? r.json() : null))
-      .then((dump: Dump | null) => dump && setTree(StandardMerkleTree.load(dump)))
-      .catch(() => setTree(null));
+      .then((dump: Dump | null) => (dump ? StandardMerkleTree.load(dump) : null))
+      .catch(() => null);
+    void published.then((t) => live && setTree(t));
+    return () => {
+      live = false;
+    };
   }, []);
+  return tree;
+}
+
+/** Merkle proof for `address` from the published allowlist. */
+export function useAllowlistProof(address?: string): { proof?: `0x${string}`[]; listed: boolean } {
+  const tree = useAllowlistTree();
   return useMemo(() => {
     if (!tree || !address) return { listed: false };
     for (const [i, [a]] of tree.entries()) {
@@ -133,6 +147,25 @@ export function useAllowlistProof(address?: string): { proof?: `0x${string}`[]; 
     }
     return { listed: false };
   }, [tree, address]);
+}
+
+/** Who runs the contract: its owner, and the address offered ownership (Ownable2Step) if any. */
+export function useOwnership() {
+  const { chainId, deployment } = useViewChain();
+  const { address } = useConnection();
+  const contract = { address: deployment?.fheCat, abi: fheCatAbi, chainId } as const;
+  const q = useReadContracts({
+    contracts: [
+      { ...contract, functionName: 'owner' },
+      { ...contract, functionName: 'pendingOwner' },
+    ],
+    allowFailure: false,
+    query: { enabled: Boolean(deployment), ...POLL },
+  });
+  const [owner, pendingOwner] = q.data ?? [];
+  const me = address?.toLowerCase();
+  const role = !me ? null : owner?.toLowerCase() === me ? 'owner' : pendingOwner?.toLowerCase() === me ? 'pending' : null;
+  return { owner, pendingOwner: pendingOwner && pendingOwner !== ZERO ? pendingOwner : undefined, role, refetch: q.refetch } as const;
 }
 
 /** The chain's TaskManager, looked up in the CoFHEAddressBook (it never changes for a session). */

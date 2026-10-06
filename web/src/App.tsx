@@ -7,8 +7,9 @@ import { Latest } from './components/Latest';
 import { Arena } from './components/Arena';
 import { Traits } from './components/Traits';
 import { Finale, Footer } from './components/Footer';
+import { OwnerPanel } from './components/OwnerPanel';
 import { chainInfo } from './config/chains';
-import { useCollection } from './lib/hooks';
+import { useCollection, useOwnership } from './lib/hooks';
 import { Clouds } from './pixel/Sky';
 import { Ticker, type TickerItem } from './pixel/Ticker';
 import { ToastProvider } from './pixel/Toast';
@@ -17,6 +18,7 @@ const PHASES = ['Sale closed', 'Allowlist mint', 'Public mint'];
 
 export function App() {
   const col = useCollection();
+  const ownership = useOwnership();
   const live = col.deployment;
   const chain = chainInfo(col.chainId)?.chain.name ?? '';
   const supply = `${col.totalSupply}/${col.maxSupply}`;
@@ -25,6 +27,8 @@ export function App() {
   // Chapters number themselves in page order, as on the homepage.
   const chapters = [
     { id: 'mint', label: 'Mint', on: true },
+    // Only the owner, or the address offered ownership, sees this one.
+    { id: 'owner', label: 'Owner', on: Boolean(live && ownership.role) },
     { id: 'cats', label: 'My cats', on: Boolean(live) },
     { id: 'arena', label: 'Arena', on: Boolean(live && col.arena) },
     { id: 'how', label: 'How it works', on: true },
@@ -67,6 +71,12 @@ export function App() {
         <Ticker items={ticker} />
         {/* A mint bumps totalSupply, which refetches the holder's cats below. */}
         <MintPanel n={n('mint')} col={col} />
+        {live && ownership.role && (
+          <>
+            <Clouds seed={6} />
+            <OwnerPanel n={n('owner')} col={col} ownership={ownership} />
+          </>
+        )}
         {live && (
           <>
             <Clouds seed={1} />

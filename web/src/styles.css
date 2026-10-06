@@ -809,6 +809,99 @@ select.field option {
   color: var(--ink);
 }
 
+/* ---------- owner ---------- */
+
+.owner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 40px 32px;
+  margin-top: 48px;
+}
+#owner > .wrap > .note {
+  max-width: 880px;
+  margin-top: 40px;
+}
+.owner-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 4px 8px 8px 4px;
+  padding: 0 24px 24px;
+}
+.owner-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.owner-box .btn {
+  align-self: flex-start;
+}
+.owner-box .spec-data {
+  margin: 0;
+}
+.owner-box .spec-data dd.mono {
+  font-size: 8px;
+  line-height: 16px;
+}
+.owner-field {
+  display: grid;
+  gap: 8px;
+}
+.owner-field span {
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.owner-note {
+  margin: 0;
+  color: var(--muted);
+  font: 16px/24px var(--f-text);
+}
+.owner-accept {
+  max-width: 720px;
+  margin-top: 48px;
+  padding-top: 24px;
+}
+.owner-accept p {
+  margin: 0;
+  color: var(--white);
+}
+.seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 4px;
+}
+.seg button {
+  --o: var(--cyan-dim);
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--cyan);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 -4px 0 0 var(--o),
+    0 4px 0 0 var(--o),
+    -4px 0 0 0 var(--o),
+    4px 0 0 0 var(--o);
+}
+.seg button:hover:not(:disabled) {
+  color: var(--white);
+}
+.seg button.active {
+  --o: var(--cyan);
+  background: var(--cyan);
+  color: var(--ink);
+  cursor: default;
+}
+.seg button:disabled:not(.active) {
+  opacity: 0.45;
+  cursor: progress;
+}
+
 /* ---------- footer ---------- */
 
 .foot-note {
@@ -875,6 +968,12 @@ select.field option {
   }
   .arena-panel {
     padding: 0 16px 8px;
+  }
+  .owner-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .owner-box {
+    padding: 0 16px 16px;
   }
   .steps {
     grid-template-columns: minmax(0, 1fr);

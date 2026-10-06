@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { TASK_MANAGER_ADDRESS } from '@cofhe/sdk';
-import type { FheCat } from '../../typechain-types';
+import type { FheCat, FheCatArena } from '../../typechain-types';
 
 /**
  * Runs the production contract (real FHE.randomEuint64) against the live CoFHE
@@ -14,6 +14,7 @@ import type { FheCat } from '../../typechain-types';
  */
 const describeFork = process.env.FORK ? describe : describe.skip;
 
+const EBOOL = 0n;
 const EUINT64 = 5n;
 const taskManagerAbi = [
   'function isAllowed(uint256 ctHash, address account) view returns (bool)',
@@ -79,5 +80,65 @@ describeFork(`FheCat on a fork of ${process.env.FORK}`, () => {
     const uri = await nft.tokenURI(4);
     const json = JSON.parse(Buffer.from(uri.split(',')[1], 'base64').toString());
     expect(json.attributes).to.deep.equal([{ trait_type: 'Status', value: 'Unopened' }]);
+  });
+
+  it('runs the arena on real ciphertexts: power stays sealed, only results go public', async () => {
+    const [owner, alice, bob] = await ethers.getSigners();
+    await ethers.provider.send('evm_mine', []);
+    const taskManager = new ethers.Contract(TASK_MANAGER_ADDRESS, taskManagerAbi, ethers.provider);
+
+    const renderer = await ethers.deployContract('FheCatRenderer');
+    const nft = (await ethers.deployContract('FheCat', [
+      'FheCat',
+      'FCAT',
+      100,
+      owner.address,
+      await renderer.getAddress(),
+      owner.address,
+      500,
+    ])) as unknown as FheCat;
+    const arena = (await ethers.deployContract('FheCatArena', [await nft.getAddress()])) as unknown as FheCatArena;
+    const arenaAddress = await arena.getAddress();
+    await nft.setArena(arenaAddress);
+    await nft.setPhase(2);
+    await nft.connect(alice).mint(1);
+    await nft.connect(bob).mint(1);
+
+    await expect(arena.connect(alice).challenge(1, 2)).to.be.revertedWithCustomError(arena, 'NotInArena');
+    const enter = await (await nft.connect(alice).enterArena(1)).wait();
+    console.log(`      enterArena gas: ${enter!.gasUsed}`);
+    await nft.connect(bob).enterArena(2);
+    expect(await taskManager.isAllowed((await nft.catOf(1)).dnaHandle, arenaAddress)).to.equal(true);
+
+    const first = await (await arena.connect(alice).challenge(1, 2)).wait();
+    console.log(`      challenge gas (power sealed, constants made): ${first!.gasUsed}`);
+    const accept = await (await arena.connect(bob).accept(1, 2)).wait();
+    console.log(`      accept gas (second power sealed): ${accept!.gasUsed}`);
+    await arena.connect(alice).challenge(1, 2);
+    const again = await (await arena.connect(bob).accept(2, 2)).wait();
+    console.log(`      accept gas (both powers cached): ${again!.gasUsed}`);
+
+    for (const id of [1n, 2n]) {
+      const power = BigInt(await arena.powerHandle(id));
+      expect((power >> 8n) & 0x7fn, 'power type').to.equal(EUINT64);
+      expect(await taskManager.isAllowed(power, arenaAddress)).to.equal(true);
+      expect(await taskManager.isPubliclyAllowed(power)).to.equal(false);
+      for (const who of [owner, alice, bob]) expect(await taskManager.isAllowed(power, who.address)).to.equal(false);
+    }
+    const outcome = BigInt((await arena.duels(1)).challengerWins);
+    expect((outcome >> 8n) & 0x7fn, 'outcome type').to.equal(EBOOL);
+    expect(await taskManager.isPubliclyAllowed(outcome)).to.equal(true);
+    expect(await nft.stateOf(1)).to.equal(0n); // still unopened
+    expect(await taskManager.isPubliclyAllowed((await nft.catOf(1)).dnaHandle)).to.equal(false);
+
+    const claim = await (await arena.connect(alice).claimTier(1, 2)).wait();
+    console.log(`      claimTier gas: ${claim!.gasUsed}`);
+    expect(await taskManager.isPubliclyAllowed(BigInt((await arena.claims(1)).reached))).to.equal(true);
+
+    await expect(arena.settle(1, true, '0x' + '11'.repeat(65))).to.be.revertedWithCustomError(arena, 'InvalidDecryptionProof');
+    await expect(arena.settleTier(1, true, '0x' + '11'.repeat(65))).to.be.revertedWithCustomError(
+      arena,
+      'InvalidDecryptionProof',
+    );
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Deploys FheCatRenderer + FheCat and records the addresses in
+ * Deploys FheCatRenderer, FheCat and FheCatArena and records the addresses in
  * deployments/<network>.json and web/src/config/deployments(.local).json.
  *
  *   npx hardhat run scripts/deploy.ts --network arb-sepolia
@@ -57,11 +57,17 @@ async function main() {
   const fheCatAddress = await fheCat.getAddress();
   console.log(`${contract}  ${fheCatAddress}  (block ${receipt!.blockNumber})`);
 
+  const arena = await ethers.deployContract('FheCatArena', [fheCatAddress]);
+  await arena.waitForDeployment();
+  const arenaAddress = await arena.getAddress();
+  console.log(`FheCatArena  ${arenaAddress}`);
+
   const nft = await ethers.getContractAt('FheCat', fheCatAddress);
   const send = async (label: string, tx: Promise<{ wait: () => Promise<unknown> }>) => {
     await (await tx).wait();
     console.log(`  ✓ ${label}`);
   };
+  await send('arena', nft.setArena(arenaAddress));
   await send('prices', nft.setPrices(settings.publicPrice, settings.allowlistPrice));
   await send('wallet limits', nft.setWalletLimits(settings.maxPerWallet, settings.allowlistMaxPerWallet));
   if (settings.openSale) await send('public sale open', nft.setPhase(2));
@@ -79,6 +85,7 @@ async function main() {
     chainId,
     fheCat: fheCatAddress,
     renderer: await renderer.getAddress(),
+    arena: arenaAddress,
     contract,
     deployer: deployer.address,
     deployBlock: receipt!.blockNumber,
@@ -91,6 +98,7 @@ async function main() {
     await new Promise((r) => setTimeout(r, 20_000)); // let the explorer index the bytecode
     for (const [address, args] of [
       [await renderer.getAddress(), []],
+      [arenaAddress, [fheCatAddress]],
       [
         fheCatAddress,
         [

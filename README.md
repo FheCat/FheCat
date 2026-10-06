@@ -51,7 +51,14 @@ sequenceDiagram
 
 Hiçbir şey reveal'ı zorlamaz. Ekip dahil kimse başkasının kedisini açamaz ve büyük bir reveal tarihi yoktur. Bir kedi sonsuza dek kapalı kalabilir.
 
-**Arena kancası.** Sahip `enterArena()` ile ekibin `setArena()` ile belirlediği arena kontratına, kedisinin şifreli DNA'sı üzerinde hesap yapma izni verebilir. Bu kanca, ileride DNA'yı açmadan yapılacak düellolar ve nadirlik kanıtları içindir.
+### Arena: kör düellolar ve kademe kanıtları
+
+`FheCatArena`, kediler kapalıyken bile onlarla oynamayı sağlar. Bir kedinin **Gücü**, DNA'sının 8 baytının toplamıdır (0–2040). Her özellik tablosu en yaygından en nadire sıralı olduğu için daha nadir bir özellik her zaman en az o kadar güç demektir. Arena Gücü FHE ile şifreli hesaplar ve hiçbir zaman çözmez. Herkese açılan tek şey, sahibin sorduğu tek bitlik cevaptır:
+
+- **Kör düello:** `challenge(kedim, rakip)` (rakip 0 ise herkese açık) → rakip kedinin sahibi `accept()` → arena `FHE.gt(güçA, güçB)` sonucunu herkese çözülebilir yapar → herkes eşik ağının kanıtıyla `settle()` eder. Yalnızca kazanan açıklanır; eşitlikte savunan kazanır. Kazanma/kaybetme sayıları zincirde tutulur. Ortada ödül yoktur, sadece şan.
+- **Kademe kanıtı:** `claimTier(kedim, kademe)` → arena `FHE.gte(güç, eşik)` sonucunu açar → `settleTier()`. Kademeler: Rare ≥1200 (en iyi ~%20), Epic ≥1350 (~%6), Legendary ≥1500 (~%1), Mythic ≥1600 (~%0,2). Cevap evet de olsa hayır da olsa herkese açık olur; DNA, özellikler ve Gücün kendisi kapalı kalır.
+
+Oynamak için sahip önce `FheCat.enterArena()` ile arenanın kedisinin şifreli DNA'sı üzerinde hesap yapmasına izin verir. Bir kediyle düello açmayı, kabul etmeyi veya kademe istemeyi yalnızca o anki sahibi yapabilir. Bir kedinin Gücü ilk oyununda bir kez hesaplanır ve şifreli olarak saklanır; onu kimse çözemez, arena dahil.
 
 ## Koleksiyon
 
@@ -82,7 +89,7 @@ Kontrat, bu üç ağın fork'unda gerçek CoFHE TaskManager ve ACL'e karşı tes
 Gereksinim: Node.js 20+ (22 önerilir).
 
 ```bash
-cd contracts && npm install && npm test   # 37 test: mint, kutu durumları, ACL, reveal, metadata, TS↔Solidity render birebirliği
+cd contracts && npm install && npm test   # 48 test: mint, kutu durumları, ACL, reveal, arena, metadata, TS↔Solidity render birebirliği
 cd ../web && npm install
 bash e2e/stack.sh                          # Hardhat + CoFHE mock'ları + yerel deploy + site
 # http://localhost:5173 → "Cüzdan bağla" → "Geliştirici cüzdanı"
@@ -127,6 +134,13 @@ Tüm komutlar `contracts/` klasöründe, `--network <ağ>` ile çalıştırılı
 | `fhecat:allowlist adresler.txt` | Merkle kökünü ayarlar ve `web/public/allowlist.json` dosyasını yazar |
 | `fhecat:airdrop --to 0x… --quantity 5` | Ekip rezervinden mintler (çağrı başına en fazla 10) |
 | `fhecat:arena 0x…` | Sahiplerin izin verebileceği arena kontratını ayarlar (`0x0` kaldırır) |
+| `arena:deploy` | Bu ağdaki FheCat için yeni bir `FheCatArena` deploy eder ve FheCat'i ona yönlendirir |
+| `arena:enter 12` | Kedinizi arenaya sokar (arena başına bir kez) |
+| `arena:duel 12 --opponent 40` | Bir kediye (veya `--opponent` olmadan herkese) düello açar |
+| `arena:accept 3 40` | 3 numaralı düelloyu kedinizle kabul eder ve sonucu kanıtıyla zincire yazar |
+| `arena:settle 3` | Savaşılmış bir düellonun sonucunu yayımlar (herkes yapabilir) |
+| `arena:tier 12 2` | Kedinizin bir kademeye ulaştığını açmadan kanıtlar (1 Rare … 4 Mythic) |
+| `arena:status 12` | Bir kedinin galibiyet, mağlubiyet ve kademe kaydını gösterir |
 | `fhecat:peek 12` | Sahip olduğunuz bir kediye gizlice bakar (kedi kalıcı olarak Peeked olur) |
 | `fhecat:reveal 12` | Sahip olduğunuz bir kediyi açar ve zincirde reveal eder |
 | `fhecat:withdraw --to 0x…` | Mint gelirini çeker |
@@ -155,7 +169,7 @@ cd web && npm run build    # çıktı: web/dist
 
 ```
 art/         Sprite'lar, özellik/nadirlik tabloları ve TypeScript SVG render'ı (tek doğruluk kaynağı)
-contracts/   Hardhat: FheCat.sol, FheCatRenderer.sol, üretilen FheCatArt.sol, testler, deploy ve yönetim komutları
+contracts/   Hardhat: FheCat.sol, FheCatRenderer.sol, FheCatArena.sol, üretilen FheCatArt.sol, testler, deploy ve yönetim komutları
 web/         Mint sitesi: Vite + React 19 + wagmi 3 + @cofhe/sdk 0.7, Playwright E2E
 docs/        README görselleri
 ```
@@ -172,12 +186,13 @@ Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 0.2.0, `@cofhe/sdk` / 
 - Every cat is born **Unopened**: only the contract is on the ciphertext's ACL, so nobody can decrypt it, not even the holder.
 - The holder decides what happens to the box. `peek()` adds them to the ACL so they can decrypt privately with `decryptForView` (the cat is marked **Peeked** for good). `open()` makes the DNA publicly decryptable (**Opened**).
 - A reveal submits the threshold network's signed decryption, which the contract checks with `FHE.verifyDecryptResultSafe`. Anyone can reveal an Opened cat; a holder who peeked can reveal with their own proof.
-- Nothing forces a reveal, and a cat may stay sealed forever. Holders can also let a future arena contract compute on their cat's encrypted DNA with `enterArena()`.
+- Nothing forces a reveal, and a cat may stay sealed forever.
+- **Arena:** after `enterArena()`, `FheCatArena` computes a cat's Power (the sum of its eight DNA bytes; rarer traits mean more power) under FHE. Blind duels publish only the winner (`FHE.gt`), and tier claims publish only whether a cat reaches Rare, Epic, Legendary or Mythic (`FHE.gte`). The DNA, traits and Power stay sealed.
 
 Art and metadata are rendered fully on-chain by `FheCatRenderer`: 8 traits with 93 options, a sealed box per state with a barcode of the token's own ciphertext handle, and 4 stars per cat picked from its whole DNA, so no two cats look alike. The site renders them with an identical TypeScript renderer; tests enforce byte-for-byte parity, so a private peek never leaves the browser.
 
 **Testing:**
-- **Contracts:** 37 Hardhat tests against the CoFHE mocks.
+- **Contracts:** 48 Hardhat tests against the CoFHE mocks.
 - **Fork test:** runs the production contract against the live TaskManager/ACL on Arbitrum Sepolia, Base Sepolia and Ethereum Sepolia.
 - **End to end:** a Playwright test covers the site's mint → peek → reveal flow.
 

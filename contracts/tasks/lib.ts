@@ -3,7 +3,7 @@ import { join } from 'path';
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import type { CofheClient } from '@cofhe/sdk';
-import type { FheCat } from '../typechain-types';
+import type { FheCat, FheCatArena } from '../typechain-types';
 
 export const LOCAL_CHAIN_ID = 31337;
 
@@ -12,6 +12,8 @@ export interface Deployment {
   chainId: number;
   fheCat: string;
   renderer: string;
+  /** FheCatArena, once deployed (FheCat.arena points at it). */
+  arena?: string;
   contract: 'FheCat' | 'FheCatLocal';
   deployer: string;
   deployBlock: number;
@@ -28,7 +30,7 @@ export function saveDeployment(d: Deployment) {
 
   const file = join(WEB_CONFIG, d.chainId === LOCAL_CHAIN_ID ? 'deployments.local.json' : 'deployments.json');
   const web = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
-  web[String(d.chainId)] = { fheCat: d.fheCat, renderer: d.renderer, deployBlock: d.deployBlock };
+  web[String(d.chainId)] = { fheCat: d.fheCat, renderer: d.renderer, arena: d.arena, deployBlock: d.deployBlock };
   mkdirSync(WEB_CONFIG, { recursive: true });
   writeFileSync(file, JSON.stringify(web, null, 2) + '\n');
 }
@@ -42,6 +44,12 @@ export function loadDeployment(network: string): Deployment {
 export async function fheCatAt(hre: HardhatRuntimeEnvironment, signer?: HardhatEthersSigner): Promise<FheCat> {
   const d = loadDeployment(hre.network.name);
   return (await hre.ethers.getContractAt('FheCat', d.fheCat, signer)) as unknown as FheCat;
+}
+
+export async function arenaAt(hre: HardhatRuntimeEnvironment, signer?: HardhatEthersSigner): Promise<FheCatArena> {
+  const d = loadDeployment(hre.network.name);
+  if (!d.arena) throw new Error(`No arena deployed on "${hre.network.name}". Run: npx hardhat arena:deploy --network ${hre.network.name}`);
+  return (await hre.ethers.getContractAt('FheCatArena', d.arena, signer)) as unknown as FheCatArena;
 }
 
 /** A CoFHE client connected with `signer`: mock-backed on a local chain, the real coprocessor elsewhere. */

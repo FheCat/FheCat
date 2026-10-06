@@ -14,6 +14,7 @@ export function Header() {
           <a href="#mint">{t.nav.mint}</a>
           <a href="#how">{t.nav.how}</a>
           <a href="#cats">{t.nav.cats}</a>
+          <a href="#arena">{t.nav.arena}</a>
           <a href="#traits">{t.nav.traits}</a>
         </nav>
         <div className="header-actions">

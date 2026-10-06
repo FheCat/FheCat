@@ -16,7 +16,7 @@ export function Latest({ totalSupply }: { totalSupply: bigint }) {
               {c.revealed ? (
                 <CatImage dna={c.dna} alt={`FheCat #${c.tokenId}`} />
               ) : (
-                <CatImage handle={c.dnaHandle} alt={`FheCat #${c.tokenId}`} />
+                <CatImage handle={c.dnaHandle} state={Number(c.state) as 0 | 1 | 2} alt={`FheCat #${c.tokenId}`} />
               )}
               <figcaption>#{c.tokenId.toString()}</figcaption>
             </figure>

@@ -3,17 +3,12 @@ import { dnaNamed } from '../lib/art';
 import { CatImage } from './CatImage';
 
 const GINGER = dnaNamed(['Starry Night', 'Ginger', 'Tabby', 'Emerald', 'Smile', 'Cap', 'Scarf', 'None']);
-const GRID = [
-  dnaNamed(['Midnight', 'Snow White', 'None', 'Sky', 'Blep', 'Party Hat', 'None', 'None']),
-  dnaNamed(['Dusk', 'Midnight Black', 'Tuxedo', 'Glow', 'Classic', 'None', 'Bow Tie', 'None']),
-  dnaNamed(['Teal Glow', 'Lilac', 'None', 'Happy', 'Meow', 'Halo', 'None', 'None']),
-  dnaNamed(['Cipher Grid', 'Steel Blue', 'Bandit Mask', 'Pixel Shades', 'Fangs', 'Headphones', 'Hoodie', 'None']),
-];
+const BOX = (byte: string) => '0x' + byte.repeat(32);
 
 export function HowItWorks() {
   const { t } = useI18n();
   const art = [
-    <CatImage key="0" handle={'0x' + '3c'.repeat(32)} alt="" />,
+    <CatImage key="0" handle={BOX('3c')} alt="" />,
     <div key="1" className="peek-art">
       <CatImage dna={GINGER} alt="" />
       <span className="badge">👁 {t.how.badges.private}</span>
@@ -22,10 +17,10 @@ export function HowItWorks() {
       <CatImage dna={GINGER} alt="" />
       <span className="badge ok">✓ {t.how.badges.onchain}</span>
     </div>,
-    <div key="3" className="mini-grid">
-      {GRID.map((dna, i) => (
-        <CatImage key={i} dna={dna} alt="" />
-      ))}
+    <div key="3" className="duel-art">
+      <CatImage handle={BOX('5a')} state={1} alt="" />
+      <span className="duel-vs">{t.how.badges.vs}</span>
+      <CatImage handle={BOX('c3')} alt="" />
     </div>,
   ];
   return (

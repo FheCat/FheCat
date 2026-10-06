@@ -20,6 +20,7 @@ if ! rpc_up; then
   for _ in $(seq 1 90); do rpc_up && break; sleep 1; done
 fi
 
-npx hardhat run scripts/deploy.ts --network localhost
+# No wallet limit locally: the e2e tests mint several times from the dev wallet.
+MAX_PER_WALLET=0 npx hardhat run scripts/deploy.ts --network localhost
 cd ../web
 VITE_DEV_WALLET=true npx vite --port 5173 --strictPort

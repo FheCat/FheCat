@@ -3,7 +3,7 @@ import { useConnection, useReadContract, useReadContracts } from 'wagmi';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { fheCatAbi, fheCatArenaAbi } from '../config/abi';
 import { DEFAULT_CHAIN, DEPLOYMENTS, IS_LAUNCHED, type Deployment } from '../config/chains';
-import { TASK_MANAGER, taskManagerAbi } from '../config/taskManager';
+import { COFHE_ADDRESS_BOOK, TASK_MANAGER_ID, addressBookAbi, taskManagerAbi } from '../config/taskManager';
 
 /** FheCat.State */
 export const STATE = { Unopened: 0, Peeked: 1, Opened: 2, Revealed: 3 } as const;
@@ -132,22 +132,37 @@ export function useAllowlistProof(address?: string): { proof?: `0x${string}`[]; 
   }, [tree, address]);
 }
 
+/** The chain's TaskManager, looked up in the CoFHEAddressBook (it never changes for a session). */
+export function useTaskManager(): `0x${string}` | undefined {
+  const { chainId } = useViewChain();
+  const q = useReadContract({
+    address: COFHE_ADDRESS_BOOK,
+    abi: addressBookAbi,
+    chainId,
+    functionName: 'getTm',
+    args: [TASK_MANAGER_ID],
+    query: { staleTime: Infinity },
+  });
+  return q.data;
+}
+
 /** For each handle, whether `account` is on its CoFHE access list (undefined while loading). */
 export function useAllowed(
   handles: readonly `0x${string}`[],
   account?: `0x${string}`,
 ): { allowed: (boolean | undefined)[]; refetch: () => void } {
   const { chainId } = useViewChain();
+  const taskManager = useTaskManager();
   const q = useReadContracts({
     contracts: handles.map((h) => ({
-      address: TASK_MANAGER,
+      address: taskManager,
       abi: taskManagerAbi,
       chainId,
       functionName: 'isAllowed' as const,
       args: [BigInt(h), account!] as const,
     })),
     allowFailure: true,
-    query: { enabled: Boolean(account && handles.length), ...POLL },
+    query: { enabled: Boolean(taskManager && account && handles.length), ...POLL },
   });
   const allowed = handles.map((_, i) => (q.data?.[i]?.status === 'success' ? (q.data[i].result as boolean) : undefined));
   return { allowed, refetch: () => void q.refetch() };

@@ -1,21 +1,34 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { TASK_MANAGER_ADDRESS } from '@cofhe/sdk';
+import { COFHE_ADDRESS_BOOK_ADDRESS, TASK_MANAGER_ID } from '@cofhe/sdk';
 import type { FheCat, FheCatArena } from '../../typechain-types';
 
 /**
- * Runs the production contract (real FHE.randomEuint64) against the live CoFHE
- * TaskManager and ACL of a forked testnet. The coprocessor itself is off-chain,
- * so this covers everything the chain does: handle creation, ACL grants on mint
- * and transfer, allowPublic and decryption-proof verification.
+ * Runs the production contracts (real FHE.randomEuint64) against the live CoFHE
+ * TaskManager and ACL of a forked chain, found through the CoFHEAddressBook just
+ * like FHE.sol finds them. The coprocessor itself is off-chain, so this covers
+ * everything the chain does: handle creation, ACL grants on mint and transfer,
+ * allowPublic and decryption-proof verification.
  *
  *   npm run test:fork              # FORK=arb-sepolia by default
  *   FORK=base-sepolia COFHE_SKIP_MOCKS_DEPLOY=1 npx hardhat test test/fork/FheCat.fork.test.ts
+ *   FORK=arbitrum ...              # mainnet forks work too (nothing is sent to the real chain)
  */
 const describeFork = process.env.FORK ? describe : describe.skip;
 
+/** TaskManager errors: CofheIsUnavailable() and NotOnAccessList(address). */
+const COFHE_UNAVAILABLE = '0xd8aba367';
+const NOT_ON_ACCESS_LIST = '0xb688c6f5';
 const EBOOL = 0n;
 const EUINT64 = 5n;
+async function liveTaskManager() {
+  expect(await ethers.provider.getCode(COFHE_ADDRESS_BOOK_ADDRESS)).to.not.equal('0x', 'no CoFHEAddressBook on this chain');
+  const book = new ethers.Contract(COFHE_ADDRESS_BOOK_ADDRESS, ['function getTm(uint256) view returns (address)'], ethers.provider);
+  const address: string = await book.getTm(TASK_MANAGER_ID);
+  expect(await ethers.provider.getCode(address)).to.not.equal('0x', 'no TaskManager behind the address book');
+  return new ethers.Contract(address, taskManagerAbi, ethers.provider);
+}
+
 const taskManagerAbi = [
   'function isAllowed(uint256 ctHash, address account) view returns (bool)',
   'function isPubliclyAllowed(uint256 ctHash) view returns (bool)',
@@ -23,12 +36,38 @@ const taskManagerAbi = [
 ];
 
 describeFork(`FheCat on a fork of ${process.env.FORK}`, () => {
+  // Mainnet CoFHE is gated: tasks fail with CofheIsUnavailable() before launch, and with
+  // NotOnAccessList(contract) for contracts Fhenix has not admitted. Report that and skip.
+  before(async function () {
+    await ethers.provider.send('evm_mine', []);
+    const taskManager = await liveTaskManager();
+    const [owner, alice] = await ethers.getSigners();
+    const renderer = await ethers.deployContract('FheCatRenderer');
+    const nft = await ethers.deployContract('FheCat', ['FheCat', 'FCAT', 100, owner.address, await renderer.getAddress(), owner.address, 500]);
+    await nft.setPhase(2);
+    try {
+      await nft.connect(alice).getFunction('mint').staticCall(1);
+    } catch (e) {
+      const seen = `${(e as Error).message} ${JSON.stringify(e, (_, v) => (typeof v === 'bigint' ? v.toString() : v))}`;
+      const reason = seen.includes(COFHE_UNAVAILABLE)
+        ? 'CofheIsUnavailable(): CoFHE is not live on this chain yet'
+        : seen.includes(NOT_ON_ACCESS_LIST)
+          ? 'NotOnAccessList(contract): this TaskManager only serves contracts on its access list'
+          : null;
+      if (reason) {
+        console.log(`      TaskManager ${await taskManager.getAddress()} refused a mint: ${reason}`);
+        this.skip();
+      }
+      throw e;
+    }
+  });
+
   it('mints, grants and opens real CoFHE ciphertexts', async () => {
     const [owner, alice, bob] = await ethers.getSigners();
     // Run everything on a locally mined block rather than the forked (historical) one.
     await ethers.provider.send('evm_mine', []);
-    expect(await ethers.provider.getCode(TASK_MANAGER_ADDRESS)).to.not.equal('0x', 'no TaskManager on this chain');
-    const taskManager = new ethers.Contract(TASK_MANAGER_ADDRESS, taskManagerAbi, ethers.provider);
+    const taskManager = await liveTaskManager();
+    console.log(`      TaskManager ${await taskManager.getAddress()}`);
     expect(await taskManager.decryptResultSigner()).to.not.equal(ethers.ZeroAddress);
 
     const renderer = await ethers.deployContract('FheCatRenderer');
@@ -85,7 +124,7 @@ describeFork(`FheCat on a fork of ${process.env.FORK}`, () => {
   it('runs the arena on real ciphertexts: power stays sealed, only results go public', async () => {
     const [owner, alice, bob] = await ethers.getSigners();
     await ethers.provider.send('evm_mine', []);
-    const taskManager = new ethers.Contract(TASK_MANAGER_ADDRESS, taskManagerAbi, ethers.provider);
+    const taskManager = await liveTaskManager();
 
     const renderer = await ethers.deployContract('FheCatRenderer');
     const nft = (await ethers.deployContract('FheCat', [

@@ -15,12 +15,14 @@
     "deploy:arb-sepolia": "hardhat run scripts/deploy.ts --network arb-sepolia",
     "deploy:base-sepolia": "hardhat run scripts/deploy.ts --network base-sepolia",
     "deploy:eth-sepolia": "hardhat run scripts/deploy.ts --network eth-sepolia",
+    "deploy:arbitrum": "hardhat run scripts/deploy.ts --network arbitrum",
+    "deploy:ethereum": "hardhat run scripts/deploy.ts --network ethereum",
     "export:abi": "ts-node scripts/export-abi.ts"
   },
   "devDependencies": {
-    "@cofhe/hardhat-plugin": "0.7.1",
-    "@cofhe/sdk": "0.7.1",
-    "@fhenixprotocol/cofhe-contracts": "0.2.0",
+    "@cofhe/hardhat-plugin": "0.0.0-beta-20261005160711",
+    "@cofhe/sdk": "0.0.0-beta-20261005160711",
+    "@fhenixprotocol/cofhe-contracts": "1.0.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.1.2",

@@ -14,6 +14,14 @@ export enum Phase {
   Public,
 }
 
+/** FheCat.State */
+export enum State {
+  Unopened,
+  Peeked,
+  Opened,
+  Revealed,
+}
+
 export async function deployFixture() {
   const [owner, alice, bob, carol, treasury] = await ethers.getSigners();
   const renderer = (await ethers.deployContract('FheCatRenderer')) as unknown as FheCatRenderer;

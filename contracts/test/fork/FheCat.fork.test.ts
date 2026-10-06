@@ -51,19 +51,25 @@ describeFork(`FheCat on a fork of ${process.env.FORK}`, () => {
     for (const id of [1n, 2n, 3n, 4n]) {
       const handle = BigInt((await nft.catOf(id)).dnaHandle);
       expect((handle >> 8n) & 0x7fn, 'handle type').to.equal(EUINT64);
+      // born unopened: only the contract itself is on the ACL
       expect(await taskManager.isAllowed(handle, await nft.getAddress())).to.equal(true);
-      expect(await taskManager.isAllowed(handle, alice.address)).to.equal(true);
-      expect(await taskManager.isAllowed(handle, bob.address)).to.equal(false);
+      expect(await taskManager.isAllowed(handle, alice.address)).to.equal(false);
+      expect(await taskManager.isAllowed(handle, owner.address)).to.equal(false);
       handles.push(handle);
     }
     expect(new Set(handles).size).to.equal(4);
 
+    const peek = await (await nft.connect(alice).peek(1)).wait();
+    console.log(`      peek gas: ${peek!.gasUsed}`);
+    expect(await taskManager.isAllowed(handles[0], alice.address)).to.equal(true);
     const transfer = await (await nft.connect(alice).transferFrom(alice.address, bob.address, 1)).wait();
     console.log(`      transfer gas: ${transfer!.gasUsed}`);
-    expect(await taskManager.isAllowed(handles[0], bob.address)).to.equal(true);
+    expect(await taskManager.isAllowed(handles[0], bob.address)).to.equal(false);
+    expect(await nft.stateOf(1)).to.equal(1n);
 
     expect(await taskManager.isPubliclyAllowed(handles[1])).to.equal(false);
-    await nft.connect(alice).enablePublicDecryption(2);
+    const open = await (await nft.connect(alice).open(2)).wait();
+    console.log(`      open gas: ${open!.gasUsed}`);
     expect(await taskManager.isPubliclyAllowed(handles[1])).to.equal(true);
 
     await expect(nft.connect(alice).reveal(3, 12345, '0x' + '11'.repeat(65)))
@@ -72,6 +78,6 @@ describeFork(`FheCat on a fork of ${process.env.FORK}`, () => {
 
     const uri = await nft.tokenURI(4);
     const json = JSON.parse(Buffer.from(uri.split(',')[1], 'base64').toString());
-    expect(json.attributes).to.deep.equal([{ trait_type: 'Status', value: 'Encrypted' }]);
+    expect(json.attributes).to.deep.equal([{ trait_type: 'Status', value: 'Unopened' }]);
   });
 });

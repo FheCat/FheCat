@@ -89,8 +89,12 @@ library FheCatArt {
     string internal constant EXTERNAL_LINK = ${str(R.EXTERNAL_LINK)};
     string internal constant COLLECTION_DESCRIPTION =
         ${str(R.COLLECTION_DESCRIPTION)};
-    string internal constant ENCRYPTED_DESCRIPTION =
-        ${str(R.ENCRYPTED_DESCRIPTION)};
+    string internal constant UNOPENED_DESCRIPTION =
+        ${str(R.UNOPENED_DESCRIPTION)};
+    string internal constant PEEKED_DESCRIPTION =
+        ${str(R.PEEKED_DESCRIPTION)};
+    string internal constant OPENED_DESCRIPTION =
+        ${str(R.OPENED_DESCRIPTION)};
     string internal constant REVEALED_DESCRIPTION =
         ${str(R.REVEALED_DESCRIPTION)};
     string internal constant SVG_OPEN =

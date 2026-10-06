@@ -11,7 +11,7 @@ import { PHASES, cofheClient, fheCatAt, loadDeployment } from './lib';
 task('fhecat:status', 'Show the collection state').setAction(async (_, hre) => {
   const d = loadDeployment(hre.network.name);
   const nft = await fheCatAt(hre);
-  const [phase, supply, max, pub, al, maxW, alMaxW, root, grand, owner] = await Promise.all([
+  const [phase, supply, max, pub, al, maxW, alMaxW, root, arena, owner] = await Promise.all([
     nft.phase(),
     nft.totalSupply(),
     nft.maxSupply(),
@@ -20,9 +20,13 @@ task('fhecat:status', 'Show the collection state').setAction(async (_, hre) => {
     nft.maxPerWallet(),
     nft.allowlistMaxPerWallet(),
     nft.allowlistRoot(),
-    nft.grandRevealAt(),
+    nft.arena(),
     nft.owner(),
   ]);
+  const states = [0, 0, 0, 0];
+  for (let from = 1n; from <= supply; from += 500n) {
+    for (const cat of await nft.catsInRange(from, from + 499n)) states[Number(cat.state)]++;
+  }
   const { formatEther } = hre.ethers;
   console.table({
     contract: d.fheCat,
@@ -32,7 +36,8 @@ task('fhecat:status', 'Show the collection state').setAction(async (_, hre) => {
     'public price': `${formatEther(pub)} ETH (max ${maxW || '∞'} per wallet)`,
     'allowlist price': `${formatEther(al)} ETH (max ${alMaxW || '∞'} per wallet)`,
     'allowlist root': root,
-    'grand reveal': grand === 0n ? 'not scheduled' : new Date(Number(grand) * 1000).toISOString(),
+    cats: `${states[0]} unopened · ${states[1]} peeked · ${states[2]} opened · ${states[3]} revealed`,
+    arena: arena === hre.ethers.ZeroAddress ? 'not set' : arena,
     balance: `${formatEther(await hre.ethers.provider.getBalance(d.fheCat))} ETH`,
   });
 });
@@ -99,60 +104,15 @@ task('fhecat:airdrop', 'Mint cats to an address from the team reserve')
     console.log(`Minted ${args.quantity} to ${args.to}. Supply: ${await nft.totalSupply()}`);
   });
 
-task('fhecat:grand-reveal', 'Schedule when anyone may decrypt any cat')
-  .addPositionalParam('when', 'ISO date (2026-12-31T18:00:00Z), unix seconds, "now" or "off"')
-  .setAction(async ({ when }: { when: string }, hre) => {
-    const ts =
-      when === 'off'
-        ? 0
-        : when === 'now'
-          ? Math.floor(Date.now() / 1000)
-          : /^\d+$/.test(when)
-            ? Number(when)
-            : Math.floor(Date.parse(when) / 1000);
-    if (Number.isNaN(ts)) throw new Error(`Cannot parse "${when}"`);
+task('fhecat:arena', 'Set the arena contract holders may let compute on their cats')
+  .addPositionalParam('address', 'arena contract address (0x0 to unset)')
+  .setAction(async ({ address }: { address: string }, hre) => {
     const nft = await fheCatAt(hre);
-    await (await nft.setGrandRevealAt(ts)).wait();
-    console.log(ts === 0 ? 'Grand reveal cancelled' : `Grand reveal at ${new Date(ts * 1000).toISOString()}`);
+    await (await nft.setArena(address)).wait();
+    console.log(`Arena: ${address}`);
   });
 
-task('fhecat:reveal-all', 'After the grand reveal: decrypt and reveal every cat that is still encrypted')
-  .addOptionalParam('batch', 'cats per transaction', 10, types.int)
-  .setAction(async ({ batch }: { batch: number }, hre) => {
-    const [signer] = await hre.ethers.getSigners();
-    const nft = await fheCatAt(hre, signer);
-    if (!(await nft.grandRevealStarted())) throw new Error('The grand reveal has not started (fhecat:grand-reveal)');
-    const client = await cofheClient(hre, signer);
-
-    const supply = await nft.totalSupply();
-    const hidden = [];
-    for (let from = 1n; from <= supply; from += 500n) {
-      for (const cat of await nft.catsInRange(from, from + 499n)) if (!cat.revealed) hidden.push(cat);
-    }
-    console.log(`${hidden.length} of ${supply} cats still encrypted`);
-
-    for (let i = 0; i < hidden.length; i += batch) {
-      const chunk = hidden.slice(i, i + batch);
-      const closed = chunk.filter((c) => !c.publicDecryption).map((c) => c.tokenId);
-      if (closed.length) await (await nft.enablePublicDecryptionBatch(closed)).wait();
-
-      const proofs = [];
-      for (const cat of chunk) {
-        proofs.push(await client.decryptForTx(cat.dnaHandle).withoutACP().set404RetryTimeout(60_000).execute());
-      }
-      await (
-        await nft.revealBatch(
-          chunk.map((c) => c.tokenId),
-          proofs.map((p) => p.decryptedValue),
-          proofs.map((p) => p.signature),
-        )
-      ).wait();
-      console.log(`  revealed #${chunk.map((c) => c.tokenId).join(', #')}`);
-    }
-    console.log('Done');
-  });
-
-task('fhecat:peek', 'Privately decrypt one of your cats (you must hold it)')
+task('fhecat:peek', 'Peek at one of your cats privately (marks it Peeked for good)')
   .addPositionalParam('token', 'token id', undefined, types.int)
   .setAction(async ({ token }: { token: number }, hre) => {
     const { FheTypes } = await import('@cofhe/sdk');
@@ -160,6 +120,7 @@ task('fhecat:peek', 'Privately decrypt one of your cats (you must hold it)')
     const [signer] = await hre.ethers.getSigners();
     const nft = await fheCatAt(hre, signer);
     const cat = await nft.catOf(token);
+    if (cat.state === 0n) await (await nft.peek(token)).wait();
     const client = await cofheClient(hre, signer);
     await client.acp.getOrCreateSelfACP();
     const dna = await client.decryptForView(cat.dnaHandle, FheTypes.Uint64).execute();
@@ -167,15 +128,24 @@ task('fhecat:peek', 'Privately decrypt one of your cats (you must hold it)')
     console.table(Object.fromEntries(traitsOf(dna).map((t) => [t.trait_type, t.value])));
   });
 
-task('fhecat:reveal', 'Reveal one of your cats on-chain')
+task('fhecat:reveal', 'Open one of your cats and reveal it on-chain')
   .addPositionalParam('token', 'token id', undefined, types.int)
   .setAction(async ({ token }: { token: number }, hre) => {
     const [signer] = await hre.ethers.getSigners();
     const nft = await fheCatAt(hre, signer);
     const cat = await nft.catOf(token);
+    if (cat.state === 3n) throw new Error(`FheCat #${token} is already revealed`);
     const client = await cofheClient(hre, signer);
-    await client.acp.getOrCreateSelfACP();
-    const { decryptedValue, signature } = await client.decryptForTx(cat.dnaHandle).withACP().execute();
+    let proof;
+    if (cat.state === 1n) {
+      // peeked: reveal with the holder's own decryption
+      await client.acp.getOrCreateSelfACP();
+      proof = await client.decryptForTx(cat.dnaHandle).withACP().execute();
+    } else {
+      if (cat.state === 0n) await (await nft.open(token)).wait();
+      proof = await client.decryptForTx(cat.dnaHandle).withoutACP().set404RetryTimeout(60_000).execute();
+    }
+    const { decryptedValue, signature } = proof;
     await (await nft.reveal(token, decryptedValue, signature)).wait();
     console.log(`FheCat #${token} revealed with DNA 0x${decryptedValue.toString(16).padStart(16, '0')}`);
   });

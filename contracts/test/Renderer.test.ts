@@ -83,13 +83,17 @@ describe('FheCatRenderer', () => {
   it('builds identical token and collection metadata', async () => {
     const { renderer } = await loadFixture(fixture);
     const handle = ethers.toBeHex(0xabcdef0123456789n << 190n, 32);
-    expect(await renderer.tokenURI(42, false, 0, handle)).to.equal(tokenUri({ tokenId: 42n, revealed: false, handle }));
-    expect(await renderer.tokenURI(7, true, 0x1234567890abcdefn, handle)).to.equal(
-      tokenUri({ tokenId: 7n, revealed: true, dna: 0x1234567890abcdefn }),
+    for (const state of [0, 1, 2] as const) {
+      expect(await renderer.tokenURI(42, state, 0, handle), `state ${state}`).to.equal(
+        tokenUri({ tokenId: 42n, state, handle }),
+      );
+    }
+    expect(await renderer.tokenURI(7, 3, 0x1234567890abcdefn, handle)).to.equal(
+      tokenUri({ tokenId: 7n, state: 3, dna: 0x1234567890abcdefn }),
     );
     expect(await renderer.contractURI()).to.equal(contractUri());
     const json = JSON.parse(
-      decodeDataUri(await renderer.tokenURI(7, true, 0x1234567890abcdefn, handle), 'data:application/json;base64,'),
+      decodeDataUri(await renderer.tokenURI(7, 3, 0x1234567890abcdefn, handle), 'data:application/json;base64,'),
     );
     expect(json.name).to.equal('FheCat #7');
   });
@@ -103,7 +107,7 @@ describe('FheCatRenderer', () => {
       const start = t.weights.slice(0, k).reduce((a, b) => a + b, 0);
       return dna | (BigInt(start) << BigInt(8 * i));
     }, 0n);
-    const gas = await renderer.tokenURI.estimateGas(1, true, heaviest, ethers.ZeroHash);
+    const gas = await renderer.tokenURI.estimateGas(1, 3, heaviest, ethers.ZeroHash);
     expect(gas).to.be.lessThan(10_000_000n);
   });
 });

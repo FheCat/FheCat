@@ -13,19 +13,23 @@ import {FHE, euint64} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
 import {IFheCatRenderer} from "./interfaces/IFheCatRenderer.sol";
 
 /// @title FheCat
-/// @notice Pixel cats whose DNA is born encrypted on Fhenix CoFHE.
+/// @notice Pixel cats whose DNA is born encrypted on Fhenix CoFHE: Schrodinger's cats.
 ///
-/// Every mint draws a 64-bit DNA with `FHE.randomEuint64()`. The value only
-/// exists as a ciphertext, so nobody - the team, the minter, a sniping bot - can
-/// know a cat's traits at mint time. The contract and the current holder are on
-/// the ciphertext's ACL, which lets the holder decrypt it privately off-chain
-/// ("peek"). Revealing publishes the plaintext on-chain, authenticated by the
-/// CoFHE threshold network's decryption signature.
+/// Every mint draws a 64-bit DNA with `FHE.randomEuint64()`. It only exists as a
+/// ciphertext, and at birth only this contract is on its ACL, so no wallet - not the
+/// team, not the minter, not a bot - can decrypt it. Each cat then moves one way
+/// through these states, and only by its holder's choice:
 ///
-/// Who can reveal:
-///  - the holder, any time, with a decryption obtained through their own permit;
-///  - anyone, once public decryption is enabled for the token - by its holder, or
-///    by anyone after the collection-wide `grandRevealAt` time.
+///  - Unopened: nobody has ever been able to see the cat. Provable on-chain.
+///  - Peeked:   a holder took private decryption rights (`peek`). Still hidden from
+///              everyone else, but the flag is permanent, so a buyer knows a seller
+///              may have seen it. (CoFHE ACL grants cannot be revoked.)
+///  - Opened:   the holder made the DNA publicly decryptable (`open`); anyone can now
+///              publish it with the threshold network's signature (`reveal`).
+///  - Revealed: the DNA is on-chain and the cat is drawn.
+///
+/// Nothing forces a reveal: a cat can stay sealed forever. A holder who has peeked can
+/// also reveal directly with their own decryption proof.
 contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
     enum Phase {
         Closed,
@@ -33,19 +37,29 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
         Public
     }
 
+    enum State {
+        Unopened,
+        Peeked,
+        Opened,
+        Revealed
+    }
+
     struct Cat {
         euint64 dna;
         uint64 revealedDna;
+        bool peeked;
+        bool opened;
         bool revealed;
-        bool publicDecryption;
     }
 
     struct CatView {
         uint256 tokenId;
         address owner;
         bytes32 dnaHandle;
+        State state;
+        bool peeked;
+        bool opened;
         bool revealed;
-        bool publicDecryption;
         uint64 dna;
     }
 
@@ -62,24 +76,26 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
     /// @notice Allowlist-phase mints per wallet; 0 means no limit.
     uint256 public allowlistMaxPerWallet;
     bytes32 public allowlistRoot;
-    /// @notice After this timestamp anyone may enable public decryption of any cat. 0 = not scheduled.
-    uint64 public grandRevealAt;
 
     IFheCatRenderer public renderer;
+    /// @notice The game contract holders may let compute on their cat's encrypted DNA. 0 = none yet.
+    address public arena;
 
     mapping(uint256 tokenId => Cat) private _cats;
     mapping(address minter => uint256) public publicMinted;
     mapping(address minter => uint256) public allowlistMinted;
 
     event CatBorn(uint256 indexed tokenId, address indexed to, bytes32 dnaHandle);
+    event CatPeeked(uint256 indexed tokenId, address indexed holder);
+    event CatOpened(uint256 indexed tokenId, bytes32 dnaHandle);
     event CatRevealed(uint256 indexed tokenId, uint64 dna);
-    event PublicDecryptionEnabled(uint256 indexed tokenId, bytes32 dnaHandle);
+    event CatEnteredArena(uint256 indexed tokenId, address indexed arena);
     event PhaseChanged(Phase phase);
     event PricesChanged(uint256 publicPrice, uint256 allowlistPrice);
     event WalletLimitsChanged(uint256 maxPerWallet, uint256 allowlistMaxPerWallet);
     event AllowlistRootChanged(bytes32 root);
-    event GrandRevealScheduled(uint64 timestamp);
     event RendererChanged(address renderer);
+    event ArenaChanged(address arena);
 
     error SaleNotActive();
     error InvalidQuantity();
@@ -87,8 +103,11 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
     error ExceedsWalletLimit();
     error WrongPayment(uint256 expected);
     error NotOnAllowlist();
+    error NotHolder(uint256 tokenId);
     error AlreadyRevealed(uint256 tokenId);
+    error AlreadyOpened(uint256 tokenId);
     error RevealLocked(uint256 tokenId);
+    error NoArena();
     error InvalidDecryptionProof(uint256 tokenId);
     error LengthMismatch();
     error ZeroAddress();
@@ -163,10 +182,10 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
 
         for (uint256 tokenId = first; tokenId <= last; ++tokenId) {
             euint64 dna = _drawDna();
+            // Only this contract may use the ciphertext: the cat is born unopened.
             FHE.allowThis(dna);
             _cats[tokenId].dna = dna;
             emit CatBorn(tokenId, to, euint64.unwrap(dna));
-            // _update grants `to` access to the ciphertext.
             _safeMint(to, tokenId);
         }
     }
@@ -176,23 +195,39 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
         return FHE.randomEuint64();
     }
 
-    /// @dev Every new holder of a still-encrypted cat is added to the ciphertext's ACL
-    ///      so they can peek at it. (ACL grants are permanent: earlier holders keep theirs.)
-    function _update(address to, uint256 tokenId, address auth) internal override returns (address from) {
-        from = super._update(to, tokenId, auth);
-        if (to != address(0)) {
-            Cat storage cat = _cats[tokenId];
-            if (!cat.revealed) FHE.allow(cat.dna, to);
+    // ---------------------------------------------------------------------
+    // The box: peek, open, reveal
+    // ---------------------------------------------------------------------
+
+    /// @notice Take private decryption rights for your cat. Nobody else learns anything, but the
+    ///         cat is marked Peeked for good, so later buyers know it may have been seen.
+    function peek(uint256 tokenId) external {
+        Cat storage cat = _holderCat(tokenId);
+        if (cat.revealed) revert AlreadyRevealed(tokenId);
+        if (cat.opened) revert AlreadyOpened(tokenId);
+        FHE.allow(cat.dna, msg.sender);
+        emit CatPeeked(tokenId, msg.sender);
+        if (!cat.peeked) {
+            cat.peeked = true;
+            emit MetadataUpdate(tokenId);
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Reveal
-    // ---------------------------------------------------------------------
+    /// @notice Open the box: make the DNA publicly decryptable so anyone can finish the reveal.
+    function open(uint256 tokenId) external {
+        Cat storage cat = _holderCat(tokenId);
+        if (cat.revealed) revert AlreadyRevealed(tokenId);
+        if (cat.opened) revert AlreadyOpened(tokenId);
+        cat.opened = true;
+        FHE.allowPublic(cat.dna);
+        emit CatOpened(tokenId, euint64.unwrap(cat.dna));
+        emit MetadataUpdate(tokenId);
+    }
 
     /// @notice Publish a cat's decrypted DNA.
     /// @param dna       plaintext DNA returned by the CoFHE threshold network (`decryptForTx`)
     /// @param signature the threshold network's signature over that decryption
+    /// @dev The holder may reveal with their own decryption (after `peek`); anyone may once opened.
     function reveal(uint256 tokenId, uint64 dna, bytes calldata signature) external {
         _reveal(tokenId, dna, signature);
     }
@@ -204,48 +239,33 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
         }
     }
 
-    /// @notice Let anyone decrypt this cat's DNA (FHE.allowPublic), so anyone can finish its reveal.
-    ///         The holder may do this at any time; everyone else only after `grandRevealAt`.
-    function enablePublicDecryption(uint256 tokenId) external {
-        _enablePublicDecryption(tokenId, true);
+    /// @notice Let the arena contract compute on this cat's encrypted DNA (duels, rarity proofs).
+    ///         The arena is a contract, not a wallet: it can only publish what its code decides,
+    ///         never the DNA itself. Grants stay with that arena address.
+    function enterArena(uint256 tokenId) external {
+        Cat storage cat = _holderCat(tokenId);
+        address arena_ = arena;
+        if (arena_ == address(0)) revert NoArena();
+        FHE.allow(cat.dna, arena_);
+        emit CatEnteredArena(tokenId, arena_);
     }
 
-    /// @notice Batch form for the grand reveal. Skips cats that are already revealed or public.
-    function enablePublicDecryptionBatch(uint256[] calldata tokenIds) external {
-        for (uint256 i; i < tokenIds.length; ++i) {
-            _enablePublicDecryption(tokenIds[i], false);
-        }
-    }
-
-    function grandRevealStarted() public view returns (bool) {
-        return grandRevealAt != 0 && block.timestamp >= grandRevealAt;
+    function _holderCat(uint256 tokenId) private view returns (Cat storage) {
+        if (_requireOwned(tokenId) != msg.sender) revert NotHolder(tokenId);
+        return _cats[tokenId];
     }
 
     function _reveal(uint256 tokenId, uint64 dna, bytes calldata signature) private {
         address holder = _requireOwned(tokenId);
         Cat storage cat = _cats[tokenId];
         if (cat.revealed) revert AlreadyRevealed(tokenId);
-        if (msg.sender != holder && !cat.publicDecryption) revert RevealLocked(tokenId);
+        if (msg.sender != holder && !cat.opened) revert RevealLocked(tokenId);
         if (!FHE.verifyDecryptResultSafe(cat.dna, dna, signature)) revert InvalidDecryptionProof(tokenId);
 
         cat.revealed = true;
         cat.revealedDna = dna;
         emit CatRevealed(tokenId, dna);
         emit MetadataUpdate(tokenId);
-    }
-
-    function _enablePublicDecryption(uint256 tokenId, bool strict) private {
-        address holder = _requireOwned(tokenId);
-        Cat storage cat = _cats[tokenId];
-        if (cat.revealed || cat.publicDecryption) {
-            if (strict && cat.revealed) revert AlreadyRevealed(tokenId);
-            return;
-        }
-        if (msg.sender != holder && !grandRevealStarted()) revert RevealLocked(tokenId);
-
-        cat.publicDecryption = true;
-        FHE.allowPublic(cat.dna);
-        emit PublicDecryptionEnabled(tokenId, euint64.unwrap(cat.dna));
     }
 
     // ---------------------------------------------------------------------
@@ -255,7 +275,19 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
         Cat storage cat = _cats[tokenId];
-        return renderer.tokenURI(tokenId, cat.revealed, cat.revealedDna, euint64.unwrap(cat.dna));
+        return renderer.tokenURI(tokenId, uint8(_state(cat)), cat.revealedDna, euint64.unwrap(cat.dna));
+    }
+
+    function stateOf(uint256 tokenId) external view returns (State) {
+        _requireOwned(tokenId);
+        return _state(_cats[tokenId]);
+    }
+
+    function _state(Cat storage cat) private view returns (State) {
+        if (cat.revealed) return State.Revealed;
+        if (cat.opened) return State.Opened;
+        if (cat.peeked) return State.Peeked;
+        return State.Unopened;
     }
 
     /// @notice Collection-level metadata (OpenSea `contractURI` convention).
@@ -270,8 +302,10 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
             tokenId: tokenId,
             owner: holder,
             dnaHandle: euint64.unwrap(cat.dna),
+            state: _state(cat),
+            peeked: cat.peeked,
+            opened: cat.opened,
             revealed: cat.revealed,
-            publicDecryption: cat.publicDecryption,
             dna: cat.revealedDna
         });
     }
@@ -337,16 +371,16 @@ contract FheCat is IERC4906, ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
         emit AllowlistRootChanged(root);
     }
 
-    function setGrandRevealAt(uint64 timestamp) external onlyOwner {
-        grandRevealAt = timestamp;
-        emit GrandRevealScheduled(timestamp);
-    }
-
     function setRenderer(IFheCatRenderer renderer_) external onlyOwner {
         if (address(renderer_) == address(0)) revert ZeroAddress();
         renderer = renderer_;
         emit RendererChanged(address(renderer_));
         if (totalSupply != 0) emit BatchMetadataUpdate(1, totalSupply);
+    }
+
+    function setArena(address arena_) external onlyOwner {
+        arena = arena_;
+        emit ArenaChanged(arena_);
     }
 
     function setDefaultRoyalty(address receiver, uint96 bps) external onlyOwner {

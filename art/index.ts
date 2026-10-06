@@ -15,5 +15,6 @@ export {
   contractJson,
   contractUri,
 } from './src/render';
-export type { Trait, TokenState } from './src/render';
+export { STATES } from './src/render';
+export type { Trait, TokenState, CatState } from './src/render';
 export { TRAITS } from './src/traits';

@@ -23,7 +23,7 @@ async function main() {
   const settings = {
     name: env('COLLECTION_NAME', 'FheCat'),
     symbol: env('COLLECTION_SYMBOL', 'FCAT'),
-    maxSupply: BigInt(env('MAX_SUPPLY', '3333')),
+    maxSupply: BigInt(env('MAX_SUPPLY', '4444')),
     owner: env('OWNER_ADDRESS', deployer.address),
     royaltyReceiver: env('ROYALTY_RECEIVER', deployer.address),
     royaltyBps: BigInt(env('ROYALTY_BPS', '500')),

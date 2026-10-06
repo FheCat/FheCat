@@ -37,35 +37,26 @@ Not: Kontratların kurucuları FHE çağrısı yapmaz. Yani erişim listesi içi
 
 ## 2. Testnet provası (şimdi)
 
-1. **Cüzdan:** Yalnızca test için yeni bir cüzdan oluştur ve faucet'ten Arbitrum Sepolia ETH al. Anahtarı `contracts/.env` içine `PRIVATE_KEY` olarak koy (bu dosya git'e girmez).
-2. **Sanatın gizliliği:** Testnet'e deploy edilen renderer herkese açıktır. Herkes `catSvg(herhangi bir DNA)` çağırıp çizimleri görebilir; mint sitesinin JS paketi de çizimleri içerir. Sanat lansmana kadar gizli kalacaksa üç seçenek var:
-   - testnet'i gerçek çizimlerle kullanmak (az kişi bakar ama herkese açıktır),
-   - testnet'te yalnızca kutuları çizen geçici bir renderer kullanmak, mainnet'te asıl renderer'ı kurmak (`setRenderer`),
-   - provayı yalnızca fork ve yerel zincirde yapmak.
-3. **Deploy:** `cd contracts && npm run deploy:arb-sepolia`. Bu komut FheCatRenderer, FheCat ve FheCatArena'yı kurar, FheCat'i arenaya bağlar ve adresleri `deployments/arb-sepolia.json` ile `web/src/config/deployments.json` dosyalarına yazar.
-4. **Uçtan uca akış:**
-   - `fhecat:phase public` ile satışı aç ve birkaç kedi mintle.
-   - Gizlice bak: `fhecat:peek <id>`.
-   - Aç ve reveal et: `fhecat:reveal <id>`.
-   - Arena: `arena:enter <id>`, `arena:duel <id>`, `arena:accept <düello> <id>`, `arena:tier <id> 1`.
-   - Aynı adımları mint sitesinden de dene.
-5. Ölçülen gas'ı ve threshold network'ün çözme sürelerini not et.
+Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Prova gizlidir: mint yalnızca allowlist'teki test cüzdanlarına açık, site yalnızca Vercel girişiyle açılır ve kaynak kodu explorer'da doğrulanmaz. Adımlar, anahtar kuralları ve test listesi `docs/TESTNET.md` dosyasında.
 
 ## 3. Lansman günü
 
 1. `cd contracts && FORK=arbitrum npm run test:fork` iki testi de geçmeli. Testler "CofheIsUnavailable" diyerek atlanıyorsa CoFHE henüz açılmamıştır. "NotOnAccessList" diyorsa FheCat listede değildir.
-2. `contracts/.env` dosyasını doldur:
-   - `PRIVATE_KEY`: deploy cüzdanı.
-   - `OWNER_ADDRESS`: tercihen bir Safe (multisig). Deploy sonrası Safe'ten `acceptOwnership()` çağrılmalı.
-   - `ROYALTY_RECEIVER`, `ROYALTY_BPS`.
-   - `MAX_SUPPLY=4444`, `PUBLIC_PRICE_ETH`, `ALLOWLIST_PRICE_ETH`, `MAX_PER_WALLET`, `ALLOWLIST_MAX_PER_WALLET`.
-   - `OPEN_SALE=false`, `ETHERSCAN_API_KEY`, `ARBITRUM_RPC_URL` (kendi RPC'n).
+2. Ayarlar `contracts/launch.json` dosyasındadır ve provadakiyle aynı kalır. Yalnızca ortam değişkenleri gerekir:
+   - `PRIVATE_KEY`: deploy cüzdanı (yalnızca deploy oturumunda, sonra silinir).
+   - `ETHERSCAN_API_KEY`: kaynak kodu doğrulaması.
+   - `ARBITRUM_RPC_URL`: kendi RPC'n.
+   - Sahip olarak bir Safe (multisig) kullanılacaksa `launch.json`'daki `owner` buna göre güncellenir. Deploy sonrası Safe'ten `acceptOwnership()` çağrılır.
 3. Deploy: `CONFIRM_MAINNET=yes npm run deploy:arbitrum`. Adresleri Fhenix'e ilet (erişim listesi gerekiyorsa) ve Arbiscan doğrulamasını kontrol et.
 4. Allowlist:
    - Admin panelden onaylı başvuruların cüzdanlarını dışa aktar (Wallets .txt).
-   - `npx hardhat fhecat:allowlist wallets.txt --network arbitrum` komutu Merkle kökünü ayarlar ve `web/public/allowlist.json` dosyasını yazar.
-5. Mint sitesi: `@cofhe/sdk`'yı mainnet'i destekleyen sürüme yükselt ve `web/src/config/chains.ts` dosyasına Arbitrum One'ı ekle. Sonra `deployments.json` ile `allowlist.json` dosyalarını commit'leyip siteyi yayınla.
-6. Satışı sırayla aç: `fhecat:phase allowlist`, ardından `fhecat:phase public`. İzlemek için `fhecat:status` kullan.
+   - `npx hardhat fhecat:allowlist wallets.txt --write-only` yalnızca `web/public/allowlist.json` dosyasını yazar; anahtar gerekmez.
+   - Site yayınlanınca sahip, sitedeki Owner bölümünden **Use this site's list** ile kökü kontrata yazar.
+5. Mint sitesi:
+   - `@cofhe/sdk`'yı mainnet'i destekleyen sürüme yükselt ve `web/src/config/chains.ts` dosyasına Arbitrum One'ı ekle.
+   - `deployments.json` ile `allowlist.json` dosyalarını commit'le.
+   - Vercel'deki `fhecat-mint` projesine alan adını (ör. `mint.fhecat.com`) bağla ve korumayı "özel alan adları hariç" yap. Site ancak o zaman herkese açılır.
+6. Satışı sırayla Owner bölümünden aç: önce Allowlist, sonra Public. `fhecat:status` ile de izlenebilir.
 
 ## Güvenlik notları
 

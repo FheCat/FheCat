@@ -2,15 +2,31 @@ import { useMemo, useState } from 'react';
 import { usePublicClient, useWriteContract } from 'wagmi';
 import { FheTypes, type CofheClient } from '@cofhe/sdk';
 import { renderCatSvg, traitsOf } from '@art';
-import { useI18n } from '../i18n';
 import { fheCatAbi } from '../config/abi';
 import { explorerUrl } from '../config/chains';
 import { ensurePermit } from '../lib/cofhe';
-import { STATE, type CatView } from '../lib/hooks';
-import { errorMessage, isUserRejection, retry } from '../lib/format';
+import { STATE, STATE_NAMES, type CatView } from '../lib/hooks';
+import { dnaHex, failure, retry } from '../lib/format';
+import { Sprite } from '../pixel/Sprite';
+import { useToast } from '../pixel/Toast';
 import { CatImage } from './CatImage';
 
 type Step = 'idle' | 'confirm' | 'mining' | 'signing' | 'decrypting';
+
+const STEP_TEXT: Record<Step, string> = {
+  idle: '',
+  confirm: 'Confirm the transaction…',
+  mining: 'Waiting for the transaction…',
+  signing: 'Sign the decryption permit…',
+  decrypting: 'Decrypting with Fhenix…',
+};
+
+const STATE_NOTES = [
+  'Nobody has ever seen this cat.',
+  'A holder has peeked. Still sealed for everyone else.',
+  'The box is open: anyone can finish the reveal.',
+  '',
+];
 
 interface Props {
   cat: CatView;
@@ -28,7 +44,7 @@ interface Props {
  * reveal) or Revealed.
  */
 export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }: Props) {
-  const { t } = useI18n();
+  const toast = useToast();
   const write = useWriteContract();
   const publicClient = usePublicClient({ chainId });
   const [seen, setSeen] = useState<bigint | null>(null);
@@ -51,7 +67,7 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
       await action(cofhe);
     } catch (e) {
       console.error(e);
-      setError(isUserRejection(e) ? t.errors.rejected : errorMessage(e, t.errors.generic));
+      setError(failure(e));
     } finally {
       setStep('idle');
     }
@@ -75,6 +91,7 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
     await mined(await write.mutateAsync({ ...call, functionName: 'reveal', args: [id, decryptedValue, signature] }));
     setSeen(null);
     onChanged();
+    toast(`FheCat #${id} is out of the box`);
   }
 
   /** Peek: join the DNA's access list if needed (one transaction), then decrypt it in the browser. */
@@ -115,25 +132,50 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
     URL.revokeObjectURL(url);
   }
 
-  const stepText = { signing: t.cats.signing, decrypting: t.cats.decrypting, confirm: t.cats.confirm, mining: t.cats.mining, idle: '' }[step];
   const privateView = seen !== null && !revealed;
   const ready = Boolean(cofhe) && !busy;
   const tokenUrl = explorerUrl(chainId, 'token', `${contract}?a=${id}`);
+  const visibleTo = state >= STATE.Opened ? 'Everyone' : state === STATE.Peeked ? 'Peekers only' : 'Nobody';
 
   return (
-    <article className={`panel cat-card ${privateView ? 'is-private' : ''}`} data-token={id.toString()} data-state={state}>
+    <article className={`cat-card box ${privateView ? 'is-private' : ''}`} data-token={id.toString()} data-state={state}>
+      <p className="spec-head">
+        <span>FheCat #{id.toString()}</span>
+        <span className={`chip state-${state} ${revealed ? 'chip-ok' : privateView ? 'chip-private' : ''}`}>{STATE_NAMES[state]}</span>
+      </p>
       <div className="cat-art">
         {dna !== null ? (
           <CatImage dna={dna} alt={`FheCat #${id}`} />
         ) : (
-          <CatImage handle={cat.dnaHandle} state={state as 0 | 1 | 2} alt={`FheCat #${id}`} />
+          <CatImage handle={cat.dnaHandle} state={state as 0 | 1 | 2} alt={`FheCat #${id}, sealed`} />
         )}
-        {privateView && <span className="ribbon">👁 {t.cats.seen}</span>}
+        {privateView && (
+          <span className="private-tag">
+            <Sprite name="eye" />
+            Only you
+          </span>
+        )}
       </div>
-      <div className="cat-head">
-        <h3>#{id.toString()}</h3>
-        <span className={`chip state-${state} ${revealed ? 'chip-ok' : privateView ? 'chip-private' : ''}`}>{t.cats.states[state]}</span>
-      </div>
+
+      <dl className="spec-data">
+        <div>
+          <dt>DNA</dt>
+          {dna !== null ? (
+            <dd className="mono">{dnaHex(dna)}</dd>
+          ) : (
+            <dd>
+              <span className="sr">Encrypted</span>
+              <span className="redact" />
+              <span className="redact short" />
+            </dd>
+          )}
+        </div>
+        <div>
+          <dt>Visible to</dt>
+          <dd>{visibleTo}</dd>
+        </div>
+      </dl>
+
       {traits ? (
         <ul className="traits">
           {traits.map((tr) => (
@@ -143,73 +185,82 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
           ))}
         </ul>
       ) : (
-        <p className="small muted">{t.cats.stateNotes[state]}</p>
+        <p className="cat-note">{STATE_NOTES[state]}</p>
       )}
-      {privateView && <p className="small muted">{t.cats.peekNote}</p>}
+      {privateView && <p className="cat-note">Decrypted in your browser. Nothing was published.</p>}
 
       {ask && (
         <div className="ask">
-          <p className="small">{ask === 'peek' ? t.cats.peekWarn : t.cats.openWarn}</p>
+          <p>
+            {ask === 'peek'
+              ? 'Peeking marks this cat as Peeked for good, so later buyers know it may have been seen. Nobody else will see it.'
+              : 'Opening makes this cat’s DNA public and shows it to everyone. It cannot be undone.'}
+          </p>
           <div className="cat-actions">
-            <button className="btn btn-small" onClick={ask === 'peek' ? peek : open} disabled={!ready}>
-              {ask === 'peek' ? t.cats.confirmPeek : t.cats.confirmOpen}
+            <button className="btn btn-sm" onClick={ask === 'peek' ? peek : open} disabled={!ready}>
+              {ask === 'peek' ? 'Peek in private' : 'Open for everyone'}
             </button>
-            <button className="btn btn-small btn-ghost" onClick={() => setAsk(null)}>
-              {t.cats.cancel}
+            <button className="btn btn-sm btn-ghost" onClick={() => setAsk(null)}>
+              Cancel
             </button>
           </div>
         </div>
       )}
-      {busy && <p className="small step-text">{stepText}</p>}
-      {error && <p className="small note error">{error}</p>}
+      {busy && (
+        <p className="step-text">
+          <i className="blink-dot" aria-hidden="true" />
+          {STEP_TEXT[step]}
+        </p>
+      )}
+      {error && <p className="note error">{error}</p>}
 
       {!ask && (
         <div className="cat-actions">
           {state === STATE.Unopened && (
             <>
-              <button className="btn btn-small btn-ghost" onClick={() => setAsk('peek')} disabled={!ready}>
-                {t.cats.peek}
+              <button className="btn btn-sm btn-ghost" onClick={() => setAsk('peek')} disabled={!ready}>
+                Peek
               </button>
-              <button className="btn btn-small" onClick={() => setAsk('open')} disabled={!ready}>
-                {t.cats.open}
+              <button className="btn btn-sm" onClick={() => setAsk('open')} disabled={!ready}>
+                Open the box
               </button>
             </>
           )}
           {state === STATE.Peeked && (
             <>
               {seen === null ? (
-                <button className="btn btn-small btn-ghost" onClick={peek} disabled={!ready || canDecrypt === undefined}>
-                  {t.cats.peek}
+                <button className="btn btn-sm btn-ghost" onClick={peek} disabled={!ready || canDecrypt === undefined}>
+                  Peek
                 </button>
               ) : (
-                <button className="btn btn-small btn-ghost" onClick={() => setSeen(null)} disabled={busy}>
-                  {t.cats.hide}
+                <button className="btn btn-sm btn-ghost" onClick={() => setSeen(null)} disabled={busy}>
+                  Hide
                 </button>
               )}
               {canDecrypt ? (
-                <button className="btn btn-small" onClick={revealNow} disabled={!ready}>
-                  {t.cats.reveal}
+                <button className="btn btn-sm" onClick={revealNow} disabled={!ready}>
+                  Reveal
                 </button>
               ) : (
-                <button className="btn btn-small" onClick={() => setAsk('open')} disabled={!ready || canDecrypt === undefined}>
-                  {t.cats.open}
+                <button className="btn btn-sm" onClick={() => setAsk('open')} disabled={!ready || canDecrypt === undefined}>
+                  Open the box
                 </button>
               )}
             </>
           )}
           {state === STATE.Opened && (
-            <button className="btn btn-small" onClick={revealNow} disabled={!ready}>
-              {t.cats.reveal}
+            <button className="btn btn-sm" onClick={revealNow} disabled={!ready}>
+              Reveal
             </button>
           )}
           {dna !== null && (
-            <button className="btn btn-small btn-ghost" onClick={saveSvg}>
-              {t.cats.save}
+            <button className="btn btn-sm btn-ghost" onClick={saveSvg}>
+              Save SVG
             </button>
           )}
           {tokenUrl && (
-            <a className="link small" href={tokenUrl} target="_blank" rel="noreferrer">
-              {t.cats.view} ↗
+            <a className="link" href={tokenUrl} target="_blank" rel="noreferrer">
+              Explorer <Sprite name="i-ext" />
             </a>
           )}
         </div>

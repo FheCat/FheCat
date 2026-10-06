@@ -3,9 +3,8 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 // Runs against the local stack (e2e/stack.sh): Hardhat + CoFHE mocks + dev wallet.
 
 async function connect(page: Page) {
-  await page.addInitScript(() => localStorage.setItem('fhecat.lang', 'en'));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Pixel cats born encrypted.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'FheCat' })).toBeVisible();
   await page.getByRole('button', { name: 'Connect wallet' }).first().click();
   await page.getByRole('button', { name: 'Dev wallet' }).click();
 }
@@ -13,8 +12,8 @@ async function connect(page: Page) {
 /** Mints `n` cats and returns their cards, newest first. */
 async function mint(page: Page, n: number): Promise<Locator[]> {
   const before = await page.locator('#cats .cat-card').count();
-  for (let i = 1; i < n; i++) await page.locator('#mint').getByRole('button', { name: '+' }).click();
-  const button = page.locator('#mint .btn-big');
+  for (let i = 1; i < n; i++) await page.locator('#mint').getByRole('button', { name: 'One more' }).click();
+  const button = page.locator('#mint .btn-mint');
   await expect(button).toHaveText(new RegExp(`Mint ${n} cat`));
   await button.click();
   await expect(page.locator('#mint .note.ok')).toBeVisible();
@@ -91,7 +90,4 @@ test('sealed cats fight blind in the arena and prove a tier', async ({ page }) =
   for (const card of cards) await expect(card.locator('.chip')).toHaveText('Unopened');
   const record = await a.locator('.arena-info').textContent();
   expect(record).toMatch(/[01]W · [01]L/);
-
-  await page.getByRole('button', { name: 'Türkçeye geç' }).click();
-  await expect(page.getByRole('heading', { name: 'Kedilerim' })).toBeVisible();
 });

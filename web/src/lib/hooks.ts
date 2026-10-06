@@ -7,6 +7,7 @@ import { COFHE_ADDRESS_BOOK, TASK_MANAGER_ID, addressBookAbi, taskManagerAbi } f
 
 /** FheCat.State */
 export const STATE = { Unopened: 0, Peeked: 1, Opened: 2, Revealed: 3 } as const;
+export const STATE_NAMES = ['Unopened', 'Peeked', 'Opened', 'Revealed'];
 
 export type CatView = {
   tokenId: bigint;
@@ -83,6 +84,8 @@ export function useCollection() {
     refetch: () => Promise.all([global.refetch(), mine.refetch()]),
   };
 }
+
+export type Collection = ReturnType<typeof useCollection>;
 
 export function useMyCats(totalSupply: bigint) {
   const { chainId, deployment } = useViewChain();
@@ -174,6 +177,16 @@ export type ArenaRecord = { wins: number; losses: number; tier: number };
 
 /** FheCatArena.DuelStatus */
 export const DUEL = { None: 0, Open: 1, Fought: 2, Settled: 3, Cancelled: 4 } as const;
+
+/** FheCatArena power tiers, by level (1-4): the Power a cat must reach and how many cats do. */
+export const TIERS = [
+  null,
+  { name: 'Rare', power: 1200, odds: '1 in 5' },
+  { name: 'Epic', power: 1350, odds: '1 in 17' },
+  { name: 'Legendary', power: 1500, odds: '1 in 100' },
+  { name: 'Mythic', power: 1600, odds: '1 in 500' },
+] as const;
+export const tierName = (level: number) => TIERS[level]?.name ?? '';
 
 /** The arena's latest duels and tier claims, and the records of the given cats. */
 export function useArena(arena: `0x${string}` | undefined, tokenIds: readonly bigint[], recent = 30n) {

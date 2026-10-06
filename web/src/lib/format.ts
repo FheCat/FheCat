@@ -30,6 +30,11 @@ export function errorMessage(e: unknown, fallback: string): string {
   return text ? text.split('\n')[0].slice(0, 160) : fallback;
 }
 
+/** What to tell the holder when a wallet request or transaction fails. */
+export function failure(e: unknown): string {
+  return isUserRejection(e) ? 'Request rejected in the wallet.' : errorMessage(e, 'Something went wrong');
+}
+
 /** Retries `fn` while the threshold network catches up with a fresh on-chain permission or result. */
 export async function retry<T>(fn: () => Promise<T>, attempts = 8, delayMs = 4000): Promise<T> {
   for (let i = 1; ; i++) {

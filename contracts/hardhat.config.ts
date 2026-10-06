@@ -11,7 +11,9 @@ dotenv.config();
 import './tasks/fhecat';
 import './tasks/arena';
 
-const accounts = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
+// The deploy key, from the environment (with or without 0x). It never belongs in a file in this repo.
+const key = process.env.PRIVATE_KEY?.trim();
+const accounts = key ? [key.startsWith('0x') ? key : `0x${key}`] : [];
 
 const RPC = {
   'eth-sepolia': process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com',

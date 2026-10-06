@@ -72,7 +72,8 @@ task('fhecat:limits', 'Set mints per wallet (0 = unlimited)')
 
 task('fhecat:allowlist', 'Build the allowlist Merkle tree from a file of addresses and set its root')
   .addPositionalParam('file', 'text file, one address per line (# comments allowed)')
-  .setAction(async ({ file }: { file: string }, hre) => {
+  .addFlag('writeOnly', 'only write web/public/allowlist.json; the owner then sets the root from the site')
+  .setAction(async ({ file, writeOnly }: { file: string; writeOnly: boolean }, hre) => {
     const { StandardMerkleTree } = await import('@openzeppelin/merkle-tree');
     const lines = readFileSync(file, 'utf8')
       .split(/\r?\n/)
@@ -90,9 +91,11 @@ task('fhecat:allowlist', 'Build the allowlist Merkle tree from a file of address
     const out = join(__dirname, '..', '..', 'web', 'public', 'allowlist.json');
     mkdirSync(join(out, '..'), { recursive: true });
     writeFileSync(out, JSON.stringify(tree.dump()));
+    console.log(`Allowlist: ${addresses.length} addresses, root ${tree.root}\nWrote ${out} (commit & redeploy the site)`);
+    if (writeOnly) return console.log('Root not set: the owner sets it from the site (Owner → Allowlist).');
     const nft = await fheCatAt(hre);
     await (await nft.setAllowlistRoot(tree.root)).wait();
-    console.log(`Allowlist: ${addresses.length} addresses, root ${tree.root}\nWrote ${out} (commit & redeploy the site)`);
+    console.log('Root set on the contract.');
   });
 
 task('fhecat:airdrop', 'Mint cats to an address from the team reserve')

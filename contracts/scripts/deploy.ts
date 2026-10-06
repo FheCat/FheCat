@@ -4,14 +4,57 @@
  *
  *   npx hardhat run scripts/deploy.ts --network arb-sepolia
  *
- * Collection settings come from .env (see .env.example). On the local Hardhat
- * network the FheCatLocal variant is deployed, because the CoFHE mocks cannot
- * generate encrypted randomness.
+ * Collection settings come from launch.json, the same file for the testnet
+ * rehearsal and for mainnet. On the local Hardhat network the FheCatLocal
+ * variant is deployed, because the CoFHE mocks cannot generate encrypted
+ * randomness.
  */
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import hre from 'hardhat';
 import { LOCAL_CHAIN_ID, saveDeployment } from '../tasks/lib';
 
-const env = (key: string, fallback: string) => process.env[key]?.trim() || fallback;
+interface Launch {
+  name: string;
+  symbol: string;
+  maxSupply: number;
+  /** Empty: the deployer keeps the contract. */
+  owner: string;
+  /** Empty: the owner. */
+  royaltyReceiver: string;
+  royaltyBps: number;
+  publicPriceEth: string;
+  allowlistPriceEth: string;
+  /** 0 = no limit. */
+  maxPerWallet: number;
+  allowlistMaxPerWallet: number;
+}
+
+// Env names a local chain may use to override launch.json (the e2e stack does).
+const OVERRIDES: Record<keyof Launch, string> = {
+  name: 'COLLECTION_NAME',
+  symbol: 'COLLECTION_SYMBOL',
+  maxSupply: 'MAX_SUPPLY',
+  owner: 'OWNER_ADDRESS',
+  royaltyReceiver: 'ROYALTY_RECEIVER',
+  royaltyBps: 'ROYALTY_BPS',
+  publicPriceEth: 'PUBLIC_PRICE_ETH',
+  allowlistPriceEth: 'ALLOWLIST_PRICE_ETH',
+  maxPerWallet: 'MAX_PER_WALLET',
+  allowlistMaxPerWallet: 'ALLOWLIST_MAX_PER_WALLET',
+};
+
+/** launch.json as is on a public network, so the testnet rehearsal and mainnet cannot drift apart. */
+function launchSettings(local: boolean): Launch {
+  const launch: Launch = JSON.parse(readFileSync(join(__dirname, '..', 'launch.json'), 'utf8'));
+  for (const [key, name] of Object.entries(OVERRIDES) as [keyof Launch, string][]) {
+    const value = process.env[name]?.trim();
+    if (!value) continue;
+    if (!local) throw new Error(`${name} is set, but on a public network the settings come only from launch.json. Unset it.`);
+    Object.assign(launch, { [key]: typeof launch[key] === 'number' ? Number(value) : value });
+  }
+  return launch;
+}
 
 async function main() {
   const { ethers, network } = hre;
@@ -23,18 +66,21 @@ async function main() {
     throw new Error('This is a mainnet deployment with real funds. Re-run with CONFIRM_MAINNET=yes once docs/MAINNET.md is done.');
   }
 
+  const launch = launchSettings(local);
+  const owner = ethers.getAddress(launch.owner || deployer.address);
   const settings = {
-    name: env('COLLECTION_NAME', 'FheCat'),
-    symbol: env('COLLECTION_SYMBOL', 'FCAT'),
-    maxSupply: BigInt(env('MAX_SUPPLY', '4444')),
-    owner: env('OWNER_ADDRESS', deployer.address),
-    royaltyReceiver: env('ROYALTY_RECEIVER', deployer.address),
-    royaltyBps: BigInt(env('ROYALTY_BPS', '500')),
-    publicPrice: ethers.parseEther(env('PUBLIC_PRICE_ETH', '0')),
-    allowlistPrice: ethers.parseEther(env('ALLOWLIST_PRICE_ETH', '0')),
-    maxPerWallet: BigInt(env('MAX_PER_WALLET', '3')),
-    allowlistMaxPerWallet: BigInt(env('ALLOWLIST_MAX_PER_WALLET', '2')),
-    openSale: env('OPEN_SALE', local ? 'true' : 'false') === 'true',
+    name: launch.name,
+    symbol: launch.symbol,
+    maxSupply: BigInt(launch.maxSupply),
+    owner,
+    royaltyReceiver: ethers.getAddress(launch.royaltyReceiver || owner),
+    royaltyBps: BigInt(launch.royaltyBps),
+    publicPrice: ethers.parseEther(launch.publicPriceEth),
+    allowlistPrice: ethers.parseEther(launch.allowlistPriceEth),
+    maxPerWallet: BigInt(launch.maxPerWallet),
+    allowlistMaxPerWallet: BigInt(launch.allowlistMaxPerWallet),
+    // Tests and the e2e stack mint straight away; on a real network the sale opens on purpose, later.
+    openSale: local && process.env.OPEN_SALE !== 'false',
   };
 
   const contract = local ? 'FheCatLocal' : 'FheCat';

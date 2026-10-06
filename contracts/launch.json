@@ -1,0 +1,12 @@
+{
+  "name": "FheCat",
+  "symbol": "FCAT",
+  "maxSupply": 4444,
+  "owner": "",
+  "royaltyReceiver": "",
+  "royaltyBps": 500,
+  "publicPriceEth": "0",
+  "allowlistPriceEth": "0",
+  "maxPerWallet": 3,
+  "allowlistMaxPerWallet": 2
+}

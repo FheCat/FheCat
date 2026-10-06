@@ -91,3 +91,35 @@ test('sealed cats fight blind in the arena and prove a tier', async ({ page }) =
   const record = await a.locator('.arena-info').textContent();
   expect(record).toMatch(/[01]W · [01]L/);
 });
+
+test('the owner runs the sale from the site', async ({ page }) => {
+  await connect(page); // the dev wallet deployed the contract, so it owns it
+  const owner = page.locator('#owner');
+  const done = (text: string) => expect(owner.locator('.note.ok')).toContainText(text, { timeout: 30_000 });
+
+  await owner.getByRole('button', { name: 'Closed' }).click();
+  await done('Sale phase: Closed');
+  await expect(page.locator('#mint .btn')).toContainText('Sale is closed');
+  await owner.getByRole('button', { name: 'Public' }).click();
+  await done('Sale phase: Public');
+
+  const prices = owner.locator('.owner-box', { hasText: 'Prices' });
+  await prices.getByLabel('Public').fill('0.01');
+  await prices.getByRole('button', { name: 'Save prices' }).click();
+  await done('Prices saved');
+  await mint(page, 1); // pays 0.01
+  await expect(owner.locator('.owner-box', { hasText: 'Funds' }).locator('.panel-head')).toContainText('0.01 ETH');
+
+  const reserve = owner.locator('.owner-box', { hasText: 'Team reserve' });
+  await reserve.getByLabel('How many (1-10)').fill('2');
+  await reserve.getByRole('button', { name: 'Mint' }).click();
+  await done('Minted 2 to');
+
+  await owner.locator('.owner-box', { hasText: 'Funds' }).getByRole('button', { name: 'Withdraw all' }).click();
+  await done('Funds withdrawn');
+
+  // Leave the sale as the other tests expect it: public and free.
+  await prices.getByLabel('Public').fill('0');
+  await prices.getByRole('button', { name: 'Save prices' }).click();
+  await done('Prices saved');
+});

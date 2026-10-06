@@ -6,6 +6,7 @@ import published from './deployments.json';
 export interface Deployment {
   fheCat: `0x${string}`;
   renderer: `0x${string}`;
+  arena?: `0x${string}`;
   deployBlock: number;
 }
 

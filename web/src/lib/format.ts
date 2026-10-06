@@ -30,13 +30,14 @@ export function errorMessage(e: unknown, fallback: string): string {
   return text ? text.split('\n')[0].slice(0, 160) : fallback;
 }
 
-export function formatDuration(seconds: number, lang: 'en' | 'tr'): string {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  const u = lang === 'tr' ? { d: 'g', h: 's', m: 'dk', s: 'sn' } : { d: 'd', h: 'h', m: 'm', s: 's' };
-  if (d > 0) return `${d}${u.d} ${h}${u.h}`;
-  if (h > 0) return `${h}${u.h} ${m}${u.m}`;
-  return `${m}${u.m} ${s}${u.s}`;
+/** Retries `fn` while the threshold network catches up with a fresh on-chain permission or result. */
+export async function retry<T>(fn: () => Promise<T>, attempts = 8, delayMs = 4000): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i >= attempts || isUserRejection(e)) throw e;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
 }

@@ -68,7 +68,7 @@ Oynamak için sahip önce `FheCat.enterArena()` ile arenanın kedisinin şifreli
 - 32×32 piksel SVG görseller `FheCatRenderer` kontratında zincir üzerinde çizilir. Web sitesi de aynı çizimi TypeScript'te yapar; testler iki çıktının **bayt bayt aynı** olduğunu doğrular. Böylece gizli bakışta DNA tarayıcıdan hiç çıkmaz.
 - **Her gökyüzü farklı:** Reveal edilen her kedinin arka planında, 64 bitlik DNA'nın tamamından seçilen 4 yıldız vardır. Aynı özellikleri taşıyan iki kedi bile farklı görünür.
 - **Kapalı kutular:** Reveal edilmemiş kediler durumlarına göre bir kutu gösterir: Unopened (bantlı kutu), Peeked (aralanmış kapak, karanlıkta iki göz), Opened (açık kutudan yükselen ışık). Etiketteki barkod kedinin kendi şifreli handle'ından türetilir; her kutu farklı görünür ama hiçbir şey sızdırmaz.
-- Varsayılan ayarlar (`.env` ile değiştirilebilir): arz 4444, testnet'te ücretsiz mint, cüzdan başına 3 (allowlist'te 2), %5 royalty (ERC-2981).
+- Koleksiyon ayarları [`contracts/launch.json`](contracts/launch.json) dosyasındadır ve testnet provası ile mainnet için aynı dosya kullanılır: arz 4444, şimdilik ücretsiz mint, cüzdan başına 3 (allowlist'te 2), %5 royalty (ERC-2981). Fiyatlar ve limitler deploy'dan sonra sitedeki Owner bölümünden değiştirilebilir.
 
 Sanatı değiştirmek için: `art/src/sprites/*` dosyalarını düzenleyin, ardından `cd contracts && npm run art:sol` ile zincir üstü veri kütüphanesini yeniden üretin. `npm run art:preview` komutu `art/preview/index.html` dosyasına örnek bir galeri yazar.
 
@@ -108,28 +108,29 @@ bash e2e/stack.sh                          # Hardhat + CoFHE mock'ları + yerel 
 
 ## Testnet'e yayınlama
 
+Gizli, mainnet'in birebir kopyası olan prova için adımlar ve anahtar kuralları [`docs/TESTNET.md`](docs/TESTNET.md) dosyasındadır. Kısaca:
+
 1. Yeni bir cüzdan oluşturun ve testnet ETH alın (ör. [Arbitrum Sepolia faucet](https://www.alchemy.com/faucets/arbitrum-sepolia)).
-2. Ayarları hazırlayın:
-   ```bash
-   cd contracts
-   cp .env.example .env    # PRIVATE_KEY ve koleksiyon ayarlarını doldurun
-   ```
+2. `contracts/launch.json` dosyasında `owner` alanına kendi cüzdanınızı yazın. Deploy anahtarı `PRIVATE_KEY` ortam değişkeninden okunur. Yerelde `contracts/.env` de kullanılabilir, ama bu dosya asla commit'lenmez.
 3. Deploy edin:
    ```bash
+   cd contracts
    npm run deploy:arb-sepolia    # veya deploy:base-sepolia / deploy:eth-sepolia
    ```
    - Adresler `contracts/deployments/<ağ>.json` ve `web/src/config/deployments.json` dosyalarına yazılır. Site bu dosyaları otomatik okur.
    - `ETHERSCAN_API_KEY` ayarlıysa kaynak kod doğrulaması da yapılır.
-   - `OWNER_ADDRESS` ayarladıysanız, o adresin `acceptOwnership()` çağırması gerekir (Ownable2Step).
-4. Satışı açın:
+   - `owner` deploy cüzdanından farklıysa sahiplik ona teklif edilir. O cüzdan siteye bağlanıp Owner bölümünden kabul eder (Ownable2Step).
+4. Allowlist'i ve satış fazını ayarlayın:
    ```bash
-   npx hardhat fhecat:phase public --network arb-sepolia
+   npx hardhat fhecat:allowlist allowlist/arb-sepolia.txt --network arb-sepolia
+   npx hardhat fhecat:phase allowlist --network arb-sepolia
    ```
-5. `web/src/config/deployments.json` dosyasını commit'leyip siteyi yayınlayın.
+   Aynı işlemler sitedeki Owner bölümünden de yapılabilir.
+5. `web/src/config/deployments.json` ve `web/public/allowlist.json` dosyalarını commit'leyip siteyi yayınlayın.
 
 ## Yönetim komutları
 
-Tüm komutlar `contracts/` klasöründe, `--network <ağ>` ile çalıştırılır.
+Tüm komutlar `contracts/` klasöründe, `--network <ağ>` ile çalıştırılır. Sahibin işlemleri (faz, fiyat, limit, allowlist kökü, ekip rezervi, para çekme, royalty, sahiplik) anahtar gerekmeden sitedeki Owner bölümünden, sahibin kendi cüzdanıyla da yapılabilir.
 
 | Komut | Ne yapar |
 |---|---|
@@ -137,7 +138,7 @@ Tüm komutlar `contracts/` klasöründe, `--network <ağ>` ile çalıştırılı
 | `fhecat:phase closed\|allowlist\|public` | Satış fazını değiştirir |
 | `fhecat:prices --public 0.001 --allowlist 0` | Mint fiyatlarını ETH cinsinden ayarlar |
 | `fhecat:limits --public 3 --allowlist 2` | Cüzdan başına limitleri ayarlar (0 = limitsiz) |
-| `fhecat:allowlist adresler.txt` | Merkle kökünü ayarlar ve `web/public/allowlist.json` dosyasını yazar |
+| `fhecat:allowlist adresler.txt` | Merkle kökünü ayarlar ve `web/public/allowlist.json` dosyasını yazar (`--write-only`: yalnızca dosyayı yazar, anahtar gerekmez) |
 | `fhecat:airdrop --to 0x… --quantity 5` | Ekip rezervinden mintler (çağrı başına en fazla 10) |
 | `fhecat:arena 0x…` | Sahiplerin izin verebileceği arena kontratını ayarlar (`0x0` kaldırır) |
 | `arena:deploy` | Bu ağdaki FheCat için yeni bir `FheCatArena` deploy eder ve FheCat'i ona yönlendirir |
@@ -202,6 +203,6 @@ Art and metadata are rendered fully on-chain by `FheCatRenderer`: 8 traits with 
 - **Fork test:** runs the production contract against the live TaskManager/ACL on Arbitrum Sepolia, Base Sepolia and Ethereum Sepolia.
 - **End to end:** Playwright tests cover the site's mint → peek → reveal flow, opening a box, and the arena.
 
-**Deploy:** `cd contracts && cp .env.example .env && npm run deploy:arb-sepolia`, then `npx hardhat fhecat:phase public --network arb-sepolia`. The site is a static Vite build (`cd web && npm run build`).
+**Deploy:** settings live in `contracts/launch.json`, the same file for the testnet rehearsal and mainnet; the key comes from the `PRIVATE_KEY` environment variable. `cd contracts && npm run deploy:arb-sepolia`, then set the allowlist and phase with the `fhecat:*` tasks or from the site's owner chapter. The site is a static Vite build (`cd web && npm run build`). See `docs/TESTNET.md` and `docs/MAINNET.md`.
 
 **Caveat:** unaudited, testnet only.

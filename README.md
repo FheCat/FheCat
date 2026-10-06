@@ -74,15 +74,21 @@ Sanatı değiştirmek için: `art/src/sprites/*` dosyalarını düzenleyin, ard�
 
 ## Ağlar
 
-Fhenix CoFHE bugün (Eylül 2026) şu **testnet'lerde** çalışıyor; henüz mainnet yok:
+Fhenix CoFHE bugün (Ekim 2026) üç **testnet'te** çalışıyor. Fhenix, mainnet'i 21 Ekim'de Ethereum ve Arbitrum One'da açacağını duyurdu:
 
-| Ağ | Chain ID | Hardhat ağı |
-|---|---|---|
-| Arbitrum Sepolia (varsayılan) | 421614 | `arb-sepolia` |
-| Base Sepolia | 84532 | `base-sepolia` |
-| Ethereum Sepolia | 11155111 | `eth-sepolia` |
+| Ağ | Chain ID | Hardhat ağı | Durum |
+|---|---|---|---|
+| Arbitrum Sepolia (varsayılan) | 421614 | `arb-sepolia` | canlı |
+| Base Sepolia | 84532 | `base-sepolia` | canlı |
+| Ethereum Sepolia | 11155111 | `eth-sepolia` | canlı |
+| Arbitrum One | 42161 | `arbitrum` | 21 Ekim, erişim Fhenix'in onayına bağlı |
+| Ethereum | 1 | `ethereum` | 21 Ekim, erişim Fhenix'in onayına bağlı |
 
-Kontrat, bu üç ağın fork'unda gerçek CoFHE TaskManager ve ACL'e karşı test edildi (`npm run test:fork`). Ölçülen gas değerleri: tek mint ≈191k, üçlü mint ≈483k, transfer ≈109k. FHE işlemi zincir dışında yapıldığı için ek bir FHE ücreti ödenmez.
+Kontratlar `@fhenixprotocol/cofhe-contracts` 1.0.0 ile derlenir. Bu sürümde FHE.sol, TaskManager'ı her zincirde aynı adreste duran CoFHEAddressBook (`0xC0F4…196b`) üzerinden bulur. Testnet'lerde bu, eski sabit adrese (`0xeA30…48D9`) çıkar; mainnet'te ise başka bir TaskManager'a (`0x52E7…432A`). 0.2.0 ile derlenen bir kontrat mainnet'te hiç çalışmazdı.
+
+Kontratlar, bu üç testnet'in fork'unda gerçek CoFHE TaskManager ve ACL'e karşı test edildi (`npm run test:fork`). Ölçülen gas değerleri: tek mint ≈174k, üçlü mint ≈413k, peek ≈106k, open ≈105k, transfer ≈60k. Arena: arenaya giriş ≈85k, bir kedinin Gücünün ilk hesaplandığı düello ≈590k–990k, iki Gücü de hazır düello kabulü ≈142k, kademe kanıtı ≈312k. FHE işlemleri zincir dışında yapıldığı için ayrıca FHE ücreti ödenmez.
+
+Aynı test mainnet fork'unda da çalışır (`FORK=arbitrum npm run test:fork`; gerçek zincire hiçbir şey gönderilmez). 6 Ekim itibarıyla mainnet TaskManager mint'i `CofheIsUnavailable()` ile reddediyor, yani CoFHE henüz açılmadı. Ayrıca erişim listesinde olmayan kontratların FHE işlemleri `NotOnAccessList(address)` ile reddediliyor. Lansman günü aynı komut, FheCat'in mainnet'te çalışıp çalışmadığını gösterir. Ayrıntılar: [docs/MAINNET.md](docs/MAINNET.md).
 
 ## Hızlı başlangıç (yerel)
 
@@ -98,7 +104,7 @@ bash e2e/stack.sh                          # Hardhat + CoFHE mock'ları + yerel 
 - `npm run test:e2e` (web klasöründe): aynı yığını kurar ve tarayıcıda mint → gizli bakış → reveal akışını test eder.
 - `npm run test:fork` (contracts klasöründe): üretim kontratını canlı bir testnet'in fork'unda çalıştırır. Farklı bir ağ için başına `FORK=base-sepolia` ekleyin.
 
-> **Not:** CoFHE mock'ları (0.7.x) şifreli rastgele sayı üretemiyor. Bu yüzden yerel zincirde `FheCatLocal` deploy edilir. Bu varyant rastgeleliği mock'lanabilir bir FHE işlemiyle taklit eder, geri kalan her kod yolu üretimdekiyle aynıdır. Gerçek `FHE.randomEuint64()` yolu fork testinde doğrulanır. `FheCatLocal` 31337 dışındaki bir zincire deploy edilemez.
+> **Not:** CoFHE mock'ları şifreli rastgele sayı üretemiyor. Bu yüzden yerel zincirde `FheCatLocal` deploy edilir. Bu varyant rastgeleliği mock'lanabilir bir FHE işlemiyle taklit eder, geri kalan her kod yolu üretimdekiyle aynıdır. Gerçek `FHE.randomEuint64()` yolu fork testinde doğrulanır. `FheCatLocal` 31337 dışındaki bir zincire deploy edilemez.
 
 ## Testnet'e yayınlama
 
@@ -174,7 +180,7 @@ web/         Mint sitesi: Vite + React 19 + wagmi 3 + @cofhe/sdk 0.7, Playwright
 docs/        README görselleri
 ```
 
-Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 0.2.0, `@cofhe/sdk` / `@cofhe/hardhat-plugin` 0.7.1, OpenZeppelin 5.4, Solidity 0.8.28 (cancun).
+Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 1.0.0, `@cofhe/sdk` / `@cofhe/hardhat-plugin` 0.0.0-beta-20261005160711 (1.0.0'ı destekleyen ilk sürüm; kararlı sürüm çıkınca güncellenmeli), OpenZeppelin 5.4, Solidity 0.8.28 (cancun).
 
 ---
 

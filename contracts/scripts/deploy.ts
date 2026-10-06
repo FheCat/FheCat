@@ -19,6 +19,9 @@ async function main() {
   if (!deployer) throw new Error('No deployer account. Set PRIVATE_KEY in contracts/.env');
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
   const local = chainId === LOCAL_CHAIN_ID;
+  if ((chainId === 1 || chainId === 42161) && process.env.CONFIRM_MAINNET !== 'yes') {
+    throw new Error('This is a mainnet deployment with real funds. Re-run with CONFIRM_MAINNET=yes once docs/MAINNET.md is done.');
+  }
 
   const settings = {
     name: env('COLLECTION_NAME', 'FheCat'),

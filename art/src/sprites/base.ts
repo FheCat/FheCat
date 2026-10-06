@@ -1,66 +1,79 @@
 import type { Sprite } from '../types';
 import { rows } from '../util';
 
-const EAR_PINK = '#e98baa';
-const NOSE = '#e0628a';
-const WHISKER = '#c9d6e5';
+const EAR_PINK = '#f29bb5';
+const NOSE = '#e86a92';
+const BLUSH = '#ff8fae';
 
-/** Shoulders and chest, drawn before the head. Left half, mirrored. */
+/**
+ * Sitting body with a light bib, front paws and a curled tail. Drawn before the
+ * head. Left half mirrored; the tail is the one asymmetric part.
+ */
 export const BODY: Sprite = {
   colors: { o: { role: 'outline' }, f: { role: 'main' }, s: { role: 'shade' }, l: { role: 'light' } },
   parts: [
+    // tail, curling up behind the right haunch
+    { x: 26, y: 20, rows: ['...oo.', '..ollo', '..ollo', '..offo', '..offo', '.offo.', '.offo.', 'offo..', 'ffo...'] },
     {
       x: 0,
-      y: 22,
+      y: 21,
       mirror: true,
-      rows: rows('9.o6f', '8.o7f', '7.o8f', '6.o9f', '5.o10f', '5.o10f', '4.o11f', '4.o11f', '3.o12f', '3.o12f'),
+      rows: rows(
+        '8.o7f',
+        '8.o7f',
+        '7.o6s2l', // shadow under the chin
+        '7.o4f4l',
+        '6.o4f5l',
+        '6.o4f5l',
+        '5.o5f5l',
+        '5.o3fs5lo', // front legs, split down the middle
+        '5.o3fo5lo',
+        '5.o3folo3lo', // toes
+        '6.10o',
+      ),
     },
-    { x: 0, y: 24, mirror: true, rows: rows('14.2l', '13.3l', '12.4l', '12.4l', '12.4l', '12.4l', '12.4l', '12.4l') },
-    { x: 9, y: 28, mirror: true, rows: ['s', 's', 's', 's'] },
   ],
 };
 
-/** Head with ears, muzzle, nose and whiskers. Left half, mirrored. */
+/** Big head with pink ears, nose and blush. Eyes and mouth are traits. Left half, mirrored. */
 export const HEAD: Sprite = {
   colors: {
     o: { role: 'outline' },
     f: { role: 'main' },
-    l: { role: 'light' },
     p: { hex: EAR_PINK },
     n: { hex: NOSE },
-    w: { hex: WHISKER },
+    b: { hex: BLUSH },
   },
   parts: [
     {
       x: 0,
-      y: 3,
+      y: 1,
       mirror: true,
       rows: rows(
-        '6.o9.',
-        '6.2o8.',
-        '5.ofpo7.',
-        '5.of2po6.',
-        '5.o2f2po5.',
-        '5.o3f2po4.',
-        '5.o6f4o',
-        '4.o11f',
-        '4.o11f',
-        '4.o11f',
+        '4.2o10.',
+        '4.ofo9.',
+        '4.ofpo8.',
+        '3.of2pfo7.',
+        '3.of3pfo6.',
+        '3.of4pf6o',
+        '3.o2f3p7f',
         '3.o12f',
         '3.o12f',
         '3.o12f',
         '3.o12f',
         '3.o12f',
-        '4.o11f',
-        '4.o11f',
-        '5.o10f',
-        '6.o9f',
-        '7.9o',
+        '2.o13f',
+        '2.o13f',
+        '2.o13f',
+        '2.o13f',
+        '2.o2f2b8fn', // blush and nose
+        '2.o13f',
+        '3.o12f',
+        '4.2o10f',
+        '6.3o7f',
+        '9.7o',
       ),
     },
-    { x: 0, y: 16, mirror: true, rows: rows('13.3l', '12.4l', '11.5l', '11.5l', '12.4l', '13.3l') },
-    { x: 14, y: 16, mirror: true, rows: ['nn', '.n'] },
-    { x: 0, y: 17, mirror: true, rows: rows('.6w', '', '2.5w') },
   ],
 };
 

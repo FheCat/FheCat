@@ -32,6 +32,10 @@ export const ENCRYPTED_FILL = '#032842';
 export const BARCODE_OFF = '#0b4f66';
 export const BARCODE_ON = '#0df3ff';
 
+/** Every cat's sky holds its own little constellation, picked by its whole DNA. */
+export const STAR_COLOR = '#dff6ff';
+export const STAR_COUNT = 4;
+
 export interface Trait {
   trait_type: string;
   value: string;
@@ -73,6 +77,29 @@ function drawLayer(layer: Layer, fur: number[]): string {
   return out;
 }
 
+const MASK64 = 0xffffffffffffffffn;
+
+/** splitmix64's finaliser: every DNA bit moves every star. */
+function mix64(dna: bigint): bigint {
+  let z = (dna + 0x9e3779b97f4a7c15n) & MASK64;
+  z = ((z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n) & MASK64;
+  z = ((z ^ (z >> 27n)) * 0x94d049bb133111ebn) & MASK64;
+  return z ^ (z >> 31n);
+}
+
+/** The cat's stars: STAR_COUNT sky cells, each picked by 16 bits of mix64(dna). */
+export function starsOf(dna: bigint): [number, number][] {
+  const z = mix64(dna & MASK64);
+  const cells = ART.skyCells;
+  return Array.from({ length: STAR_COUNT }, (_, i) => cells[Number((z >> BigInt(16 * i)) & 0xffffn) % cells.length]);
+}
+
+function drawStars(dna: bigint): string {
+  return `<path fill="${STAR_COLOR}" d="${starsOf(dna)
+    .map(([x, y]) => rectPath(x, y, 1, 1))
+    .join('')}"/>`;
+}
+
 export function renderCatSvg(dna: bigint): string {
   const [bg, fur, pattern, eyes, mouth, headwear, accessory, aura] = decodeDna(dna);
   const palette = ART.furPalettes[fur];
@@ -84,6 +111,7 @@ export function renderCatSvg(dna: bigint): string {
     SVG_OPEN +
     `<rect width="32" height="32" fill="${ART.colors[ART.backgroundFills[bg]]}"/>` +
     L(0, bg) +
+    drawStars(dna) +
     L(7, aura) +
     drawLayer(ART.layers[ART.bodyLayer], palette) +
     drawLayer(ART.layers[ART.headLayer], palette) +
@@ -120,13 +148,14 @@ export function renderMotifSvg(): string {
   return SVG_OPEN + `<rect width="32" height="32" fill="${ENCRYPTED_FILL}"/>` + drawLayer(ART.layers[ART.motifLayer], []) + SVG_CLOSE;
 }
 
-export function renderEncryptedSvg(handle: bigint | string): string {
-  const h = BigInt(handle);
+/** The sealed box for state 0 (Unopened), 1 (Peeked) or 2 (Opened), labelled with the token's own ciphertext handle. */
+export function renderSealedSvg(state: 0 | 1 | 2, handle: bigint | string): string {
   return (
     SVG_OPEN +
     `<rect width="32" height="32" fill="${ENCRYPTED_FILL}"/>` +
-    drawLayer(ART.layers[ART.motifLayer], []) +
-    barcode(h) +
+    drawLayer(ART.layers[ART.boxLayer], []) +
+    drawLayer(ART.layers[ART.lidLayers[state]], []) +
+    barcode(BigInt(handle)) +
     SVG_CLOSE
   );
 }
@@ -151,7 +180,7 @@ export interface TokenState {
 export function tokenJson({ tokenId, state, dna, handle }: TokenState): string {
   const name = `${COLLECTION_NAME} #${tokenId.toString()}`;
   if (state < 3) {
-    const image = svgDataUri(renderEncryptedSvg(handle ?? 0n));
+    const image = svgDataUri(renderSealedSvg(state as 0 | 1 | 2, handle ?? 0n));
     return `{"name":"${name}","description":"${SEALED_DESCRIPTIONS[state]}","image":"${image}","attributes":[{"trait_type":"Status","value":"${STATES[state]}"}]}`;
   }
   const image = svgDataUri(renderCatSvg(dna ?? 0n));

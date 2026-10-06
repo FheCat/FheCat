@@ -6,7 +6,7 @@
 
 **Şifreli doğan piksel kediler.** Fhenix CoFHE üzerinde çalışan bir NFT koleksiyonu. X: [@FheCat](https://x.com/FheCat)
 
-Her FheCat, mint anında DNA'sını Fhenix'in **FHE (tam homomorfik şifreleme) rastgeleliğinden** alır. DNA zincirde yalnızca şifreli (ciphertext) olarak durur. Kedinin özelliklerini reveal edilene kadar kimse bilemez: ne ekip, ne mintleyen kişi, ne de botlar. Kediyi yalnızca sahibi, kendi tarayıcısında gizlice görebilir. Sahibi hazır olduğunda Fhenix eşik ağının (threshold network) imzalı şifre çözme kanıtıyla kediyi zincirde reveal eder. Görseller ve metadata **tamamen zincir üzerinde** üretilir.
+Her FheCat, mint anında DNA'sını Fhenix'in **FHE (tam homomorfik şifreleme) rastgeleliğinden** alır ve kapalı bir kutuda doğar: DNA zincirde yalnızca şifreli (ciphertext) olarak durur ve kimse çözemez. Ne ekip, ne mintleyen kişi, ne de botlar. Kutu hakkında karar yalnızca sahibinindir: kapalı tutabilir, gizlice bakabilir (**Peek**) ya da herkese açabilir (**Open**). Açılan kedi, Fhenix eşik ağının (threshold network) imzalı şifre çözme kanıtıyla zincirde reveal edilir. Hiçbir şey reveal'ı zorlamaz; bir kedi sonsuza dek kapalı kalabilir. Görseller ve metadata **tamamen zincir üzerinde** üretilir.
 
 <p align="center"><img src="docs/collection.png" alt="Örnek FheCat'ler" /></p>
 
@@ -31,30 +31,37 @@ sequenceDiagram
     U->>C: mint()
     C->>F: FHE.randomEuint64()
     F-->>C: şifreli DNA (euint64 handle)
-    C->>F: ACL: allowThis + allow(sahip)
-    Note over U,F: Gizli bakış: izin (ACP) imzası → decryptForView → kedi yalnızca tarayıcıda çizilir
-    U->>F: decryptForTx(handle) + ACP
+    C->>F: ACL: yalnızca allowThis (kutu kapalı doğar)
+    U->>C: peek(tokenId)
+    C->>F: FHE.allow(sahip)
+    Note over U,F: İzin (ACP) imzası → decryptForView → kedi yalnızca tarayıcıda çizilir
+    U->>C: open(tokenId)
+    C->>F: FHE.allowPublic(DNA)
+    U->>F: decryptForTx(handle)
     F-->>U: DNA + eşik ağı imzası
     U->>C: reveal(tokenId, dna, imza)
     C->>F: FHE.verifyDecryptResultSafe
     C-->>U: CatRevealed → tokenURI artık kediyi çizer
 ```
 
-1. **Kör mint.** `mint()` her kedi için `FHE.randomEuint64()` çağırır. Kontrat ve kedinin sahibi şifreli verinin erişim listesine (ACL) eklenir. Nadirlik avcılığı yapılamaz, çünkü özellikler mint anında kimse tarafından bilinemez.
-2. **Gizli bakış.** Sahip ücretsiz bir EIP-712 izni (ACP) imzalar. DNA, `decryptForView` ile yalnızca onun tarayıcısında çözülür ve hiçbir yere yayınlanmaz. Kedi el değiştirdiğinde yeni sahip de ACL'e eklenir.
-3. **Reveal.** Eşik ağı DNA'yı çözer ve imzalar. `reveal()` bu imzayı `FHE.verifyDecryptResultSafe` ile doğrular. Kontrat sahte bir DNA'yı kabul etmez; başka kedinin kanıtını da reddeder.
-4. **Büyük reveal.** Ekip `grandRevealAt` zamanını ayarlar. Bu zamandan sonra herkes gizli kalan kedilerin şifresini herkese açabilir (`FHE.allowPublic`) ve reveal edebilir. `fhecat:reveal-all` komutu bunu toplu olarak yapar.
+1. **Kör mint.** `mint()` her kedi için `FHE.randomEuint64()` çağırır. Şifreli DNA'nın erişim listesinde (ACL) yalnızca kontrat vardır: kedi **Unopened** doğar ve kimse çözemez, sahibi bile. Nadirlik avcılığı yapılamaz, çünkü özellikler mint anında kimse tarafından bilinemez.
+2. **Peek (gizli bakış).** Sahip `peek()` çağırır ve kontrat onu ACL'e ekler (`FHE.allow`). Sahip ücretsiz bir EIP-712 izni (ACP) imzalar; DNA `decryptForView` ile yalnızca onun tarayıcısında çözülür ve hiçbir yere yayınlanmaz. Kedi kalıcı olarak **Peeked** işaretlenir, böylece alıcılar kedinin görülmüş olabileceğini bilir. Satıştan sonra yeni sahip kendisi peek etmelidir.
+3. **Open.** Sahip `open()` ile DNA'yı herkese çözülebilir yapar (`FHE.allowPublic`). Kedi **Opened** olur ve reveal'ı artık herkes tamamlayabilir.
+4. **Reveal.** Eşik ağı DNA'yı çözer ve imzalar. `reveal()` bu imzayı `FHE.verifyDecryptResultSafe` ile doğrular ve kedi **Revealed** olur. Opened bir kediyi herkes, Peeked bir kediyi ise sahibi kendi kanıtıyla reveal edebilir. Kontrat sahte bir DNA'yı ve başka bir kedinin kanıtını reddeder.
 
-Sahip de istediği zaman `enablePublicDecryption()` ile kendi kedisini herkese açabilir. Site, izinle şifre çözme başarısız olursa bu yola otomatik olarak geçer.
+Hiçbir şey reveal'ı zorlamaz. Ekip dahil kimse başkasının kedisini açamaz ve büyük bir reveal tarihi yoktur. Bir kedi sonsuza dek kapalı kalabilir.
+
+**Arena kancası.** Sahip `enterArena()` ile ekibin `setArena()` ile belirlediği arena kontratına, kedisinin şifreli DNA'sı üzerinde hesap yapma izni verebilir. Bu kanca, ileride DNA'yı açmadan yapılacak düellolar ve nadirlik kanıtları içindir.
 
 ## Koleksiyon
 
-- **8 özellik, 67 seçenek:** Arka plan, Kürk, Desen, Gözler, Ağız, Başlık, Aksesuar, Aura.
+- **8 özellik, 93 seçenek:** Arka plan (10), Kürk (12), Desen (10), Gözler (16), Ağız (10), Başlık (16), Aksesuar (12), Aura (7).
 - DNA 64 bittir ve her bayt bir özelliği seçer. Nadirlik ağırlıkları herkese açıktır ve kontratta sabittir (her tablo 256'ya tamamlanır). Tablolar [`art/src/traits.ts`](art/src/traits.ts) dosyasında.
-- En nadir seçenekler: Encrypted Aura (%0,8), Gold kürk (%2,3), Cipher Crown (%2,3), 3D Glasses (%3,1).
+- En nadir seçenekler: Encrypted Aura (%1,6), Cipher Crown (%1,6), Gold kürk (%2,3), Laser Eyes ve Cipher Eyes (%3,1).
 - 32×32 piksel SVG görseller `FheCatRenderer` kontratında zincir üzerinde çizilir. Web sitesi de aynı çizimi TypeScript'te yapar; testler iki çıktının **bayt bayt aynı** olduğunu doğrular. Böylece gizli bakışta DNA tarayıcıdan hiç çıkmaz.
-- Reveal edilmemiş kediler logo motifini ve kendi şifreli handle'ından türetilen bir "barkod" gösterir. Böylece her gizli kedi farklı görünür ama hiçbir şey sızdırmaz.
-- Varsayılan ayarlar (`.env` ile değiştirilebilir): arz 3333, testnet'te ücretsiz mint, cüzdan başına 3 (allowlist'te 2), %5 royalty (ERC-2981).
+- **Her gökyüzü farklı:** Reveal edilen her kedinin arka planında, 64 bitlik DNA'nın tamamından seçilen 4 yıldız vardır. Aynı özellikleri taşıyan iki kedi bile farklı görünür.
+- **Kapalı kutular:** Reveal edilmemiş kediler durumlarına göre bir kutu gösterir: Unopened (bantlı kutu), Peeked (aralanmış kapak, karanlıkta iki göz), Opened (açık kutudan yükselen ışık). Etiketteki barkod kedinin kendi şifreli handle'ından türetilir; her kutu farklı görünür ama hiçbir şey sızdırmaz.
+- Varsayılan ayarlar (`.env` ile değiştirilebilir): arz 4444, testnet'te ücretsiz mint, cüzdan başına 3 (allowlist'te 2), %5 royalty (ERC-2981).
 
 Sanatı değiştirmek için: `art/src/sprites/*` dosyalarını düzenleyin, ardından `cd contracts && npm run art:sol` ile zincir üstü veri kütüphanesini yeniden üretin. `npm run art:preview` komutu `art/preview/index.html` dosyasına örnek bir galeri yazar.
 
@@ -75,7 +82,7 @@ Kontrat, bu üç ağın fork'unda gerçek CoFHE TaskManager ve ACL'e karşı tes
 Gereksinim: Node.js 20+ (22 önerilir).
 
 ```bash
-cd contracts && npm install && npm test   # 35 test: mint, ACL, reveal, metadata, TS↔Solidity render birebirliği
+cd contracts && npm install && npm test   # 37 test: mint, kutu durumları, ACL, reveal, metadata, TS↔Solidity render birebirliği
 cd ../web && npm install
 bash e2e/stack.sh                          # Hardhat + CoFHE mock'ları + yerel deploy + site
 # http://localhost:5173 → "Cüzdan bağla" → "Geliştirici cüzdanı"
@@ -113,15 +120,15 @@ Tüm komutlar `contracts/` klasöründe, `--network <ağ>` ile çalıştırılı
 
 | Komut | Ne yapar |
 |---|---|
-| `fhecat:status` | Faz, arz, fiyatlar, limitler, büyük reveal zamanı ve bakiyeyi gösterir |
+| `fhecat:status` | Faz, arz, fiyatlar, limitler, durumlara göre kedi sayıları, arena ve bakiyeyi gösterir |
 | `fhecat:phase closed\|allowlist\|public` | Satış fazını değiştirir |
 | `fhecat:prices --public 0.001 --allowlist 0` | Mint fiyatlarını ETH cinsinden ayarlar |
 | `fhecat:limits --public 3 --allowlist 2` | Cüzdan başına limitleri ayarlar (0 = limitsiz) |
 | `fhecat:allowlist adresler.txt` | Merkle kökünü ayarlar ve `web/public/allowlist.json` dosyasını yazar |
 | `fhecat:airdrop --to 0x… --quantity 5` | Ekip rezervinden mintler (çağrı başına en fazla 10) |
-| `fhecat:grand-reveal 2026-12-31T18:00:00Z` | Büyük reveal zamanını ayarlar (`now` veya `off` da olur) |
-| `fhecat:reveal-all --batch 10` | Büyük reveal'dan sonra gizli kalan tüm kedileri açar ve reveal eder |
-| `fhecat:peek 12` / `fhecat:reveal 12` | Sahip olduğunuz bir kediye gizlice bakar / onu reveal eder |
+| `fhecat:arena 0x…` | Sahiplerin izin verebileceği arena kontratını ayarlar (`0x0` kaldırır) |
+| `fhecat:peek 12` | Sahip olduğunuz bir kediye gizlice bakar (kedi kalıcı olarak Peeked olur) |
+| `fhecat:reveal 12` | Sahip olduğunuz bir kediyi açar ve zincirde reveal eder |
 | `fhecat:withdraw --to 0x…` | Mint gelirini çeker |
 
 ## Mint sitesini yayınlama
@@ -137,10 +144,10 @@ cd web && npm run build    # çıktı: web/dist
 ## Güvenlik notları ve sınırlamalar
 
 - **Denetimden geçmedi.** Kontratlar test ediliyor ama bağımsız bir güvenlik denetimi yapılmadı. Mainnet'e çıkmadan önce denetim yaptırın.
-- **Ekibin yetkileri:** Ekip DNA'ları çözemez; ACL'de yalnızca kontrat ve sahipler vardır. Ancak `grandRevealAt` ile gizli kedilerin herkese açılma zamanını ekip belirler. Ekip ayrıca renderer'ı değiştirebilir (görseli etkiler, DNA'yı etkilemez). Kontrat yükseltilemez.
-- **ACL izinleri kalıcıdır:** Bir kedi satıldığında önceki sahip de DNA'yı çözebilir. Bu, o kişinin zaten bildiği bir bilgidir.
-- **Reveal edilmemiş kedi satışı:** Satıcı kedinin özelliklerini bilir, alıcı bilmez. Alıcılar satın almadan önce reveal isteyebilir.
-- **İkizler mümkündür:** DNA gerçekten rastgele olduğu için 3333 kedide yaklaşık 5 çift ikiz beklenir.
+- **Ekibin yetkileri:** Ekip DNA'ları çözemez ve kimsenin kedisini açamaz. ACL'de kontrat, peek eden sahipler ve sahibinin izin verdiği arena vardır. Ekip renderer'ı ve arena adresini değiştirebilir (görseli ve arenayı etkiler, DNA'yı etkilemez). Kontrat yükseltilemez.
+- **ACL izinleri kalıcıdır:** Peek eden bir sahip kediyi satsa bile DNA'yı çözebilir; bu, zaten bildiği bir bilgidir. Bu yüzden Peeked işareti kalıcıdır ve alıcıya görünür. Eski sahip kediyi reveal edemez.
+- **Kapalı kedi satışı:** Unopened bir kedinin özelliklerini satıcı da bilmez, çünkü kimse çözemez. Peeked bir kedide satıcı biliyor olabilir; alıcı bu durumu metadata'da görür.
+- **Aynı özellikler mümkündür:** DNA gerçekten rastgele olduğu için 4444 kedide aynı özellik setini taşıyan yaklaşık 0,4 çift beklenir. Yıldızlar DNA'nın tamamından seçildiği için bu kedilerin görselleri yine de farklıdır.
 - **Şifreli girdiler:** CoFHE'nin `encryptInputs` akışı şu an public testnet'lerde çalışmıyor. FheCat bunu kullanmaz; yalnızca zincir üstü rastgelelik ve şifre çözme kullanır.
 - **Test ağı tokenlerinin parasal değeri yoktur.**
 
@@ -162,14 +169,15 @@ Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 0.2.0, `@cofhe/sdk` / 
 **FheCat** is a pixel-cat NFT collection on **Fhenix CoFHE**. Each cat's 64-bit DNA comes from `FHE.randomEuint64()` at mint and lives on-chain only as a ciphertext:
 
 - Traits are unknowable at mint time, so nobody can snipe rarity. That includes the team.
-- The holder is on the ciphertext's ACL. They can peek privately with `decryptForView` after signing a free EIP-712 permit (ACP).
-- The holder reveals by submitting the threshold network's signed decryption. The contract checks it with `FHE.verifyDecryptResultSafe`.
-- After the team's grand-reveal time, anyone can open and reveal the remaining cats.
+- Every cat is born **Unopened**: only the contract is on the ciphertext's ACL, so nobody can decrypt it, not even the holder.
+- The holder decides what happens to the box. `peek()` adds them to the ACL so they can decrypt privately with `decryptForView` (the cat is marked **Peeked** for good). `open()` makes the DNA publicly decryptable (**Opened**).
+- A reveal submits the threshold network's signed decryption, which the contract checks with `FHE.verifyDecryptResultSafe`. Anyone can reveal an Opened cat; a holder who peeked can reveal with their own proof.
+- Nothing forces a reveal, and a cat may stay sealed forever. Holders can also let a future arena contract compute on their cat's encrypted DNA with `enterArena()`.
 
-Art and metadata are rendered fully on-chain by `FheCatRenderer`. The site renders them with an identical TypeScript renderer; tests enforce byte-for-byte parity, so a private peek never leaves the browser.
+Art and metadata are rendered fully on-chain by `FheCatRenderer`: 8 traits with 93 options, a sealed box per state with a barcode of the token's own ciphertext handle, and 4 stars per cat picked from its whole DNA, so no two cats look alike. The site renders them with an identical TypeScript renderer; tests enforce byte-for-byte parity, so a private peek never leaves the browser.
 
 **Testing:**
-- **Contracts:** 35 Hardhat tests against the CoFHE mocks.
+- **Contracts:** 37 Hardhat tests against the CoFHE mocks.
 - **Fork test:** runs the production contract against the live TaskManager/ACL on Arbitrum Sepolia, Base Sepolia and Ethereum Sepolia.
 - **End to end:** a Playwright test covers the site's mint → peek → reveal flow.
 

@@ -10,6 +10,7 @@ import {
   PRICE,
   Phase,
   ROYALTY_BPS,
+  State,
   cofheFor,
   decodeDataUri,
   deployFixture,
@@ -145,39 +146,7 @@ describe('FheCat', () => {
     });
   });
 
-  describe('encrypted DNA', () => {
-    it('lets the holder peek privately', async () => {
-      const { nft, alice } = await loadFixture(deployFixture);
-      const [id] = await mintPublic(nft, alice);
-      const handle = await dnaHandle(nft, id);
-      const client = await cofheFor(alice);
-      const dna = await client.decryptForView(handle, FheTypes.Uint64).execute();
-      expect(dna).to.equal(await mockPlaintext(handle));
-    });
-
-    it('keeps the DNA hidden from everyone else', async () => {
-      const { nft, alice, bob } = await loadFixture(deployFixture);
-      const [id] = await mintPublic(nft, alice);
-      const handle = await dnaHandle(nft, id);
-      const client = await cofheFor(bob);
-      await expect(client.decryptForView(handle, FheTypes.Uint64).execute()).to.be.rejected;
-      await expect(client.decryptForTx(handle).withACP().execute()).to.be.rejected;
-      await expect(client.decryptForTx(handle).withoutACP().execute()).to.be.rejected;
-    });
-
-    it('hands peek access to each new holder', async () => {
-      const { nft, alice, bob } = await loadFixture(deployFixture);
-      const [id] = await mintPublic(nft, alice);
-      const handle = await dnaHandle(nft, id);
-      const bobClient = await cofheFor(bob);
-      await expect(bobClient.decryptForView(handle, FheTypes.Uint64).execute()).to.be.rejected;
-
-      await nft.connect(alice).transferFrom(alice.address, bob.address, id);
-      expect(await bobClient.decryptForView(handle, FheTypes.Uint64).execute()).to.equal(await mockPlaintext(handle));
-    });
-  });
-
-  describe('reveal', () => {
+  describe('the box', () => {
     async function mintedFixture() {
       const f = await deployFixture();
       const [id] = await mintPublic(f.nft, f.alice);
@@ -185,140 +154,211 @@ describe('FheCat', () => {
       return { ...f, id, handle };
     }
 
-    it('publishes the DNA with the holder’s own decryption proof', async () => {
-      const { nft, alice, id, handle } = await loadFixture(mintedFixture);
-      const client = await cofheFor(alice);
-      const { decryptedValue, signature } = await client.decryptForTx(handle).withACP().execute();
-      expect(decryptedValue).to.equal(await mockPlaintext(handle));
+    it('is born unopened: no wallet can decrypt it, not even the holder or the team', async () => {
+      const { nft, owner, alice, bob, id, handle } = await loadFixture(mintedFixture);
+      expect(await nft.stateOf(id)).to.equal(State.Unopened);
+      for (const who of [alice, bob, owner]) {
+        const client = await cofheFor(who);
+        await expect(client.decryptForView(handle, FheTypes.Uint64).execute(), who.address).to.be.rejected;
+        await expect(client.decryptForTx(handle).withACP().execute(), who.address).to.be.rejected;
+        await expect(client.decryptForTx(handle).withoutACP().execute(), who.address).to.be.rejected;
+      }
+    });
 
+    it('lets only the holder peek, privately, and marks the cat for good', async () => {
+      const { nft, owner, alice, bob, id, handle } = await loadFixture(mintedFixture);
+      await expect(nft.connect(bob).peek(id)).to.be.revertedWithCustomError(nft, 'NotHolder').withArgs(id);
+      await expect(nft.connect(owner).peek(id)).to.be.revertedWithCustomError(nft, 'NotHolder').withArgs(id);
+
+      await expect(nft.connect(alice).peek(id))
+        .to.emit(nft, 'CatPeeked')
+        .withArgs(id, alice.address)
+        .and.to.emit(nft, 'MetadataUpdate')
+        .withArgs(id);
+      expect(await nft.stateOf(id)).to.equal(State.Peeked);
+      const seen = await (await cofheFor(alice)).decryptForView(handle, FheTypes.Uint64).execute();
+      expect(seen).to.equal(await mockPlaintext(handle));
+      await expect((await cofheFor(bob)).decryptForView(handle, FheTypes.Uint64).execute()).to.be.rejected;
+
+      // a second peek is allowed but changes nothing on the metadata
+      await expect(nft.connect(alice).peek(id)).to.emit(nft, 'CatPeeked').and.not.to.emit(nft, 'MetadataUpdate');
+    });
+
+    it('keeps the peeked flag after a sale; the buyer must peek on their own', async () => {
+      const { nft, alice, bob, id, handle } = await loadFixture(mintedFixture);
+      await nft.connect(alice).peek(id);
+      await nft.connect(alice).transferFrom(alice.address, bob.address, id);
+      expect(await nft.stateOf(id)).to.equal(State.Peeked);
+      const bobClient = await cofheFor(bob);
+      await expect(bobClient.decryptForView(handle, FheTypes.Uint64).execute()).to.be.rejected;
+      await nft.connect(bob).peek(id);
+      expect(await bobClient.decryptForView(handle, FheTypes.Uint64).execute()).to.equal(await mockPlaintext(handle));
+    });
+
+    it('stays unopened through sales when nobody peeks', async () => {
+      const { nft, alice, bob, carol, id, handle } = await loadFixture(mintedFixture);
+      await nft.connect(alice).transferFrom(alice.address, bob.address, id);
+      await nft.connect(bob).transferFrom(bob.address, carol.address, id);
+      expect(await nft.stateOf(id)).to.equal(State.Unopened);
+      for (const who of [alice, bob, carol]) {
+        await expect((await cofheFor(who)).decryptForView(handle, FheTypes.Uint64).execute()).to.be.rejected;
+      }
+    });
+
+    it('opens only by its holder, then anyone can finish the reveal', async () => {
+      const { nft, owner, alice, bob, id, handle } = await loadFixture(mintedFixture);
+      await expect(nft.connect(owner).open(id)).to.be.revertedWithCustomError(nft, 'NotHolder');
+      await expect(nft.connect(alice).open(id))
+        .to.emit(nft, 'CatOpened')
+        .withArgs(id, handle)
+        .and.to.emit(nft, 'MetadataUpdate')
+        .withArgs(id);
+      expect(await nft.stateOf(id)).to.equal(State.Opened);
+      await expect(nft.connect(alice).open(id)).to.be.revertedWithCustomError(nft, 'AlreadyOpened').withArgs(id);
+      await expect(nft.connect(alice).peek(id)).to.be.revertedWithCustomError(nft, 'AlreadyOpened').withArgs(id);
+
+      const proof = await (await cofheFor(bob)).decryptForTx(handle).withoutACP().execute();
+      await expect(nft.connect(bob).reveal(id, proof.decryptedValue, proof.signature))
+        .to.emit(nft, 'CatRevealed')
+        .withArgs(id, proof.decryptedValue);
+      const cat = await nft.catOf(id);
+      expect(cat.state).to.equal(State.Revealed);
+      expect(cat.dna).to.equal(await mockPlaintext(handle));
+      expect([cat.peeked, cat.opened, cat.revealed]).to.deep.equal([false, true, true]);
+    });
+
+    it('can be revealed directly by a holder who peeked, with their own proof', async () => {
+      const { nft, alice, id, handle } = await loadFixture(mintedFixture);
+      await nft.connect(alice).peek(id);
+      const { decryptedValue, signature } = await (await cofheFor(alice)).decryptForTx(handle).withACP().execute();
       await expect(nft.connect(alice).reveal(id, decryptedValue, signature))
         .to.emit(nft, 'CatRevealed')
         .withArgs(id, decryptedValue)
         .and.to.emit(nft, 'MetadataUpdate')
         .withArgs(id);
-      const cat = await nft.catOf(id);
-      expect(cat.revealed).to.equal(true);
-      expect(cat.dna).to.equal(decryptedValue);
-
+      expect(await nft.stateOf(id)).to.equal(State.Revealed);
       await expect(nft.connect(alice).reveal(id, decryptedValue, signature))
         .to.be.revertedWithCustomError(nft, 'AlreadyRevealed')
         .withArgs(id);
+      await expect(nft.connect(alice).peek(id)).to.be.revertedWithCustomError(nft, 'AlreadyRevealed');
+      await expect(nft.connect(alice).open(id)).to.be.revertedWithCustomError(nft, 'AlreadyRevealed');
     });
 
-    it('rejects a DNA that does not match the signature', async () => {
-      const { nft, alice, id, handle } = await loadFixture(mintedFixture);
-      const client = await cofheFor(alice);
-      const { decryptedValue, signature } = await client.decryptForTx(handle).withACP().execute();
-      const forged = decryptedValue ^ 0xffn; // e.g. trying to reroll the background
-      await expect(nft.connect(alice).reveal(id, forged, signature))
-        .to.be.revertedWithCustomError(nft, 'InvalidDecryptionProof')
+    it('does not let a former holder who peeked reveal a cat they sold', async () => {
+      const { nft, alice, bob, id, handle } = await loadFixture(mintedFixture);
+      await nft.connect(alice).peek(id);
+      const proof = await (await cofheFor(alice)).decryptForTx(handle).withACP().execute();
+      await nft.connect(alice).transferFrom(alice.address, bob.address, id);
+      await expect(nft.connect(alice).reveal(id, proof.decryptedValue, proof.signature))
+        .to.be.revertedWithCustomError(nft, 'RevealLocked')
         .withArgs(id);
-      await expect(nft.connect(alice).reveal(id, decryptedValue, '0x' + '11'.repeat(65))).to.be.revertedWithCustomError(
+    });
+
+    it('rejects a DNA that does not match the signature, and proofs for other cats', async () => {
+      const { nft, alice } = await loadFixture(deployFixture);
+      const [a, b] = await mintPublic(nft, alice, 2);
+      await nft.connect(alice).peek(a);
+      await nft.connect(alice).peek(b);
+      const client = await cofheFor(alice);
+      const proofA = await client.decryptForTx(await dnaHandle(nft, a)).withACP().execute();
+      const forged = proofA.decryptedValue ^ 0xffn; // e.g. trying to reroll the background
+      await expect(nft.connect(alice).reveal(a, forged, proofA.signature))
+        .to.be.revertedWithCustomError(nft, 'InvalidDecryptionProof')
+        .withArgs(a);
+      await expect(nft.connect(alice).reveal(a, proofA.decryptedValue, '0x' + '11'.repeat(65))).to.be.revertedWithCustomError(
         nft,
         'InvalidDecryptionProof',
       );
-    });
-
-    it('rejects a proof for another cat', async () => {
-      const { nft, alice } = await loadFixture(deployFixture);
-      const [a, b] = await mintPublic(nft, alice, 2);
-      const client = await cofheFor(alice);
-      const proofA = await client.decryptForTx(await dnaHandle(nft, a)).withACP().execute();
       await expect(nft.connect(alice).reveal(b, proofA.decryptedValue, proofA.signature)).to.be.revertedWithCustomError(
         nft,
         'InvalidDecryptionProof',
       );
     });
 
-    it('keeps strangers out until public decryption is enabled', async () => {
-      const { nft, alice, bob, id, handle } = await loadFixture(mintedFixture);
-      const proof = await (await cofheFor(alice)).decryptForTx(handle).withACP().execute();
-      await expect(nft.connect(bob).reveal(id, proof.decryptedValue, proof.signature))
-        .to.be.revertedWithCustomError(nft, 'RevealLocked')
-        .withArgs(id);
-      await expect(nft.connect(bob).enablePublicDecryption(id)).to.be.revertedWithCustomError(nft, 'RevealLocked');
+    it('never forces a reveal: nobody but the holder can open a cat, at any time', async () => {
+      const { nft, owner, alice, bob, id } = await loadFixture(mintedFixture);
+      await time.increase(10 * 365 * 24 * 3600);
+      for (const who of [owner, bob]) {
+        await expect(nft.connect(who).open(id)).to.be.revertedWithCustomError(nft, 'NotHolder');
+        await expect(nft.connect(who).peek(id)).to.be.revertedWithCustomError(nft, 'NotHolder');
+      }
+      expect(await nft.stateOf(id)).to.equal(State.Unopened);
+      expect(nft.interface.getFunction('setGrandRevealAt' as never)).to.equal(null);
+      expect((await nft.catOf(id)).owner).to.equal(alice.address);
     });
 
-    it('lets the holder open decryption to everyone, then anyone can finish the reveal', async () => {
-      const { nft, alice, bob, id, handle } = await loadFixture(mintedFixture);
-      await expect(nft.connect(alice).enablePublicDecryption(id))
-        .to.emit(nft, 'PublicDecryptionEnabled')
-        .withArgs(id, handle);
-      expect((await nft.catOf(id)).publicDecryption).to.equal(true);
-
-      const proof = await (await cofheFor(bob)).decryptForTx(handle).withoutACP().execute();
-      await nft.connect(bob).reveal(id, proof.decryptedValue, proof.signature);
-      expect((await nft.catOf(id)).dna).to.equal(await mockPlaintext(handle));
-      await expect(nft.connect(alice).enablePublicDecryption(id)).to.be.revertedWithCustomError(nft, 'AlreadyRevealed');
-    });
-
-    it('opens every cat after the grand reveal time', async () => {
-      const { nft, owner, alice, bob, carol } = await loadFixture(deployFixture);
-      const ids = [...(await mintPublic(nft, alice, 2)), ...(await mintPublic(nft, bob, 2))];
-      await expect(nft.connect(carol).enablePublicDecryptionBatch(ids)).to.be.revertedWithCustomError(nft, 'RevealLocked');
-      await expect(nft.connect(carol).setGrandRevealAt(1)).to.be.revertedWithCustomError(
-        nft,
-        'OwnableUnauthorizedAccount',
-      );
-
-      const at = (await time.latest()) + 3600;
-      await nft.connect(owner).setGrandRevealAt(at);
-      expect(await nft.grandRevealStarted()).to.equal(false);
-      await time.increaseTo(at);
-      expect(await nft.grandRevealStarted()).to.equal(true);
-
-      // one cat revealed by its holder first; the batch must skip it
-      const first = await (await cofheFor(alice)).decryptForTx(await dnaHandle(nft, ids[0])).withACP().execute();
-      await nft.connect(alice).reveal(ids[0], first.decryptedValue, first.signature);
-      await nft.connect(carol).enablePublicDecryptionBatch(ids);
-
-      const carolClient = await cofheFor(carol);
-      const rest = ids.slice(1);
+    it('reveals in batches with matching lengths', async () => {
+      const { nft, alice, bob } = await loadFixture(deployFixture);
+      const ids = await mintPublic(nft, alice, 3);
+      for (const id of ids) await nft.connect(alice).open(id);
+      const client = await cofheFor(bob);
       const proofs = [];
-      for (const id of rest) proofs.push(await carolClient.decryptForTx(await dnaHandle(nft, id)).withoutACP().execute());
+      for (const id of ids) proofs.push(await client.decryptForTx(await dnaHandle(nft, id)).withoutACP().execute());
       await expect(
-        nft.connect(carol).revealBatch(rest, proofs.map((p) => p.decryptedValue), [proofs[0].signature]),
+        nft.connect(bob).revealBatch(ids, proofs.map((p) => p.decryptedValue), [proofs[0].signature]),
       ).to.be.revertedWithCustomError(nft, 'LengthMismatch');
-      await nft.connect(carol).revealBatch(
-        rest,
+      await nft.connect(bob).revealBatch(
+        ids,
         proofs.map((p) => p.decryptedValue),
         proofs.map((p) => p.signature),
       );
-      for (const id of ids) expect((await nft.catOf(id)).revealed).to.equal(true);
+      for (const id of ids) expect(await nft.stateOf(id)).to.equal(State.Revealed);
     });
+  });
 
-    it('stops granting DNA access on transfers after the reveal', async () => {
-      const { nft, alice, bob, id, handle } = await loadFixture(mintedFixture);
-      const proof = await (await cofheFor(alice)).decryptForTx(handle).withACP().execute();
-      await nft.connect(alice).reveal(id, proof.decryptedValue, proof.signature);
-      await nft.connect(alice).transferFrom(alice.address, bob.address, id);
-      expect(await nft.ownerOf(id)).to.equal(bob.address);
-      // the DNA is public now anyway
-      expect((await nft.catOf(id)).dna).to.equal(proof.decryptedValue);
+  describe('arena hook', () => {
+    it('lets a holder allow the arena to compute on their cat, and nobody else', async () => {
+      const { nft, owner, alice, bob } = await loadFixture(deployFixture);
+      const [id] = await mintPublic(nft, alice);
+      const handle = await dnaHandle(nft, id);
+      const probe = await ethers.deployContract('ArenaProbe');
+      const probeAddress = await probe.getAddress();
+
+      await expect(nft.connect(alice).enterArena(id)).to.be.revertedWithCustomError(nft, 'NoArena');
+      await expect(nft.connect(alice).setArena(probeAddress)).to.be.revertedWithCustomError(
+        nft,
+        'OwnableUnauthorizedAccount',
+      );
+      await expect(nft.connect(owner).setArena(probeAddress)).to.emit(nft, 'ArenaChanged').withArgs(probeAddress);
+
+      // before the holder opts in, the arena cannot touch the ciphertext
+      await expect(probe.touch(handle)).to.be.reverted;
+      await expect(nft.connect(bob).enterArena(id)).to.be.revertedWithCustomError(nft, 'NotHolder');
+      await expect(nft.connect(alice).enterArena(id)).to.emit(nft, 'CatEnteredArena').withArgs(id, probeAddress);
+      await expect(probe.touch(handle)).not.to.be.reverted;
+
+      // entering the arena gives no wallet a way in: the cat is still unopened
+      expect(await nft.stateOf(id)).to.equal(State.Unopened);
+      await expect((await cofheFor(alice)).decryptForView(handle, FheTypes.Uint64).execute()).to.be.rejected;
     });
   });
 
   describe('metadata', () => {
-    it('shows an encrypted cat until the reveal, then the rendered cat', async () => {
+    it('follows the box through every state, then shows the rendered cat', async () => {
       const { nft, alice } = await loadFixture(deployFixture);
       const [id] = await mintPublic(nft, alice);
       const handle = await dnaHandle(nft, id);
+      const json = async () => JSON.parse(decodeDataUri(await nft.tokenURI(id), 'data:application/json;base64,'));
 
-      const hidden = await nft.tokenURI(id);
-      expect(hidden).to.equal(tokenUri({ tokenId: id, revealed: false, handle }));
-      const hiddenJson = JSON.parse(decodeDataUri(hidden, 'data:application/json;base64,'));
-      expect(hiddenJson.name).to.equal(`FheCat #${id}`);
-      expect(hiddenJson.attributes).to.deep.equal([{ trait_type: 'Status', value: 'Encrypted' }]);
+      expect(await nft.tokenURI(id)).to.equal(tokenUri({ tokenId: id, state: 0, handle }));
+      expect((await json()).name).to.equal(`FheCat #${id}`);
+      expect((await json()).attributes).to.deep.equal([{ trait_type: 'Status', value: 'Unopened' }]);
 
-      const proof = await (await cofheFor(alice)).decryptForTx(handle).withACP().execute();
+      await nft.connect(alice).peek(id);
+      expect(await nft.tokenURI(id)).to.equal(tokenUri({ tokenId: id, state: 1, handle }));
+      expect((await json()).attributes).to.deep.equal([{ trait_type: 'Status', value: 'Peeked' }]);
+
+      await nft.connect(alice).open(id);
+      expect(await nft.tokenURI(id)).to.equal(tokenUri({ tokenId: id, state: 2, handle }));
+      expect((await json()).attributes).to.deep.equal([{ trait_type: 'Status', value: 'Opened' }]);
+
+      const proof = await (await cofheFor(alice)).decryptForTx(handle).withoutACP().execute();
       await nft.connect(alice).reveal(id, proof.decryptedValue, proof.signature);
-
-      const shown = await nft.tokenURI(id);
-      expect(shown).to.equal(tokenUri({ tokenId: id, revealed: true, dna: proof.decryptedValue }));
-      const json = JSON.parse(decodeDataUri(shown, 'data:application/json;base64,'));
-      expect(json.attributes).to.have.length(9);
-      expect(json.attributes[0]).to.deep.equal({ trait_type: 'Status', value: 'Revealed' });
-      expect(decodeDataUri(json.image, 'data:image/svg+xml;base64,')).to.match(/^<svg[\s\S]*<\/svg>$/);
+      expect(await nft.tokenURI(id)).to.equal(tokenUri({ tokenId: id, state: 3, dna: proof.decryptedValue }));
+      const shown = await json();
+      expect(shown.attributes).to.have.length(9);
+      expect(shown.attributes[0]).to.deep.equal({ trait_type: 'Status', value: 'Revealed' });
+      expect(decodeDataUri(shown.image, 'data:image/svg+xml;base64,')).to.match(/^<svg[\s\S]*<\/svg>$/);
     });
 
     it('serves collection metadata', async () => {
@@ -371,7 +411,7 @@ describe('FheCat', () => {
         () => as.setPrices(0, 0),
         () => as.setWalletLimits(0, 0),
         () => as.setAllowlistRoot(ethers.ZeroHash),
-        () => as.setGrandRevealAt(0),
+        () => as.setArena(alice.address),
         () => as.setRenderer(rendererAddress),
         () => as.setDefaultRoyalty(alice.address, 0),
         () => as.withdraw(alice.address),

@@ -28,14 +28,14 @@ contract FheCatRenderer is IFheCatRenderer {
     // IFheCatRenderer
     // ---------------------------------------------------------------------
 
-    function tokenURI(uint256 tokenId, bool revealed, uint64 dna, bytes32 dnaHandle)
+    function tokenURI(uint256 tokenId, uint8 state, uint64 dna, bytes32 dnaHandle)
         external
         pure
         returns (string memory)
     {
         string memory name = string.concat(Art.COLLECTION_NAME, " #", tokenId.toString());
         bytes memory json;
-        if (revealed) {
+        if (state >= 3) {
             json = abi.encodePacked(
                 '{"name":"',
                 name,
@@ -52,10 +52,12 @@ contract FheCatRenderer is IFheCatRenderer {
                 '{"name":"',
                 name,
                 '","description":"',
-                Art.ENCRYPTED_DESCRIPTION,
+                state == 0 ? Art.UNOPENED_DESCRIPTION : state == 1 ? Art.PEEKED_DESCRIPTION : Art.OPENED_DESCRIPTION,
                 '","image":"',
                 _svgDataUri(encryptedSvg(dnaHandle)),
-                '","attributes":[{"trait_type":"Status","value":"Encrypted"}]}'
+                '","attributes":[{"trait_type":"Status","value":"',
+                state == 0 ? "Unopened" : state == 1 ? "Peeked" : "Opened",
+                '"}]}'
             );
         }
         return string.concat("data:application/json;base64,", Base64.encode(json));

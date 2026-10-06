@@ -9,11 +9,20 @@ import { FUR_ROLES, type Layer } from './types';
 export const COLLECTION_NAME = 'FheCat';
 export const EXTERNAL_LINK = 'https://x.com/FheCat';
 export const COLLECTION_DESCRIPTION =
-  'Pixel cats born encrypted on Fhenix. Every FheCat gets its DNA from FHE randomness at mint, so nobody - not the team, not the minter, not a bot - can see or snipe its traits. The holder can peek privately and reveal the cat on-chain with a threshold-network decryption proof. Art is rendered fully on-chain.';
-export const ENCRYPTED_DESCRIPTION =
-  'This FheCat is still encrypted. Its DNA is a Fhenix FHE ciphertext: only its holder can peek at it. Reveal it to decrypt the cat for everyone.';
+  "Schrodinger's cats on Fhenix. Every FheCat is born in a sealed box: its DNA comes from FHE randomness at mint and no wallet - not the team, not the minter, not a bot - can decrypt it. Only its holder decides what happens next: keep it Unopened, Peek privately, or Open it for everyone. Nothing forces a reveal, and a cat can stay sealed forever. Art is rendered fully on-chain.";
+export const UNOPENED_DESCRIPTION =
+  "An Unopened FheCat. Its DNA is a Fhenix FHE ciphertext that no wallet has ever been able to decrypt, and that is provable on-chain. Only its holder can peek or open the box.";
+export const PEEKED_DESCRIPTION =
+  'A Peeked FheCat. A holder has taken private decryption rights to its DNA, so it may have been seen. It is still sealed for everyone else, and only its holder can open the box.';
+export const OPENED_DESCRIPTION =
+  "An Opened FheCat. Its holder made the DNA publicly decryptable, so anyone can now publish it on-chain with the threshold network's proof and draw the cat.";
 export const REVEALED_DESCRIPTION =
-  'A FheCat born encrypted on Fhenix. Its DNA came from FHE randomness, stayed a ciphertext until its holder revealed it, and was decrypted on-chain with a threshold-network proof.';
+  'A FheCat born encrypted on Fhenix. Its DNA came from FHE randomness, stayed a ciphertext until its holder opened the box, and was decrypted on-chain with a threshold-network proof.';
+
+/** FheCat.State, in contract order. */
+export const STATES = ['Unopened', 'Peeked', 'Opened', 'Revealed'] as const;
+export type CatState = 0 | 1 | 2 | 3;
+export const SEALED_DESCRIPTIONS = [UNOPENED_DESCRIPTION, PEEKED_DESCRIPTION, OPENED_DESCRIPTION];
 
 export const SVG_OPEN =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="1024" height="1024" shape-rendering="crispEdges">';
@@ -133,16 +142,17 @@ export function svgDataUri(svg: string): string {
 
 export interface TokenState {
   tokenId: bigint | number;
-  revealed: boolean;
+  /** FheCat.State: 0 Unopened, 1 Peeked, 2 Opened, 3 Revealed. */
+  state: CatState;
   dna?: bigint;
   handle?: bigint | string;
 }
 
-export function tokenJson({ tokenId, revealed, dna, handle }: TokenState): string {
+export function tokenJson({ tokenId, state, dna, handle }: TokenState): string {
   const name = `${COLLECTION_NAME} #${tokenId.toString()}`;
-  if (!revealed) {
+  if (state < 3) {
     const image = svgDataUri(renderEncryptedSvg(handle ?? 0n));
-    return `{"name":"${name}","description":"${ENCRYPTED_DESCRIPTION}","image":"${image}","attributes":[{"trait_type":"Status","value":"Encrypted"}]}`;
+    return `{"name":"${name}","description":"${SEALED_DESCRIPTIONS[state]}","image":"${image}","attributes":[{"trait_type":"Status","value":"${STATES[state]}"}]}`;
   }
   const image = svgDataUri(renderCatSvg(dna ?? 0n));
   const attrs = traitsOf(dna ?? 0n)

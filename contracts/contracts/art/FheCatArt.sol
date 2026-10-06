@@ -18,11 +18,15 @@ library FheCatArt {
     string internal constant COLLECTION_NAME = "FheCat";
     string internal constant EXTERNAL_LINK = "https://x.com/FheCat";
     string internal constant COLLECTION_DESCRIPTION =
-        "Pixel cats born encrypted on Fhenix. Every FheCat gets its DNA from FHE randomness at mint, so nobody - not the team, not the minter, not a bot - can see or snipe its traits. The holder can peek privately and reveal the cat on-chain with a threshold-network decryption proof. Art is rendered fully on-chain.";
-    string internal constant ENCRYPTED_DESCRIPTION =
-        "This FheCat is still encrypted. Its DNA is a Fhenix FHE ciphertext: only its holder can peek at it. Reveal it to decrypt the cat for everyone.";
+        "Schrodinger's cats on Fhenix. Every FheCat is born in a sealed box: its DNA comes from FHE randomness at mint and no wallet - not the team, not the minter, not a bot - can decrypt it. Only its holder decides what happens next: keep it Unopened, Peek privately, or Open it for everyone. Nothing forces a reveal, and a cat can stay sealed forever. Art is rendered fully on-chain.";
+    string internal constant UNOPENED_DESCRIPTION =
+        "An Unopened FheCat. Its DNA is a Fhenix FHE ciphertext that no wallet has ever been able to decrypt, and that is provable on-chain. Only its holder can peek or open the box.";
+    string internal constant PEEKED_DESCRIPTION =
+        "A Peeked FheCat. A holder has taken private decryption rights to its DNA, so it may have been seen. It is still sealed for everyone else, and only its holder can open the box.";
+    string internal constant OPENED_DESCRIPTION =
+        "An Opened FheCat. Its holder made the DNA publicly decryptable, so anyone can now publish it on-chain with the threshold network's proof and draw the cat.";
     string internal constant REVEALED_DESCRIPTION =
-        "A FheCat born encrypted on Fhenix. Its DNA came from FHE randomness, stayed a ciphertext until its holder revealed it, and was decrypted on-chain with a threshold-network proof.";
+        "A FheCat born encrypted on Fhenix. Its DNA came from FHE randomness, stayed a ciphertext until its holder opened the box, and was decrypted on-chain with a threshold-network proof.";
     string internal constant SVG_OPEN =
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="1024" height="1024" shape-rendering="crispEdges">';
     string internal constant SVG_CLOSE = "</svg>";

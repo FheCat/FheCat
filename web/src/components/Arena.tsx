@@ -101,7 +101,7 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
   const write = useWriteContract();
   const publicClient = usePublicClient({ chainId });
   const now = useNow();
-  const { cats, refetch: refetchCats } = useMyCats(totalSupply);
+  const { cats, refetch: refetchCats, loading: catsLoading } = useMyCats(totalSupply);
   const access = useAllowed(
     cats.map((c) => c.dnaHandle),
     arena,
@@ -353,6 +353,8 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
               </p>
               {!isConnected ? (
                 <p className="panel-empty">Connect your wallet to fight.</p>
+              ) : catsLoading ? (
+                <p className="panel-empty">Looking for your cats…</p>
               ) : cats.length === 0 ? (
                 <p className="panel-empty">Mint a cat to play.</p>
               ) : (

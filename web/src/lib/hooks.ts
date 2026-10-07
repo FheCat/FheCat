@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { keepPreviousData } from '@tanstack/react-query';
 import { useConnection, useReadContract, useReadContracts } from 'wagmi';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { fheCatAbi, fheCatArenaAbi } from '../config/abi';
@@ -87,18 +88,24 @@ export function useCollection() {
 
 export type Collection = ReturnType<typeof useCollection>;
 
-export function useMyCats(totalSupply: bigint) {
+/** The connected wallet's cats. `totalSupply` is undefined while the collection is still loading. */
+export function useMyCats(totalSupply: bigint | undefined) {
   const { chainId, deployment } = useViewChain();
   const { address } = useConnection();
+  const supply = totalSupply ?? 0n;
   const q = useReadContract({
     address: deployment?.fheCat,
     abi: fheCatAbi,
     chainId,
     functionName: 'catsOfOwner',
-    args: [address!, 1n, totalSupply],
-    query: { enabled: Boolean(deployment && address && totalSupply > 0n), ...POLL },
+    args: [address!, 1n, supply],
+    // The supply is part of the query, so every mint (anyone's) starts a new one: keep showing
+    // the cats already loaded until it answers, instead of an empty list.
+    query: { enabled: Boolean(deployment && address && supply > 0n), placeholderData: keepPreviousData, ...POLL },
   });
-  return { cats: (q.data ?? []) as readonly CatView[], refetch: q.refetch, loading: q.isLoading };
+  // Until the supply is known and, if anyone has minted, until the list has come back once.
+  const loading = Boolean(deployment && address) && (totalSupply === undefined || (supply > 0n && q.data === undefined && !q.isError));
+  return { cats: (q.data ?? []) as readonly CatView[], refetch: q.refetch, loading };
 }
 
 export function useLatestCats(totalSupply: bigint, count = 12n) {

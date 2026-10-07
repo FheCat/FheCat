@@ -11,13 +11,14 @@ interface Props {
   n: string;
   chainId: number;
   contract: `0x${string}`;
-  totalSupply: bigint;
+  /** Undefined while the collection is still loading. */
+  totalSupply: bigint | undefined;
 }
 
 export function MyCats({ n, chainId, contract, totalSupply }: Props) {
   const { address, isConnected } = useConnection();
   const cofhe = useCofhe();
-  const { cats, refetch } = useMyCats(totalSupply);
+  const { cats, refetch, loading } = useMyCats(totalSupply);
   const access = useAllowed(
     cats.map((c) => c.dnaHandle),
     address,
@@ -48,6 +49,13 @@ export function MyCats({ n, chainId, contract, totalSupply }: Props) {
             <div>
               <p>Connect your wallet to see your cats.</p>
               <ConnectButton />
+            </div>
+          </div>
+        ) : loading ? (
+          <div className="empty box">
+            <Sprite name="noiseCat" className="empty-cat" />
+            <div>
+              <p>Looking for your cats…</p>
             </div>
           </div>
         ) : cats.length === 0 ? (

@@ -2139,6 +2139,23 @@ h2 {
 .adm-panel {
   position: relative;
 }
+.adm-mint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 48px;
+  margin: 0 0 56px;
+  padding: 24px 28px;
+}
+.adm-mint .label {
+  margin-bottom: 8px;
+}
+.adm-mint-text {
+  max-width: 640px;
+  margin: 0;
+  color: var(--muted);
+}
 .adm-head {
   display: flex;
   flex-wrap: wrap;

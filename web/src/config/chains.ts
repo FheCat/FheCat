@@ -1,5 +1,5 @@
 import type { Chain } from 'viem';
-import { arbitrumSepolia, baseSepolia, hardhat, sepolia } from 'viem/chains';
+import { arbitrum, arbitrumSepolia, baseSepolia, hardhat, mainnet, sepolia } from 'viem/chains';
 import { chains as cofheChains, type CofheChain } from '@cofhe/sdk/chains';
 import published from './deployments.json';
 
@@ -29,12 +29,18 @@ interface ChainInfo {
   faucet?: string;
 }
 
+// Fhenix mainnets first, so a mainnet deployment is the default chain wherever it exists.
 const KNOWN: ChainInfo[] = [
+  { chain: arbitrum, cofhe: cofheChains.arbitrum },
+  { chain: mainnet, cofhe: cofheChains.ethereum },
   { chain: arbitrumSepolia, cofhe: cofheChains.arbSepolia, faucet: 'https://www.alchemy.com/faucets/arbitrum-sepolia' },
   { chain: baseSepolia, cofhe: cofheChains.baseSepolia, faucet: 'https://www.alchemy.com/faucets/base-sepolia' },
   { chain: sepolia, cofhe: cofheChains.sepolia, faucet: 'https://www.alchemy.com/faucets/ethereum-sepolia' },
   { chain: hardhat, cofhe: cofheChains.hardhat },
 ];
+
+/** Before launch the site still needs a chain to talk to; Arbitrum Sepolia is the default home. */
+const HOME = KNOWN.find((c) => c.chain.id === arbitrumSepolia.id)!;
 
 /** Chains the collection is deployed on, in the order above. */
 export const LIVE: ChainInfo[] = KNOWN.filter((c) => DEPLOYMENTS[c.chain.id]);
@@ -42,12 +48,14 @@ export const LIVE: ChainInfo[] = KNOWN.filter((c) => DEPLOYMENTS[c.chain.id]);
 export const IS_LAUNCHED = LIVE.length > 0;
 
 const preferred = Number(import.meta.env.VITE_DEFAULT_CHAIN_ID);
-/** Before launch the site still needs a chain to talk to; Arbitrum Sepolia is the default home. */
-export const DEFAULT_CHAIN: Chain = (LIVE.find((c) => c.chain.id === preferred) ?? LIVE[0] ?? KNOWN[0]).chain;
+export const DEFAULT_CHAIN: Chain = (LIVE.find((c) => c.chain.id === preferred) ?? LIVE[0] ?? HOME).chain;
 
-export const WAGMI_CHAINS = (IS_LAUNCHED ? LIVE : [KNOWN[0]]).map((c) => c.chain) as [Chain, ...Chain[]];
+// The default chain goes first: wallets and connectors without a chain of their own start there.
+const SERVED = IS_LAUNCHED ? [...LIVE].sort((a, b) => Number(b.chain.id === DEFAULT_CHAIN.id) - Number(a.chain.id === DEFAULT_CHAIN.id)) : [HOME];
 
-export const COFHE_CHAINS: CofheChain[] = (IS_LAUNCHED ? LIVE : [KNOWN[0]]).map((c) => c.cofhe);
+export const WAGMI_CHAINS = SERVED.map((c) => c.chain) as [Chain, ...Chain[]];
+
+export const COFHE_CHAINS: CofheChain[] = SERVED.map((c) => c.cofhe);
 
 export function chainInfo(chainId: number | undefined): ChainInfo | undefined {
   return KNOWN.find((c) => c.chain.id === chainId);

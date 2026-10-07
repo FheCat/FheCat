@@ -107,8 +107,12 @@ test('the owner runs the sale from the site', async ({ page }) => {
   await prices.getByLabel('Public').fill('0.01');
   await prices.getByRole('button', { name: 'Save prices' }).click();
   await done('Prices saved');
+  // Earlier tests paid the launch price into the contract, so check what this mint adds.
+  const funds = owner.locator('.owner-box', { hasText: 'Funds' }).locator('.panel-head .mono');
+  const eth = async () => Number((await funds.textContent())!.replace(/[^\d.]/g, ''));
+  const before = await eth();
   await mint(page, 1); // pays 0.01
-  await expect(owner.locator('.owner-box', { hasText: 'Funds' }).locator('.panel-head')).toContainText('0.01 ETH');
+  await expect.poll(eth).toBeCloseTo(before + 0.01, 6);
 
   const reserve = owner.locator('.owner-box', { hasText: 'Team reserve' });
   await reserve.getByLabel('How many (1-10)').fill('2');

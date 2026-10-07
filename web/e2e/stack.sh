@@ -23,4 +23,5 @@ fi
 # No wallet limit locally: the e2e tests mint several times from the dev wallet.
 MAX_PER_WALLET=0 npx hardhat run scripts/deploy.ts --network localhost
 cd ../web
-VITE_DEV_WALLET=true npx vite --port 5173 --strictPort
+# The published testnet deployment is in deployments.json too; the local chain comes first here.
+VITE_DEV_WALLET=true VITE_DEFAULT_CHAIN_ID=31337 npx vite --port 5173 --strictPort

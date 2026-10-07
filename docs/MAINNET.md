@@ -1,6 +1,6 @@
 # Mainnet'e geçiş planı (21 Ekim 2026)
 
-Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet'ine taşımak için yapılacakları sıralar. Durum bilgileri 6 Ekim 2026 tarihlidir.
+Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet'ine taşımak için yapılacakları sıralar. Durum bilgileri 7 Ekim 2026 tarihlidir.
 
 ## Bugünkü durum
 
@@ -8,7 +8,7 @@ Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet
 
 - Fhenix, mainnet'i 21 Ekim'de Ethereum ve Arbitrum One'da açacağını duyurdu. Lansmanda ekibin seçtiği beş uygulama yayına giriyor.
 - `@fhenixprotocol/cofhe-contracts` 1.0.0, 5 Ekim'de yayımlandı. Bu sürümde FHE.sol, TaskManager'ı her zincirde aynı adreste duran **CoFHEAddressBook** (`0xC0F4e00E531a2B086492Ae3DCC1515038307196b`) üzerinden bulur.
-- Zincir üstü kontrol (fork testi, 6 Ekim):
+- Zincir üstü kontrol (fork testi, 7 Ekim):
 
   | Zincir | Adres defterinin gösterdiği TaskManager | Durum |
   |---|---|---|
@@ -16,12 +16,13 @@ Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet
   | Arbitrum One, Ethereum | `0x52E7a0cAF234b266bCFAa6aA933a412FDe58432A` | Mint `CofheIsUnavailable()` ile reddediliyor |
 
 - Mainnet TaskManager'ında kontrat bazlı bir **erişim listesi** var: listede olmayan bir kontratın FHE işlemi `NotOnAccessList(address)` hatası alıyor. Bu listenin lansmandan sonra kalıp kalmayacağı ve nasıl başvurulacağı herkese açık bir belgede yazmıyor.
-- Mainnet için resmi SDK zincir tanımları (CoFHE ve eşik ağı URL'leri) henüz yayımlanmadı. `@cofhe/sdk` beta sürümünde de yalnızca testnet'ler var.
+- `@cofhe/sdk` 0.8.0 (6 Ekim) mainnet zincir tanımlarını getirdi: Ethereum ve Arbitrum One (`https://cofhe.mainnet.fhenix.zone`).
 
 **FheCat tarafı**
 
 - Kontratlar cofhe-contracts 1.0.0 ile derleniyor, yani mainnet'te doğru TaskManager'a ulaşıyor. (0.2.0 ile derlenen sürüm mainnet'te hiç çalışmazdı: eski sabit adreste kontrat yok.)
-- 48 birim testi, 3 tarayıcı (E2E) testi ve üç testnet'te fork testleri geçiyor.
+- Proje `@cofhe/sdk` ve `@cofhe/hardhat-plugin` 0.8.0'a yükseltildi. Mint sitesi Arbitrum One'ı ve Ethereum'u tanıyor; `deployments.json`'a mainnet adresi girildiği an o zincirde çalışır.
+- 0.8.0 ile 48 birim testi, 4 tarayıcı (E2E) testi ve Arbitrum Sepolia fork testleri geçiyor.
 - Deploy betiği mainnet'te `CONFIRM_MAINNET=yes` olmadan çalışmaz.
 
 ## 1. Fhenix'e sorulacaklar (en önemli adım)
@@ -31,13 +32,12 @@ Lansmana yetişmek bu cevaplara bağlı:
 1. FheCat'in iki kontratı (`FheCat` ve `FheCatArena`) mainnet erişim listesine nasıl alınır? Kontrat adresi mi istiyorlar, başvuru formu mu var?
 2. Hangi zincir öneriliyor? (Önerimiz Arbitrum One: mint ≈174k gas, Ethereum'da aynı işlem çok daha pahalı.)
 3. Lansmanda `FHE.randomEuint64()` (şifreli rastgelelik) ve herkese açık şifre çözme (`decryptForTx(...).withoutACP()`) açık olacak mı?
-4. Mainnet'i destekleyen `@cofhe/sdk` sürümü ne zaman çıkacak?
 
 Not: Kontratların kurucuları FHE çağrısı yapmaz. Yani erişim listesi için adres gerekiyorsa önce deploy edip adresleri iletebiliriz. Mint, liste onayı gelene kadar açılmaz.
 
 ## 2. Testnet provası (şimdi)
 
-Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Claude provayı atılabilir test cüzdanlarıyla yürütür. Prova gizlidir: site yalnızca Vercel girişiyle açılır, kaynak kodu explorer'da doğrulanmaz ve satış prova bitince kapatılır. Adımlar, test listesi ve sonuçlar `docs/TESTNET.md` dosyasında.
+Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Claude provayı atılabilir test cüzdanlarıyla yürütür. Prova gizlidir: site yalnızca Vercel girişiyle ya da fhecat.com/admin'deki **Testnet mint** kopyasından admin girişiyle açılır ve kaynak kodu explorer'da doğrulanmaz. Adımlar, test listesi ve sonuçlar `docs/TESTNET.md` dosyasında.
 
 ## 3. Lansman günü
 
@@ -55,10 +55,22 @@ Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek
    - `npx hardhat fhecat:allowlist wallets.txt --write-only` yalnızca `web/public/allowlist.json` dosyasını yazar; anahtar gerekmez.
    - Site yayınlanınca sahip, sitedeki Owner bölümünden **Use this site's list** ile kökü kontrata yazar.
 5. Mint sitesi:
-   - `@cofhe/sdk`'yı mainnet'i destekleyen sürüme yükselt ve `web/src/config/chains.ts` dosyasına Arbitrum One'ı ekle.
    - `deployments.json` ile `allowlist.json` dosyalarını commit'le.
    - Vercel'deki `fhecat-mint` projesine alan adını (ör. `mint.fhecat.com`) bağla ve korumayı "özel alan adları hariç" yap. Site ancak o zaman herkese açılır.
+   - Admin'deki testnet kopyası artık gerekmiyorsa `landing/admin/mint/` klasörünü sil.
 6. Satışı sırayla Owner bölümünden aç: önce Allowlist, sonra Public. `fhecat:status` ile de izlenebilir.
+
+## OpenSea
+
+- **Mainnet:** OpenSea Arbitrum One'ı destekliyor ve zincirdeki ERC-721 koleksiyonlarını kendiliğinden gösteriyor (indeksliyor); ayrıca başvuru gerekmez. İlk mint'ten sonra kediler `opensea.io/assets/arbitrum/<FheCat adresi>/<numara>` adresinde görünür.
+- **Koleksiyon sayfası:** OpenSea, düzenleme yetkisini kontratın `owner()` cüzdanına verir. Sahip cüzdanla bağlanıp banner'ı, kategoriyi ve linkleri düzenle. Kontrattaki `external_link` şu an X hesabını gösteriyor; site linki OpenSea'dan eklenebilir.
+- **Reveal'lar:** Peek, kutu açma ve reveal `MetadataUpdate` (ERC-4906) olayı yayar. OpenSea bu olayları dinleyip kedinin görselini ve trait'lerini kendisi yeniler.
+- **Testnet:** OpenSea testnet desteğini 23 Temmuz 2025'te kapattı, bu yüzden testnet koleksiyonu OpenSea'da görünmez. Bunun yerine OpenSea'nın okuduğu her şey testnet kontratında doğrulandı (7 Ekim):
+  - `tokenURI` dört durumda da (Unopened, Peeked, Opened, Revealed) geçerli JSON döndürüyor: `name`, `description`, `image` ve trait'ler (`attributes`).
+  - Görsel zincir üstü SVG'dir: 1024 px, keskin pikseller (`crispEdges`). Pazar yerlerinin `<img>` ile gösterdiği şekilde doğru çiziliyor.
+  - `contractURI` geçerli JSON döndürüyor: `name`, `description`, `image`, `external_link`.
+  - ERC-721, ERC-721 Metadata, ERC-2981 (%5 royalty), ERC-4906 ve ERC-165 arayüzleri `true` döndürüyor; `owner()` tanımlı.
+  - `tokenURI` çağrısı en fazla yaklaşık 1,4 milyon gas tutuyor, yani RPC sınırlarının çok altında.
 
 ## Güvenlik notları
 

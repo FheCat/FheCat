@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Waitlist admin · FheCat</title>
+    <title>Admin · FheCat</title>
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#032842" />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
@@ -57,6 +57,14 @@
             <a class="btn" href="admin/mint/"><span>Open the test mint</span><i data-sprite="i-arrow"></i></a>
           </div>
 
+          <div class="adm-tabs" role="tablist" aria-label="Lists">
+            <button type="button" class="adm-tab on" role="tab" aria-selected="true" aria-controls="admWaitlist" data-tab="waitlist">Waitlist</button>
+            <button type="button" class="adm-tab" role="tab" aria-selected="false" aria-controls="admCollabs" data-tab="collabs">
+              Collabs <span class="adm-tab-n" id="admCollabTab" hidden></span>
+            </button>
+          </div>
+
+          <div id="admWaitlist" role="tabpanel">
           <div class="adm-head">
             <div>
               <p class="label"><i data-sprite="i-diamond"></i>Waitlist admin</p>
@@ -131,6 +139,62 @@
             <button type="button" class="adm-btn" data-bulk="pending"><i data-sprite="i-back"></i>Pending</button>
             <button type="button" class="adm-btn is-plain" data-bulk="">Clear</button>
           </div>
+          </div>
+
+          <!-- collabs: communities that applied at fhecat.com/collab (js/admin-collab.js) -->
+          <div class="adm-collabs" id="admCollabs" role="tabpanel" hidden>
+            <div class="adm-head">
+              <div>
+                <p class="label"><i data-sprite="i-star"></i>Collab admin</p>
+                <h1 class="adm-title">Collabs</h1>
+              </div>
+              <div class="adm-export">
+                <p class="adm-export-what">For the mint</p>
+                <div class="adm-export-btns">
+                  <button type="button" class="btn btn-sm" id="admAllowlist"><i data-sprite="i-down"></i><span>Allowlist .txt</span></button>
+                  <button type="button" class="btn btn-sm btn-ghost" id="admCollabCsv"><span>Collab wallets .csv</span></button>
+                </div>
+              </div>
+            </div>
+            <p class="adm-collab-note">
+              Approve a community with a number of WL spots and the hours they get to add their winners. The allowlist file joins the approved
+              waitlist wallets with every approved collab's winners, without duplicates.
+            </p>
+
+            <div class="adm-stats adm-cstats" aria-label="Filter collabs by status">
+              <button type="button" class="adm-stat" aria-pressed="false" data-cstatus="">
+                <span class="adm-stat-label">All</span>
+                <b class="adm-stat-value" data-ccount="total">0</b>
+                <span class="adm-stat-note">communities</span>
+              </button>
+              <button type="button" class="adm-stat" aria-pressed="false" data-cstatus="pending">
+                <span class="adm-stat-label"><i class="adm-dot is-pending"></i>Pending</span>
+                <b class="adm-stat-value" data-ccount="pending">0</b>
+                <span class="adm-stat-note">to review</span>
+              </button>
+              <button type="button" class="adm-stat" aria-pressed="false" data-cstatus="approved">
+                <span class="adm-stat-label"><i class="adm-dot is-approved"></i>Approved</span>
+                <b class="adm-stat-value" data-ccount="approved">0</b>
+                <span class="adm-stat-note" data-ccount-note="submitted">0 submitted</span>
+              </button>
+              <button type="button" class="adm-stat" aria-pressed="false" data-cstatus="rejected">
+                <span class="adm-stat-label"><i class="adm-dot is-rejected"></i>Rejected</span>
+                <b class="adm-stat-value" data-ccount="rejected">0</b>
+                <span class="adm-stat-note">left out</span>
+              </button>
+            </div>
+
+            <div class="adm-tools">
+              <label class="adm-search">
+                <span class="sr">Search collabs</span>
+                <input type="search" id="admCollabSearch" autocomplete="off" spellcheck="false" placeholder="Search community, X handle or wallet" />
+              </label>
+              <p class="adm-shown" id="admCollabShown"></p>
+            </div>
+
+            <ol class="adm-clist" id="admCollabList"></ol>
+            <p class="adm-empty" id="admCollabEmpty" hidden></p>
+          </div>
         </section>
       </div>
     </main>
@@ -138,7 +202,7 @@
     <footer class="foot">
       <div class="wrap foot-inner">
         <span>© <span id="year">2026</span> FheCat</span>
-        <span>Waitlist admin</span>
+        <span>Admin</span>
         <a class="link" href="index.html">fhecat.com</a>
       </div>
     </footer>
@@ -149,5 +213,6 @@
     <script src="js/sprites.js"></script>
     <script src="js/scene.js"></script>
     <script src="js/admin.js"></script>
+    <script src="js/admin-collab.js"></script>
   </body>
 </html>

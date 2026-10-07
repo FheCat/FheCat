@@ -109,6 +109,7 @@
     $('#admLogin').hidden = which !== 'login';
     $('#admPanel').hidden = which !== 'panel';
     $('#admSignOut').hidden = which !== 'panel';
+    if (which === 'panel' && NS.adminCollab) NS.adminCollab.shown();
   }
   function showLogin(msg) {
     show('login');
@@ -143,6 +144,7 @@
       .then(function () {
         view = { status: '', q: '', rows: [], next: null, counts: null, sel: {} };
         $('#admSearch').value = '';
+        if (NS.adminCollab) NS.adminCollab.reset();
         showLogin('');
       });
   });
@@ -189,11 +191,11 @@
 
   function renderCounts() {
     var c = view.counts || { total: 0, pending: 0, approved: 0, rejected: 0, today: 0 };
-    $$('[data-count]').forEach(function (n) {
+    $$('#admWaitlist [data-count]').forEach(function (n) {
       n.textContent = fmt(c[n.getAttribute('data-count')]);
     });
     $('#admToday').textContent = '+' + fmt(c.today) + ' in 24h';
-    $$('.adm-stat').forEach(function (b) {
+    $$('#admWaitlist .adm-stat').forEach(function (b) {
       var on = b.getAttribute('data-status') === view.status;
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -428,7 +430,7 @@
   // ---------------------------------------------------------------------------
   // filters
   // ---------------------------------------------------------------------------
-  $$('.adm-stat').forEach(function (b) {
+  $$('#admWaitlist .adm-stat').forEach(function (b) {
     b.addEventListener('click', function () {
       view.status = b.getAttribute('data-status');
       renderCounts();
@@ -548,6 +550,9 @@
         });
     });
   });
+
+  // The collab tab (js/admin-collab.js) works through the same session and helpers.
+  NS.admin = { call: call, fail: fail, toast: toast, el: el, icon: icon, fmt: fmt, when: when, copyText: copyText, save: save, csv: csv, fetchAll: fetchAll };
 
   // ---------------------------------------------------------------------------
   function start() {

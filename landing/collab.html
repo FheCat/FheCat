@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The site lives only on fhecat.com; the old Render copy forwards there until it is deleted.
+      if (/\.onrender\.com$/.test(location.hostname)) location.replace('https://fhecat.com' + location.pathname + location.search + location.hash);
+    </script>
+    <title>Collab · FheCat</title>
+    <meta name="description" content="DAOs, guilds and alpha groups: apply for FheCat allowlist spots, raffle them in your community and add the winners' wallets." />
+    <meta name="theme-color" content="#032842" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="canonical" href="https://fhecat.com/collab" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fhecat.com/collab" />
+    <meta property="og:title" content="Collab with FheCat" />
+    <meta property="og:description" content="Communities: apply for FheCat allowlist spots and raffle them to your members." />
+    <meta property="og:image" content="https://fhecat.com/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@FheCat" />
+    <meta name="twitter:image" content="https://fhecat.com/assets/og.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="page-cb">
+    <header class="topbar solid" id="topbar">
+      <div class="wrap bar">
+        <a class="brand" href="index.html" aria-label="FheCat home">
+          <i data-sprite="logo" class="brand-logo"></i>
+          <span class="brand-word" data-wordmark aria-hidden="true"></span>
+        </a>
+        <a class="link hide-sm" href="index.html">Back to the site</a>
+        <a class="btn btn-sm" href="https://x.com/FheCat" target="_blank" rel="noopener">
+          <i data-sprite="i-x"></i><span class="hide-sm">Follow</span><span class="sr">FheCat on X</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="cb">
+      <div class="stars" data-stars="0.7" aria-hidden="true"></div>
+      <div class="wrap">
+        <section class="cb-win" aria-labelledby="cbTitle">
+          <header class="cb-titlebar">
+            <span class="cb-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <h1 class="cb-name" id="cbTitle">Collab</h1>
+            <span class="cb-brand" data-wordmark aria-hidden="true"></span>
+          </header>
+
+          <div class="cb-body">
+            <!-- left: the guide, your communities, you -->
+            <aside class="cb-side">
+              <p class="label"><i class="blink-dot" aria-hidden="true"></i>Collab live</p>
+              <button type="button" class="cb-guide" id="cbGuideOpen">
+                <i data-sprite="i-star" class="cb-guide-icon"></i>
+                <span class="cb-guide-text">
+                  <b>Collab guide</b>
+                  <span>Read this first: how to run your raffle and hand out your spots.</span>
+                </span>
+                <span class="cb-guide-open">Open</span>
+              </button>
+
+              <h2 class="cb-h">Your communities</h2>
+              <p class="cb-none" id="cbNone">Sign in to see the communities you applied with.</p>
+              <ul class="cb-groups" id="cbGroups"></ul>
+              <button type="button" class="cb-new" id="cbNew" hidden>+ Add another community</button>
+
+              <div class="cb-me" id="cbMe" hidden>
+                <span class="cb-avatar" id="cbAvatar" aria-hidden="true"></span>
+                <span class="cb-me-text">
+                  <b id="cbMeName"></b>
+                  <span class="mono" id="cbMeWallet"></span>
+                </span>
+                <button type="button" class="cb-switch" id="cbSwitch">Switch</button>
+              </div>
+              <p class="cb-ask">Questions? DM <a class="link" href="https://x.com/FheCat" target="_blank" rel="noopener">@FheCat</a> on X.</p>
+            </aside>
+
+            <!-- right: where you are in the flow -->
+            <section class="cb-main" aria-live="polite">
+              <ol class="cb-steps" id="cbSteps">
+                <li data-step="1"><span class="cb-step-no">1</span><span>Apply</span></li>
+                <li data-step="2"><span class="cb-step-no">2</span><span>Review</span></li>
+                <li data-step="3"><span class="cb-step-no">3</span><span>Add wallets</span></li>
+              </ol>
+
+              <p class="cb-boot mono" id="cbBoot">Decrypting…</p>
+
+              <!-- signed out -->
+              <div class="cb-view" id="cbSignin" hidden>
+                <h2 class="cb-title">Bring your community.</h2>
+                <p class="cb-lead">
+                  DAOs, guilds and alpha groups can get FheCat allowlist spots to raffle to their members. Sign in with your wallet to apply, or to
+                  manage the spots you already have.
+                </p>
+                <ol class="cb-how">
+                  <li><span><b>Apply</b> with your community's details.</span></li>
+                  <li><span><b>We review</b> it and DM you on X.</span></li>
+                  <li><span><b>Add your winners'</b> wallets before the timer ends.</span></li>
+                </ol>
+                <div class="cb-wallets" id="cbWallets"></div>
+                <p class="cb-fine">Signing in is free and sends no transaction.</p>
+                <p class="wl-error" id="cbSigninError" role="alert"></p>
+              </div>
+
+              <!-- step 1 -->
+              <form class="cb-view" id="cbApply" novalidate hidden>
+                <h2 class="cb-title">Apply.</h2>
+                <p class="cb-lead">Tell us about your community. Applying as <b id="cbApplyWallet"></b>.</p>
+                <div class="cb-form">
+                  <label class="wl-field cb-wide"><span>Community name</span><input name="name" maxlength="40" autocomplete="off" required /></label>
+                  <label class="wl-field">
+                    <span>Type</span>
+                    <select name="kind" required>
+                      <option value="">Pick one</option>
+                      <option value="dao">DAO</option>
+                      <option value="community">Community</option>
+                      <option value="guild">Guild</option>
+                      <option value="alpha">Alpha group</option>
+                      <option value="nft">NFT project</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label class="wl-field"><span>Members</span><input name="members" inputmode="numeric" placeholder="1200" autocomplete="off" required /></label>
+                  <label class="wl-field"><span>Community X</span><input name="x" placeholder="@community" autocomplete="off" spellcheck="false" required /></label>
+                  <label class="wl-field"><span>Spots you'd like</span><input name="requested" inputmode="numeric" placeholder="10" autocomplete="off" required /></label>
+                  <label class="wl-field"><span>Discord invite <i>optional</i></span><input name="discord" placeholder="discord.gg/…" autocomplete="off" spellcheck="false" /></label>
+                  <label class="wl-field"><span>Website <i>optional</i></span><input name="website" placeholder="community.xyz" autocomplete="off" spellcheck="false" /></label>
+                  <label class="wl-field"><span>Your X</span><input name="contactX" placeholder="@you" autocomplete="off" spellcheck="false" required /></label>
+                  <label class="wl-field"><span>Your Discord <i>optional</i></span><input name="contactDiscord" placeholder="username" autocomplete="off" spellcheck="false" /></label>
+                  <label class="wl-field">
+                    <span>Your role</span>
+                    <select name="role" required>
+                      <option value="">Pick one</option>
+                      <option value="founder">Founder</option>
+                      <option value="cm">Community manager</option>
+                      <option value="mod">Moderator</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label class="wl-field cb-wide">
+                    <span>About your community</span>
+                    <textarea name="pitch" rows="4" maxlength="600" placeholder="Who you are, what you do, why FheCat fits." required></textarea>
+                  </label>
+                  <label class="wl-trap" aria-hidden="true">Company <input name="company" tabindex="-1" autocomplete="off" /></label>
+                </div>
+                <p class="wl-error" id="cbApplyError" role="alert"></p>
+                <div class="cb-actions">
+                  <button type="button" class="link cb-cancel" id="cbApplyCancel" hidden>Cancel</button>
+                  <button type="submit" class="btn" id="cbApplyBtn"><span>Apply</span><i data-sprite="i-arrow"></i></button>
+                </div>
+              </form>
+
+              <!-- step 2 -->
+              <div class="cb-view" id="cbReview" hidden>
+                <div class="cb-gh">
+                  <h2 class="cb-title" id="cbRevName"></h2>
+                  <span class="cb-badge is-wait">In review</span>
+                </div>
+                <p class="cb-lead">
+                  Thanks for applying. We're reviewing it and will DM <b id="cbRevContact"></b> on X. This page updates by itself once your spots are
+                  ready.
+                </p>
+                <dl class="cb-facts" id="cbRevFacts"></dl>
+              </div>
+
+              <!-- not this time -->
+              <div class="cb-view" id="cbRejected" hidden>
+                <div class="cb-gh">
+                  <h2 class="cb-title" id="cbRejName"></h2>
+                  <span class="cb-badge is-no">Not this time</span>
+                </div>
+                <p class="cb-lead">Thanks for applying. We can't offer spots to this community this round. DM @FheCat on X if something changed.</p>
+              </div>
+
+              <!-- step 3 -->
+              <div class="cb-view" id="cbWinners" hidden>
+                <div class="cb-timer" id="cbTimer">
+                  <span class="cb-clock"><i class="blink-dot" aria-hidden="true"></i><b class="mono" id="cbClock">--:--:--</b> <span id="cbClockNote">left to submit</span></span>
+                  <button type="button" class="btn btn-sm" id="cbSubmit"><i data-sprite="i-check"></i><span>Submit wallets</span></button>
+                </div>
+                <div class="cb-gh">
+                  <h2 class="cb-title" id="cbWinName"></h2>
+                  <span class="cb-badge" id="cbBadge"></span>
+                </div>
+                <div class="cb-sub">
+                  <span id="cbWinWhat">Add your WL winners</span>
+                  <span id="cbLeft"></span>
+                </div>
+                <div class="cb-table">
+                  <div class="cb-th" aria-hidden="true"><span>#</span><span>Name</span><span>Wallet</span></div>
+                  <ol class="cb-rows" id="cbRows"></ol>
+                </div>
+                <p class="cb-fine" id="cbRowsNote">One person per row. Paste a list (a name and a wallet on each line) into any row to fill the rows below it.</p>
+                <p class="wl-error" id="cbWinError" role="alert"></p>
+                <div class="cb-actions" id="cbWinActions">
+                  <button type="button" class="btn" id="cbSave"><span>Save wallets</span><i data-sprite="i-arrow"></i></button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <footer class="cb-foot">
+            <span>FheCat · Collab</span>
+            <span>Powered by Fhenix FHE</span>
+          </footer>
+        </section>
+      </div>
+    </main>
+
+    <!-- the guide -->
+    <div class="cb-modal" id="cbGuide" role="dialog" aria-modal="true" aria-labelledby="cbGuideTitle" hidden>
+      <div class="cb-modal-box box">
+        <div class="cb-modal-head">
+          <p class="label"><i data-sprite="i-star"></i>Collab guide</p>
+          <button type="button" class="cb-x" id="cbGuideClose" aria-label="Close the guide"><i data-sprite="i-cross"></i></button>
+        </div>
+        <h2 class="cb-title" id="cbGuideTitle">Run your raffle.</h2>
+        <ol class="cb-guide-steps">
+          <li><span><b>Apply</b> with your community. We review every application by hand and DM you on X.</span></li>
+          <li><span><b>Get your spots.</b> Once approved, this page shows how many FheCat allowlist (WL) spots you have and a timer to hand them out.</span></li>
+          <li><span><b>Run a raffle</b> or a giveaway in your community. Use the post below or your own.</span></li>
+          <li><span><b>Add the winners</b> here: a name (Discord or X) and an EVM wallet (0x…) per person. Save as you go.</span></li>
+          <li><span><b>Submit</b> before the timer ends. Submitted wallets go on the FheCat allowlist for the mainnet mint.</span></li>
+        </ol>
+        <h3 class="cb-guide-h">Rules</h3>
+        <ul class="cb-rules">
+          <li><span>One person per spot, one wallet per person.</span></li>
+          <li><span>EVM wallets only (they start with 0x). No exchange deposit addresses.</span></li>
+          <li><span>No bots, no farms. We may remove wallets that look like either.</span></li>
+          <li><span>After you submit, the list is locked. DM @FheCat if you need a change.</span></li>
+        </ul>
+        <h3 class="cb-guide-h">A post for your raffle</h3>
+        <pre class="cb-post" id="cbPost"></pre>
+        <div class="cb-actions">
+          <button type="button" class="btn" id="cbCopyPost"><i data-sprite="i-copy"></i><span>Copy the post</span></button>
+        </div>
+      </div>
+    </div>
+
+    <p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+    <script src="js/pixel.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/collab.js"></script>
+  </body>
+</html>

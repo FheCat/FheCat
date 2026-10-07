@@ -10,11 +10,16 @@
  *   POST {action: 'logout'}                    sign out
  *   GET  ?status=&q=&after=&limit=&order=      entries (keyset paging by id) + counts
  *   POST {action: 'status', ids: [...], status} approve, reject, or back to pending
+ *   GET  ?view=collabs                         every collab (community applications) + counts
+ *   POST {action: 'collab', id, status, spots?, hours?, reopen?}
+ *                                              approve with spots and a deadline `hours` from now,
+ *                                              reject, or back to pending; `reopen` unlocks a submitted list
  *
  * Exports are built in the browser from the GET pages, so there is no size cap.
  */
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
+import { MAX_HOURS, MAX_SPOTS, STATUSES as COLLAB_STATUSES, adminView, ensureSchema } from './_collab.js';
 
 const COOKIE = 'fhecat_admin';
 const TTL = 12 * 60 * 60; // seconds
@@ -104,6 +109,48 @@ async function list(sql, query) {
   return { entries, next: more ? entries[entries.length - 1].id : null };
 }
 
+async function collabs(sql) {
+  await ensureSchema(sql);
+  const rows = (await sql`SELECT * FROM collabs ORDER BY id DESC LIMIT 2000`).map(adminView);
+  const counts = { total: rows.length, pending: 0, approved: 0, rejected: 0, submitted: 0 };
+  for (const c of rows) {
+    counts[c.status] += 1;
+    if (c.status === 'approved' && c.submittedAt) counts.submitted += 1;
+  }
+  return { now: new Date().toISOString(), collabs: rows, counts };
+}
+
+/** Approve (spots + a deadline `hours` from now), reject or send back to pending one collab. */
+async function reviewCollab(sql, body, res) {
+  await ensureSchema(sql);
+  const id = Number(body.id);
+  const status = String(body.status || '');
+  if (!Number.isSafeInteger(id) || id < 1 || !COLLAB_STATUSES.includes(status)) {
+    return res.status(400).json({ error: 'Pick a collab and a status.' });
+  }
+  const [cur] = await sql`SELECT * FROM collabs WHERE id = ${id}`;
+  if (!cur) return res.status(404).json({ error: 'No such collab.' });
+
+  let rows;
+  if (status === 'approved') {
+    const spots = Number(body.spots);
+    const hours = Number(body.hours);
+    if (!Number.isInteger(spots) || spots < 1 || spots > MAX_SPOTS) return res.status(400).json({ error: `Give 1 to ${MAX_SPOTS} spots.` });
+    if (!Number.isInteger(hours) || hours < 1 || hours > MAX_HOURS) return res.status(400).json({ error: `Give 1 to ${MAX_HOURS} hours to submit.` });
+    const saved = Array.isArray(cur.winners) ? cur.winners.length : 0;
+    if (spots < saved) return res.status(400).json({ error: `${saved} wallets are already on their list; give at least ${saved} spots.` });
+    rows = await sql`
+      UPDATE collabs
+      SET status = 'approved', spots = ${spots}, deadline = now() + (${hours}::int * interval '1 hour'), reviewed_at = now(),
+          submitted_at = CASE WHEN ${Boolean(body.reopen)}::boolean THEN NULL ELSE submitted_at END
+      WHERE id = ${id}
+      RETURNING *`;
+  } else {
+    rows = await sql`UPDATE collabs SET status = ${status}, reviewed_at = now() WHERE id = ${id} RETURNING *`;
+  }
+  return res.status(200).json({ ok: true, collab: adminView(rows[0]) });
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const key = process.env.ADMIN_PASSWORD || '';
@@ -117,6 +164,7 @@ export default async function handler(req, res) {
       // Re-set on Path=/, so a session from before the mint copy opens it too.
       session(res, `${s.exp}.${s.sig}`, s.exp - Math.floor(Date.now() / 1000));
       const query = req.query || {};
+      if (query.view === 'collabs') return res.status(200).json(await collabs(sql));
       const [page, all] = await Promise.all([list(sql, query), query.after ? null : counts(sql)]);
       return res.status(200).json(all ? { ...page, counts: all } : page);
     }
@@ -155,6 +203,7 @@ export default async function handler(req, res) {
         RETURNING id`;
       return res.status(200).json({ ok: true, ids: done.map((r) => Number(r.id)), status: body.status, counts: await counts(sql) });
     }
+    if (body.action === 'collab') return await reviewCollab(sql, body, res);
     return res.status(400).json({ error: 'Unknown action.' });
   } catch (err) {
     console.error('admin failed', err);

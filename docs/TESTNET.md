@@ -173,4 +173,21 @@ Site, testnet deploy'una bağlı olarak derlendi ve tarayıcıda gerçek bir kul
 | Sahip satışı kapattı | | 25.057 |
 
 - Açılmış bir kedinin DNA'sı herkese açık olduğu için arenaya girmeden dövüşebilir (#11). Sahibinin kendi kanıtıyla reveal ettiği kedi (#10) ise önce arenaya girmelidir.
-- Son durum: 12 kedi var, satış kapalı, kontratta para kalmadı ve sahiplik `owner` cüzdanında.
+- Bu çalıştırmanın sonunda 12 kedi vardı, satış kapalıydı, kontratta para kalmamıştı ve sahiplik `owner` cüzdanındaydı.
+
+**Admin kopyasında tekrar (Fhenix SDK 0.8.0)**
+
+Site, fhecat.com/admin/mint/ kopyasından admin girişiyle ve SDK 0.8.0 ile baştan sona yeniden denendi. 13 işlemin hepsi başarılı oldu; toplam ücret 0,000218 ETH.
+
+| Adım | Süre |
+|---|---|
+| Sahip, kopyadaki Owner bölümünden satışı Public'e aldı | |
+| `carol` 3 kedi bastı (#13–#15) | |
+| #13'e gizlice baktı | 3,6 sn |
+| #13'ü kendi kanıtıyla reveal etti | 1,9 sn |
+| #14'ü herkese açtı; site reveal'ı tamamladı | 3,0 sn |
+| Mühürlü #15, açık #14'ü yendi | 3,9 sn |
+| Kademe kanıtı: "#15 is not Rare" | 3,5 sn |
+| Sahip 0,00345 ETH'yi çekti | |
+
+- Şu anki durum: 15 kedi var ve kontratta para yok. Satış, proje sahibinin kendi testleri için Public aşamada açık bırakıldı. Sahiplik `owner` cüzdanında.

@@ -204,9 +204,32 @@ export function useAllowed(
   return { allowed, refetch: () => void q.refetch() };
 }
 
-export type Duel = { id: bigint; challenger: bigint; opponent: bigint; outcome: `0x${string}`; status: number; winner: bigint };
+export type Duel = {
+  id: bigint;
+  challenger: bigint;
+  opponent: bigint;
+  challengerHolder: `0x${string}`;
+  opponentHolder: `0x${string}`;
+  challengerTactic: `0x${string}`;
+  opponentTactic: `0x${string}`;
+  outcome: `0x${string}`;
+  openedAt: number;
+  foughtAt: number;
+  status: number;
+  challengerSealed: boolean;
+  opponentSealed: boolean;
+  winner: bigint;
+};
 export type TierClaim = { id: bigint; tokenId: bigint; tier: number; reached: `0x${string}`; settled: boolean; result: boolean };
-export type ArenaRecord = { wins: number; losses: number; tier: number };
+export type ArenaRecord = {
+  wins: number;
+  losses: number;
+  sealedWins: number;
+  streak: number;
+  bestStreak: number;
+  tier: number;
+  badges: number;
+};
 
 /** FheCatArena.DuelStatus */
 export const DUEL = { None: 0, Open: 1, Fought: 2, Settled: 3, Cancelled: 4 } as const;
@@ -221,52 +244,105 @@ export const TIERS = [
 ] as const;
 export const tierName = (level: number) => TIERS[level]?.name ?? '';
 
-/** The arena's latest duels and tier claims, and the records of the given cats. */
-export function useArena(arena: `0x${string}` | undefined, tokenIds: readonly bigint[], recent = 30n) {
+const STANDINGS_PAGE = 1000n;
+
+/**
+ * The Blind Arena: its latest duels and tier claims, every cat's record and points this week,
+ * and last week's crown.
+ */
+export function useArena(arena: `0x${string}` | undefined, totalSupply: bigint, recent = 40n) {
   const { chainId } = useViewChain();
   const at = { address: arena, abi: fheCatArenaAbi, chainId } as const;
-  const counts = useReadContracts({
+  const head = useReadContracts({
     contracts: [
       { ...at, functionName: 'duelCount' },
       { ...at, functionName: 'claimCount' },
+      { ...at, functionName: 'currentWeek' },
     ],
     allowFailure: false,
     query: { enabled: Boolean(arena), ...POLL },
   });
-  const [duelCount, claimCount] = counts.data ?? [0n, 0n];
-  const ids = (count: bigint) => {
-    const out: bigint[] = [];
-    for (let id = count; id > 0n && id > count - recent; id--) out.push(id);
-    return out;
-  };
-  const duelIds = ids(duelCount);
-  const claimIds = ids(claimCount);
+  const [duelCount, claimCount, week] = head.data ?? [0n, 0n, 0n];
+  const claimIds: bigint[] = [];
+  for (let id = claimCount; id > 0n && id > claimCount - 30n; id--) claimIds.push(id);
+  const pages: [bigint, bigint][] = [];
+  for (let from = 1n; from <= totalSupply; from += STANDINGS_PAGE) {
+    pages.push([from, from + STANDINGS_PAGE - 1n > totalSupply ? totalSupply : from + STANDINGS_PAGE - 1n]);
+  }
+  const fromDuel = duelCount > recent ? duelCount - recent + 1n : 1n;
 
   const lists = useReadContracts({
     contracts: [
-      ...duelIds.map((id) => ({ ...at, functionName: 'duels' as const, args: [id] as const })),
+      { ...at, functionName: 'duelsInRange' as const, args: [fromDuel, duelCount] as const },
+      { ...at, functionName: 'weekStart' as const, args: [week + 1n] as const },
+      { ...at, functionName: 'weeklyChampion' as const, args: [week > 0n ? week - 1n : 0n] as const },
+      { ...at, functionName: 'weeklyLeader' as const, args: [week > 0n ? week - 1n : 0n] as const },
       ...claimIds.map((id) => ({ ...at, functionName: 'claims' as const, args: [id] as const })),
-      ...tokenIds.map((id) => ({ ...at, functionName: 'records' as const, args: [id] as const })),
+      ...pages.map(([from, to]) => ({ ...at, functionName: 'standings' as const, args: [week, from, to] as const })),
     ],
     allowFailure: false,
-    query: { enabled: Boolean(arena && duelIds.length + claimIds.length + tokenIds.length), ...POLL },
+    query: { enabled: Boolean(arena && head.data), ...POLL },
   });
 
   return useMemo(() => {
     const data = (lists.data ?? []) as readonly unknown[];
-    const duels: Duel[] = duelIds.flatMap((id, i) => {
-      const d = data[i] as readonly [bigint, bigint, `0x${string}`, number, bigint] | undefined;
-      return d ? [{ id, challenger: d[0], opponent: d[1], outcome: d[2], status: Number(d[3]), winner: d[4] }] : [];
-    });
+    type RawDuel = Omit<Duel, 'id' | 'openedAt' | 'foughtAt' | 'status'> & { openedAt: bigint; foughtAt: bigint; status: number };
+    const duels: Duel[] = ((data[0] ?? []) as readonly RawDuel[])
+      .map((d, i) => ({ ...d, id: fromDuel + BigInt(i), openedAt: Number(d.openedAt), foughtAt: Number(d.foughtAt), status: Number(d.status) }))
+      .reverse();
+    const nextWeekAt = Number((data[1] as bigint | undefined) ?? 0n);
+    const lastWeek = { champion: (data[2] as bigint | undefined) ?? 0n, leader: (data[3] as bigint | undefined) ?? 0n };
     const claims: TierClaim[] = claimIds.flatMap((id, i) => {
-      const c = data[duelIds.length + i] as readonly [bigint, number, `0x${string}`, boolean, boolean] | undefined;
+      const c = data[4 + i] as readonly [bigint, number, `0x${string}`, boolean, boolean] | undefined;
       return c ? [{ id, tokenId: c[0], tier: Number(c[1]), reached: c[2], settled: c[3], result: c[4] }] : [];
     });
     const records = new Map<bigint, ArenaRecord>();
-    tokenIds.forEach((id, i) => {
-      const r = data[duelIds.length + claimIds.length + i] as readonly [number, number, number] | undefined;
-      if (r) records.set(id, { wins: Number(r[0]), losses: Number(r[1]), tier: Number(r[2]) });
+    const points = new Map<bigint, number>();
+    pages.forEach(([from], p) => {
+      const page = data[4 + claimIds.length + p] as readonly [readonly Record<keyof ArenaRecord, number | bigint>[], readonly number[]] | undefined;
+      if (!page) return;
+      page[0].forEach((r, i) => {
+        const id = from + BigInt(i);
+        records.set(id, {
+          wins: Number(r.wins),
+          losses: Number(r.losses),
+          sealedWins: Number(r.sealedWins),
+          streak: Number(r.streak),
+          bestStreak: Number(r.bestStreak),
+          tier: Number(r.tier),
+          badges: Number(r.badges),
+        });
+        if (page[1][i]) points.set(id, Number(page[1][i]));
+      });
     });
-    return { duels, claims, records, refetch: () => Promise.all([counts.refetch(), lists.refetch()]) };
-  }, [lists.data, duelCount, claimCount, tokenIds.join(',')]);
+    return {
+      duels,
+      claims,
+      records,
+      points,
+      week,
+      nextWeekAt,
+      lastWeek,
+      loaded: Boolean(lists.data),
+      refetch: () => Promise.all([head.refetch(), lists.refetch()]),
+    };
+  }, [lists.data, duelCount, claimCount, week, totalSupply]);
+}
+
+/** Cat views for a handful of ids (thumbnails and box states around the arena). */
+export function useCats(ids: readonly bigint[]) {
+  const { chainId, deployment } = useViewChain();
+  const q = useReadContracts({
+    contracts: ids.map((id) => ({ address: deployment?.fheCat, abi: fheCatAbi, chainId, functionName: 'catOf' as const, args: [id] as const })),
+    allowFailure: true,
+    query: { enabled: Boolean(deployment && ids.length), ...POLL },
+  });
+  return useMemo(() => {
+    const m = new Map<bigint, CatView>();
+    ids.forEach((id, i) => {
+      const r = q.data?.[i];
+      if (r?.status === 'success') m.set(id, r.result as unknown as CatView);
+    });
+    return m;
+  }, [q.data, ids.join(',')]);
 }

@@ -1701,11 +1701,60 @@ export const fheCatArenaAbi = [
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "duelId",
+        "type": "uint256"
+      }
+    ],
+    "name": "AlreadyChallenging",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "AlreadyCrowned",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyMetThisWeek",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "claimId",
         "type": "uint256"
       }
     ],
     "name": "AlreadySettled",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "duelId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ChallengerMoved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "duelId",
+        "type": "uint256"
+      }
+    ],
+    "name": "DuelExpired",
     "type": "error"
   },
   {
@@ -1744,6 +1793,17 @@ export const fheCatArenaAbi = [
       }
     ],
     "name": "InvalidTier",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "NoLeader",
     "type": "error"
   },
   {
@@ -1790,6 +1850,11 @@ export const fheCatArenaAbi = [
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "SameHolder",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "int32",
@@ -1810,6 +1875,36 @@ export const fheCatArenaAbi = [
     ],
     "name": "UnknownClaim",
     "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "WeekNotOver",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "badge",
+        "type": "uint32"
+      }
+    ],
+    "name": "BadgeEarned",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -1900,9 +1995,40 @@ export const fheCatArenaAbi = [
         "internalType": "uint256",
         "name": "loser",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "sealedWin",
+        "type": "bool"
       }
     ],
     "name": "DuelSettled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "handle",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InstinctsSealed",
     "type": "event"
   },
   {
@@ -1987,6 +2113,44 @@ export const fheCatArenaAbi = [
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "points",
+        "type": "uint32"
+      }
+    ],
+    "name": "WeekCrowned",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "CROWN_GRACE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "EPIC",
     "outputs": [
@@ -1994,6 +2158,45 @@ export const fheCatArenaAbi = [
         "internalType": "uint64",
         "name": "",
         "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "FIRST_WIN",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "GUARD",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "HAT_TRICK",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -2014,12 +2217,51 @@ export const fheCatArenaAbi = [
   },
   {
     "inputs": [],
+    "name": "LOSS_POINTS",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "MYTHIC",
     "outputs": [
       {
         "internalType": "uint64",
         "name": "",
         "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "OPEN_FOR",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "POUNCE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -2039,6 +2281,123 @@ export const fheCatArenaAbi = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "SEALED_LEGEND",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SEALED_LEGEND_WINS",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SEALED_WIN",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SEALED_WIN_POINTS",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TRICK",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WEEK",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WEEKLY_CROWN",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WEEK_ANCHOR",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WIN_POINTS",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -2049,6 +2408,16 @@ export const fheCatArenaAbi = [
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
+      },
+      {
+        "internalType": "externalEuint8",
+        "name": "tactic",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
       }
     ],
     "name": "accept",
@@ -2093,6 +2462,16 @@ export const fheCatArenaAbi = [
         "internalType": "uint256",
         "name": "opponent",
         "type": "uint256"
+      },
+      {
+        "internalType": "externalEuint8",
+        "name": "tactic",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
       }
     ],
     "name": "challenge",
@@ -2183,6 +2562,32 @@ export const fheCatArenaAbi = [
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "crownWeek",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "currentWeek",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "duelCount",
     "outputs": [
@@ -2216,9 +2621,39 @@ export const fheCatArenaAbi = [
         "type": "uint256"
       },
       {
-        "internalType": "ebool",
-        "name": "challengerWins",
+        "internalType": "address",
+        "name": "challengerHolder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "opponentHolder",
+        "type": "address"
+      },
+      {
+        "internalType": "euint8",
+        "name": "challengerTactic",
         "type": "bytes32"
+      },
+      {
+        "internalType": "euint8",
+        "name": "opponentTactic",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "euint64",
+        "name": "outcome",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "openedAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "foughtAt",
+        "type": "uint64"
       },
       {
         "internalType": "enum FheCatArena.DuelStatus",
@@ -2226,8 +2661,166 @@ export const fheCatArenaAbi = [
         "type": "uint8"
       },
       {
+        "internalType": "bool",
+        "name": "challengerSealed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "opponentSealed",
+        "type": "bool"
+      },
+      {
         "internalType": "uint256",
         "name": "winner",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "fromId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toId",
+        "type": "uint256"
+      }
+    ],
+    "name": "duelsInRange",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "challenger",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "opponent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "challengerHolder",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "opponentHolder",
+            "type": "address"
+          },
+          {
+            "internalType": "euint8",
+            "name": "challengerTactic",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "euint8",
+            "name": "opponentTactic",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "euint64",
+            "name": "outcome",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "openedAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "foughtAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "enum FheCatArena.DuelStatus",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "challengerSealed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "opponentSealed",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "winner",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct FheCatArena.Duel[]",
+        "name": "list",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "instinctsHandle",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "duelId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isOpen",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "openDuelOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "duelId",
         "type": "uint256"
       }
     ],
@@ -2274,9 +2867,29 @@ export const fheCatArenaAbi = [
         "type": "uint32"
       },
       {
+        "internalType": "uint32",
+        "name": "sealedWins",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "streak",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "bestStreak",
+        "type": "uint16"
+      },
+      {
         "internalType": "uint8",
         "name": "tier",
         "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "badges",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -2290,9 +2903,9 @@ export const fheCatArenaAbi = [
         "type": "uint256"
       },
       {
-        "internalType": "bool",
-        "name": "challengerWon",
-        "type": "bool"
+        "internalType": "uint8",
+        "name": "outcome",
+        "type": "uint8"
       },
       {
         "internalType": "bytes",
@@ -2331,6 +2944,77 @@ export const fheCatArenaAbi = [
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fromId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toId",
+        "type": "uint256"
+      }
+    ],
+    "name": "standings",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "wins",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "losses",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "sealedWins",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint16",
+            "name": "streak",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "bestStreak",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tier",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint32",
+            "name": "badges",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct FheCatArena.Record[]",
+        "name": "recs",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "points",
+        "type": "uint32[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint8",
         "name": "tier",
         "type": "uint8"
@@ -2345,6 +3029,106 @@ export const fheCatArenaAbi = [
       }
     ],
     "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "weekOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "weekStart",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "weeklyChampion",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      }
+    ],
+    "name": "weeklyLeader",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "week",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "weeklyPoints",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ] as const;

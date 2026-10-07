@@ -5,9 +5,9 @@
  *   npx hardhat run scripts/deploy.ts --network arb-sepolia
  *
  * Collection settings come from launch.json, the same file for the testnet
- * rehearsal and for mainnet. On the local Hardhat network the FheCatLocal
- * variant is deployed, because the CoFHE mocks cannot generate encrypted
- * randomness.
+ * rehearsal and for mainnet. On the local Hardhat network the FheCatLocal and
+ * FheCatArenaLocal variants are deployed, because the CoFHE mocks cannot
+ * generate encrypted randomness.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -84,6 +84,7 @@ async function main() {
   };
 
   const contract = local ? 'FheCatLocal' : 'FheCat';
+  const arenaContract = local ? 'FheCatArenaLocal' : 'FheCatArena';
   const balance = await ethers.provider.getBalance(deployer.address);
   console.log(`Network   ${network.name} (chain ${chainId})`);
   console.log(`Deployer  ${deployer.address}  balance ${ethers.formatEther(balance)} ETH`);
@@ -106,10 +107,10 @@ async function main() {
   const fheCatAddress = await fheCat.getAddress();
   console.log(`${contract}  ${fheCatAddress}  (block ${receipt!.blockNumber})`);
 
-  const arena = await ethers.deployContract('FheCatArena', [fheCatAddress]);
+  const arena = await ethers.deployContract(arenaContract, [fheCatAddress]);
   await arena.waitForDeployment();
   const arenaAddress = await arena.getAddress();
-  console.log(`FheCatArena  ${arenaAddress}`);
+  console.log(`${arenaContract}  ${arenaAddress}`);
 
   const nft = await ethers.getContractAt('FheCat', fheCatAddress);
   const send = async (label: string, tx: Promise<{ wait: () => Promise<unknown> }>) => {

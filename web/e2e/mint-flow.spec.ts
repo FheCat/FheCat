@@ -2,8 +2,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Runs against the local stack (e2e/stack.sh): Hardhat + CoFHE mocks + dev wallet.
 
-async function connect(page: Page) {
-  await page.goto('/');
+/** `?dev=1` connects Hardhat's second dev account: a second holder. */
+async function connect(page: Page, path = '/') {
+  await page.goto(path);
   await expect(page.getByRole('heading', { level: 1, name: 'FheCat' })).toBeVisible();
   await page.getByRole('button', { name: 'Connect wallet' }).first().click();
   await page.getByRole('button', { name: 'Dev wallet' }).click();
@@ -60,36 +61,71 @@ test('a holder can open the box for everyone, and the cat is revealed', async ({
   await expect(card.locator('.traits li')).toHaveCount(8);
 });
 
-test('sealed cats fight blind in the arena and prove a tier', async ({ page }) => {
+test('two sealed cats duel blind: tactics stay hidden, the winner tops the week', async ({ page, browser }) => {
+  // The arena never lets a holder fight itself, so the rival plays from a second wallet and browser.
+  const rival = await (await browser.newContext()).newPage();
   await connect(page);
-  const cards = await mint(page, 2);
-  const ids = await Promise.all(cards.map((c) => c.getAttribute('data-token')));
-  const [a, b] = ids.map((id) => page.locator(`#arena .arena-cat[data-token="${id}"]`));
-
+  await connect(rival, '/?dev=1');
+  const [cardA] = await mint(page, 1);
+  const [cardB] = await mint(rival, 1);
+  const idA = (await cardA.getAttribute('data-token'))!;
+  const idB = (await cardB.getAttribute('data-token'))!;
+  const a = page.locator(`#arena .arena-cat[data-token="${idA}"]`);
+  const b = rival.locator(`#arena .arena-cat[data-token="${idB}"]`);
   for (const cat of [a, b]) {
     await cat.getByRole('button', { name: 'Enter arena' }).click();
-    await expect(cat.getByRole('button', { name: 'Challenge' })).toBeVisible({ timeout: 30_000 });
+    await expect(cat.getByRole('button', { name: 'Challenge' })).toBeVisible();
   }
 
-  // An open challenge from A, accepted by B.
+  // A locks a Pounce and challenges anyone.
   await a.getByRole('button', { name: 'Challenge' }).click();
-  await a.getByRole('button', { name: 'Send' }).click();
-  const duel = page.locator('#arena .arena-row', { hasText: `#${ids[0]} vs anyone` });
-  await expect(duel).toBeVisible({ timeout: 30_000 });
-  await duel.locator('select').selectOption(ids[1]!);
-  await duel.getByRole('button', { name: 'Accept' }).click();
-  await expect(page.locator('#arena .note.ok')).toContainText(/#\d+ beat #\d+/, { timeout: 60_000 });
-  await expect(page.locator('#arena .arena-results')).toContainText(/#\d+ beat #\d+/);
+  await expect(a.getByRole('button', { name: 'Lock & challenge' })).toBeDisabled(); // no tactic yet
+  await a.getByRole('radio', { name: 'Pounce' }).click();
+  await a.getByRole('button', { name: 'Lock & challenge' }).click();
+  await expect(page.locator('#arena .note.ok')).toContainText(`#${idA} is waiting for a rival. Your Pounce is locked and sealed.`);
+  await expect(a.locator('.waiting')).toBeVisible();
+
+  // B finds a sealed box and answers with Guard, which beats Pounce.
+  const duel = rival.locator('#arena .duel-open').filter({ has: rival.locator('.duel-title', { hasText: new RegExp(`^#${idA}\\s*vs\\s*anyone$`) }) });
+  await expect(duel).toContainText('A sealed box: it wins the ties.');
+  await duel.getByLabel('Accept with').selectOption(idB);
+  await duel.getByRole('radio', { name: 'Guard' }).click();
+  await duel.getByRole('button', { name: 'Lock & fight' }).click();
+  const told = rival.locator('#arena .note.ok');
+  await expect(told).toContainText(/You (won|lost): #\d+ beat #\d+\. They played Pounce, you played Guard\./, { timeout: 60_000 });
+  const winner = (await told.textContent())!.match(/#(\d+) beat/)![1]!;
+  const loser = winner === idA ? idB : idA;
+  expect([idA, idB]).toContain(winner);
+
+  // Both holders see who won; the tactics open only for the two of them, the winner's first.
+  const result = (p: Page) => p.locator('#arena .arena-results li').filter({ hasText: new RegExp(`#${winner} beat #${loser} sealed`) });
+  const tactics = winner === idA ? 'Pounce vs Guard' : 'Guard vs Pounce';
+  await expect(result(rival)).toContainText(tactics);
+  await expect(result(page)).toBeVisible();
+  await expect(result(page)).not.toContainText('Pounce');
+  await result(page).getByRole('button', { name: 'Tactics' }).click();
+  await expect(result(page)).toContainText(tactics);
+
+  // Records, badges and the week's table: 4 points for a sealed win, 1 for the loss.
+  const [winnerCat, loserCat] = winner === idA ? [a, b] : [b, a];
+  await expect(winnerCat.locator('.record')).toHaveText('1W · 0L · 1 sealed');
+  await expect(loserCat.locator('.record')).toHaveText('0W · 1L');
+  await expect(winnerCat.locator('.badge')).toHaveText(['First Blood', 'Won Blind']);
+  for (const p of [page, rival]) {
+    const row = (id: string) => p.locator('#arena .board li').filter({ has: p.locator('b', { hasText: new RegExp(`^#${id}$`) }) });
+    await expect(row(winner).locator('.pts')).toHaveText('4 pts');
+    await expect(row(loser).locator('.pts')).toHaveText('1 pt');
+  }
 
   // A tier proof for A.
   await a.getByRole('button', { name: 'Prove tier' }).click();
   await a.getByRole('button', { name: 'Prove tier' }).last().click();
-  await expect(page.locator('#arena .note.ok')).toContainText(new RegExp(`#${ids[0]} is (not )?Rare`), { timeout: 60_000 });
+  await expect(page.locator('#arena .note.ok')).toContainText(new RegExp(`#${idA} is (not )?Rare`), { timeout: 60_000 });
 
-  // Neither cat was opened to fight.
-  for (const card of cards) await expect(card.locator('.chip')).toHaveText('Unopened');
-  const record = await a.locator('.arena-info').textContent();
-  expect(record).toMatch(/[01]W · [01]L/);
+  // Nobody opened a box to fight.
+  await expect(cardA.locator('.chip')).toHaveText('Unopened');
+  await expect(cardB.locator('.chip')).toHaveText('Unopened');
+  await rival.context().close();
 });
 
 test('the owner runs the sale from the site', async ({ page }) => {

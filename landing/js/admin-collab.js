@@ -12,6 +12,7 @@
   var NS = window.FheCat;
   var A = NS.admin;
   var SPOT = 'WL';
+  // "community" is no longer offered; older applications may still carry it.
   var KIND = { dao: 'DAO', community: 'COMM', guild: 'GUILD', alpha: 'ALPHA', nft: 'NFT', other: 'OTHER' };
   var KIND_NAME = { dao: 'DAO', community: 'Community', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
   var ROLE = { founder: 'Founder', cm: 'Community manager', mod: 'Moderator', other: 'Other' };
@@ -158,6 +159,16 @@
     return span;
   }
 
+  /** The raffle post's link, and a flag when it isn't from the community's account. */
+  function raffle(x) {
+    if (!x.tweet) return 'Not added yet';
+    var by = (/^https:\/\/x\.com\/([A-Za-z0-9_]{1,15})\/status\//.exec(x.tweet) || [])[1];
+    var known = by && by !== 'i';
+    var parts = [link(known ? 'Post by @' + by : 'Post on X', x.tweet)];
+    if (known && by.toLowerCase() !== String(x.x).toLowerCase()) parts.push("not the community's account");
+    return group(parts);
+  }
+
   function card(x) {
     var li = el('li', 'adm-collab is-' + x.status);
     li.setAttribute('data-id', x.id);
@@ -202,6 +213,7 @@
       var progress = x.winners.length + '/' + x.spots + ' ' + SPOT;
       progress += x.submittedAt ? ' · submitted ' + A.when(x.submittedAt) : isOpen(x) ? ' · ' + left(x) + ' left' : " · time's up, not submitted";
       facts.appendChild(fact('Winners', progress));
+      facts.appendChild(fact('Raffle post', raffle(x)));
     }
     li.appendChild(facts);
     li.appendChild(el('p', 'adm-c-pitch', x.pitch));
@@ -374,11 +386,11 @@
         var rows = [];
         approved().forEach(function (x) {
           x.winners.forEach(function (w) {
-            rows.push([x.id, x.name, 'https://x.com/' + x.x, KIND_NAME[x.kind] || x.kind, w.name, w.wallet, x.submittedAt ? 'yes' : 'no', x.submittedAt || '']);
+            rows.push([x.id, x.name, 'https://x.com/' + x.x, KIND_NAME[x.kind] || x.kind, x.tweet || '', w.name, w.wallet, x.submittedAt ? 'yes' : 'no', x.submittedAt || '']);
           });
         });
         if (!rows.length) return A.toast('No collab winners yet');
-        var head = ['collab', 'community', 'community_x', 'type', 'winner', 'wallet', 'submitted', 'submitted_utc'];
+        var head = ['collab', 'community', 'community_x', 'type', 'raffle_post', 'winner', 'wallet', 'submitted', 'submitted_utc'];
         A.save('fhecat-collab-wallets-' + stamp() + '.csv', A.csv([head].concat(rows)), 'text/csv');
         A.toast(A.fmt(rows.length) + ' collab wallets exported');
       })

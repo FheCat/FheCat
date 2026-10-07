@@ -2466,7 +2466,6 @@ h2 {
   font-weight: 400;
   color: var(--cyan);
 }
-.cb-how,
 .cb-guide-steps {
   display: grid;
   gap: 12px;
@@ -2475,13 +2474,11 @@ h2 {
   list-style: none;
   counter-reset: cb;
 }
-.cb-how li,
 .cb-guide-steps li {
   display: flex;
   gap: 16px;
   counter-increment: cb;
 }
-.cb-how li::before,
 .cb-guide-steps li::before {
   content: counter(cb);
   display: grid;
@@ -2493,7 +2490,6 @@ h2 {
   color: var(--cyan);
   font: 8px/16px var(--f-mono);
 }
-.cb-how b,
 .cb-guide-steps b {
   font-weight: 400;
   color: var(--cyan);
@@ -2605,6 +2601,39 @@ h2 {
   border: 0;
   background: none;
   cursor: pointer;
+}
+.cb-inline {
+  display: inline;
+}
+.cb-warn {
+  max-width: 600px;
+  margin: -8px 0 28px;
+  padding: 12px 16px;
+  background: var(--ink);
+  color: var(--white);
+  box-shadow: -4px 0 0 0 #f5c542;
+}
+.cb-sign {
+  margin: 24px 0 0;
+}
+.cb-sign .cb-wallets {
+  margin: 0 0 8px;
+}
+.cb-raffle {
+  margin: 0 0 28px;
+}
+.cb-raffle .wl-field {
+  margin: 0;
+}
+.cb-raffle-done {
+  margin: 0 0 24px;
+  color: var(--muted);
+}
+.cb-raffle-done .link {
+  display: inline;
+  font: inherit;
+  text-transform: none;
+  overflow-wrap: anywhere;
 }
 .cb-gh {
   display: flex;

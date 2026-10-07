@@ -1,0 +1,3 @@
+# Testnet rehearsal wallets (throwaway keys held only for the rehearsal)
+0x78d5813c962d8fbC6E0118d0FFC0A27fd1846A48
+0xD3F3863f8674c2955ee4219DeaaFd0Eff18C5ed5

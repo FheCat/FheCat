@@ -15,7 +15,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import hre from 'hardhat';
-import type { ContractTransactionResponse, Wallet } from 'ethers';
+import { Interface, type ContractTransactionResponse, type ErrorFragment, type Wallet } from 'ethers';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { createPublicClient, createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -71,10 +71,36 @@ async function tx(step: string, what: string, sent: Promise<ContractTransactionR
   return r;
 }
 
-/** The custom error a call reverted with: decoded by ethers on a real node, named in the message by Hardhat's. */
+/** Every custom error FheCat and the arena can revert with (set once the contracts are loaded). */
+let errors: Interface | undefined;
+
+/** Revert data somewhere in an error, but never the transaction's own calldata. */
+function revertData(o: unknown, depth = 0): string | undefined {
+  if (typeof o === 'string') return /^0x[0-9a-fA-F]{8}/.test(o) ? o : undefined;
+  if (!o || typeof o !== 'object' || depth > 4) return undefined;
+  for (const key of ['data', 'error', 'info', 'cause']) {
+    const found = revertData((o as Record<string, unknown>)[key], depth + 1);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
+ * The custom error a call reverted with. Ethers names it when it decodes the
+ * call itself, a Hardhat node names it in the message, and otherwise (a live
+ * RPC through Hardhat's provider) it is decoded from the raw revert data.
+ */
 function errorName(e: unknown): string | undefined {
   const err = e as { revert?: { name?: string }; message?: string };
-  return err.revert?.name ?? /custom error '(\w+)\(/.exec(err.message ?? '')?.[1];
+  if (err.revert?.name) return err.revert.name;
+  const named = /custom error '(\w+)\(/.exec(err.message ?? '')?.[1];
+  if (named) return named;
+  const data = revertData(e);
+  try {
+    return data && errors?.parseError(data)?.name;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Expects a call to revert with the named custom error. */
@@ -123,6 +149,12 @@ async function main() {
   const nft = (who: Name) => ethers.getContractAt('FheCat', d.fheCat, w[who]) as unknown as Promise<FheCat>;
   const arena = (who: Name) => ethers.getContractAt('FheCatArena', d.arena!, w[who]) as unknown as Promise<FheCatArena>;
   const read = await nft('owner');
+  const seen = new Set<string>();
+  errors = new Interface(
+    [...read.interface.fragments, ...(await arena('owner')).interface.fragments].filter(
+      (f): f is ErrorFragment => f.type === 'error' && !seen.has(f.format()) && Boolean(seen.add(f.format())),
+    ),
+  );
   const rpc = (network.config as { url: string }).url;
   const local = network.name === 'localhost';
 
@@ -225,14 +257,18 @@ async function main() {
     [
       'public-mint',
       async () => {
-        await tx('public-mint', 'sale phase: public', read.setPhase(2));
+        if ((await read.phase()) !== 2n) await tx('public-mint', 'sale phase: public', read.setPhase(2));
         const bob = await nft('bob');
-        await refused('public-mint', 'bob underpays', 'WrongPayment', () => bob.mint.staticCall(1, { value: publicPrice - 1n }));
-        const r = await tx('public-mint', 'bob mints 3 in the public sale', bob.mint(3, { value: publicPrice * 3n }));
-        state.tokens.bob = born(r);
-        check(state.tokens.bob.length === 3, 'three cats born');
+        // Resumable: bob mints once, whatever happens to the checks after it.
+        if (!state.tokens.bob?.length) {
+          await refused('public-mint', 'bob underpays', 'WrongPayment', () => bob.mint.staticCall(1, { value: publicPrice - 1n }));
+          const r = await tx('public-mint', 'bob mints 3 in the public sale', bob.mint(3, { value: publicPrice * 3n }));
+          state.tokens.bob = born(r);
+          check(state.tokens.bob.length === 3, 'three cats born');
+        }
         await refused('public-mint', 'bob mints a 4th', 'ExceedsWalletLimit', () => bob.mint.staticCall(1, { value: publicPrice }));
-        await refused('public-mint', 'a cat beyond 10 per transaction', 'InvalidQuantity', () => bob.mint.staticCall(11, { value: publicPrice * 11n }));
+        // The quantity is checked before payment, so no ETH is needed to see the refusal.
+        await refused('public-mint', 'a cat beyond 10 per transaction', 'InvalidQuantity', () => bob.mint.staticCall(11, { value: 0 }));
       },
     ],
     [

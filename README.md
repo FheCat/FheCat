@@ -68,7 +68,7 @@ Oynamak için sahip önce `FheCat.enterArena()` ile arenanın kedisinin şifreli
 - 32×32 piksel SVG görseller `FheCatRenderer` kontratında zincir üzerinde çizilir. Web sitesi de aynı çizimi TypeScript'te yapar; testler iki çıktının **bayt bayt aynı** olduğunu doğrular. Böylece gizli bakışta DNA tarayıcıdan hiç çıkmaz.
 - **Her gökyüzü farklı:** Reveal edilen her kedinin arka planında, 64 bitlik DNA'nın tamamından seçilen 4 yıldız vardır. Aynı özellikleri taşıyan iki kedi bile farklı görünür.
 - **Kapalı kutular:** Reveal edilmemiş kediler durumlarına göre bir kutu gösterir: Unopened (bantlı kutu), Peeked (aralanmış kapak, karanlıkta iki göz), Opened (açık kutudan yükselen ışık). Etiketteki barkod kedinin kendi şifreli handle'ından türetilir; her kutu farklı görünür ama hiçbir şey sızdırmaz.
-- Koleksiyon ayarları [`contracts/launch.json`](contracts/launch.json) dosyasındadır ve testnet provası ile mainnet için aynı dosya kullanılır: arz 4444, şimdilik ücretsiz mint, cüzdan başına 3 (allowlist'te 2), %5 royalty (ERC-2981). Fiyatlar ve limitler deploy'dan sonra sitedeki Owner bölümünden değiştirilebilir.
+- Koleksiyon ayarları [`contracts/launch.json`](contracts/launch.json) dosyasındadır ve testnet provası ile mainnet için aynı dosya kullanılır: arz 4444, kedi başına 0,00115 ETH (≈ 3 $; mainnet deploy'undan önce o günkü kurla güncellenir), her aşamada cüzdan başına 3 kedi, %5 royalty (ERC-2981). Fiyatlar ve limitler deploy'dan sonra sitedeki Owner bölümünden değiştirilebilir.
 
 Sanatı değiştirmek için: `art/src/sprites/*` dosyalarını düzenleyin, ardından `cd contracts && npm run art:sol` ile zincir üstü veri kütüphanesini yeniden üretin. `npm run art:preview` komutu `art/preview/index.html` dosyasına örnek bir galeri yazar.
 

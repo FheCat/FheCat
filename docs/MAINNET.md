@@ -37,16 +37,18 @@ Not: Kontratların kurucuları FHE çağrısı yapmaz. Yani erişim listesi içi
 
 ## 2. Testnet provası (şimdi)
 
-Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Prova gizlidir: mint yalnızca allowlist'teki test cüzdanlarına açık, site yalnızca Vercel girişiyle açılır ve kaynak kodu explorer'da doğrulanmaz. Adımlar, anahtar kuralları ve test listesi `docs/TESTNET.md` dosyasında.
+Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Claude provayı atılabilir test cüzdanlarıyla yürütür. Prova gizlidir: site yalnızca Vercel girişiyle açılır, kaynak kodu explorer'da doğrulanmaz ve satış prova bitince kapatılır. Adımlar, test listesi ve sonuçlar `docs/TESTNET.md` dosyasında.
 
 ## 3. Lansman günü
 
 1. `cd contracts && FORK=arbitrum npm run test:fork` iki testi de geçmeli. Testler "CofheIsUnavailable" diyerek atlanıyorsa CoFHE henüz açılmamıştır. "NotOnAccessList" diyorsa FheCat listede değildir.
-2. Ayarlar `contracts/launch.json` dosyasındadır ve provadakiyle aynı kalır. Yalnızca ortam değişkenleri gerekir:
-   - `PRIVATE_KEY`: deploy cüzdanı (yalnızca deploy oturumunda, sonra silinir).
-   - `ETHERSCAN_API_KEY`: kaynak kodu doğrulaması.
-   - `ARBITRUM_RPC_URL`: kendi RPC'n.
-   - Sahip olarak bir Safe (multisig) kullanılacaksa `launch.json`'daki `owner` buna göre güncellenir. Deploy sonrası Safe'ten `acceptOwnership()` çağrılır.
+2. Mainnet'i proje sahibi kendi bilgisayarından deploy eder.
+   - **Ayarlar:** `contracts/launch.json` dosyasındadır ve provadakiyle aynı kalır. Deploy'dan önce yalnızca fiyat güncellenir: kedi başına 3 $, o günkü ETH kuruyla ETH'ye çevrilir (`publicPriceEth`, `allowlistPriceEth`). Fiyat sonradan Owner bölümünden de değiştirilebilir.
+   - **Kendi bilgisayarındaki `contracts/.env` dosyasına** (git'e girmez):
+     - `PRIVATE_KEY`: deploy cüzdanı. Yalnızca gas parası tutan yeni bir cüzdan en güvenlisidir. Deploy bitince satır silinir.
+     - `ETHERSCAN_API_KEY`: kaynak kodu doğrulaması.
+     - `ARBITRUM_RPC_URL`: kendi RPC'n.
+   - **Sahip:** `launch.json`'daki `owner` boşsa deploy cüzdanı sahip olur. Asıl cüzdanın ya da bir Safe (multisig) sahip olacaksa adresini buraya yaz. Deploy'dan sonra o cüzdan siteye bağlanıp Owner bölümünden kabul eder (Safe'te `acceptOwnership()`).
 3. Deploy: `CONFIRM_MAINNET=yes npm run deploy:arbitrum`. Adresleri Fhenix'e ilet (erişim listesi gerekiyorsa) ve Arbiscan doğrulamasını kontrol et.
 4. Allowlist:
    - Admin panelden onaylı başvuruların cüzdanlarını dışa aktar (Wallets .txt).

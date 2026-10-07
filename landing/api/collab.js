@@ -1,24 +1,26 @@
 /*
  * /api/collab: community managers' side of fhecat.com/collab.
  *
- * Managers sign in with a wallet: the server hands out a short message with
- * a signed nonce, the wallet signs it (free, no transaction) and the server
- * checks the signature and sets a 7-day session cookie. Cookies and nonces
- * are signed with a key derived from ADMIN_PASSWORD, so changing that
- * password signs managers out too.
+ * Managers fill in the application first and sign in with a wallet when they
+ * send it: the server hands out a short message with a signed nonce, the
+ * wallet signs it (free, no transaction) and the server checks the signature
+ * and sets a 7-day session cookie. That wallet is the way back in to add the
+ * winners. Cookies and nonces are signed with a key derived from
+ * ADMIN_PASSWORD, so changing that password signs managers out too.
  *
+ *   POST {action: 'check', ...}                an application, checked before the wallet signs
  *   GET  ?challenge=0x...                      the message to sign
  *   POST {action: 'signin', address, token, signature}
  *   POST {action: 'signout'}
  *   GET                                        my collabs
  *   POST {action: 'apply', ...}                a new community (pending review)
- *   POST {action: 'save', id, winners}         winners so far (until submitted)
- *   POST {action: 'submit', id, winners}       final winners; locks the list
+ *   POST {action: 'save', id, winners, tweet}  winners and the raffle post so far (until submitted)
+ *   POST {action: 'submit', id, winners, tweet} final winners and the raffle post; locks the list
  */
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { getAddress, isAddress, verifyMessage } from 'viem';
-import { MAX_COLLABS, ensureSchema, managerView, readApplication, readWinners } from './_collab.js';
+import { MAX_COLLABS, ensureSchema, managerView, postOf, readApplication, readWinners } from './_collab.js';
 
 const COOKIE = 'fhecat_collab';
 const SESSION_TTL = 7 * 24 * 60 * 60; // seconds
@@ -67,6 +69,8 @@ function sameOrigin(req) {
     return false;
   }
 }
+
+const taken = (x) => `@${x} has already applied. DM @FheCat on X if that wasn't you.`;
 
 async function state(sql, wallet) {
   await ensureSchema(sql);
@@ -132,6 +136,15 @@ export default async function handler(req, res) {
       setSession(res, '', 0);
       return res.status(200).json({ ok: true });
     }
+    if (body.action === 'check') {
+      // The form is checked before the wallet signs, so a typo never costs a signature.
+      const app = readApplication(body);
+      if (app.error) return res.status(400).json(app);
+      await ensureSchema(sql);
+      const [dup] = await sql`SELECT 1 AS one FROM collabs WHERE lower(x_handle) = lower(${app.value.x})`;
+      if (dup) return res.status(409).json({ error: taken(app.value.x), field: 'x' });
+      return res.status(200).json({ ok: true });
+    }
 
     const wallet = sessionOf(req, key);
     if (!wallet) return res.status(401).json({ error: 'Sign in with your wallet first.' });
@@ -151,7 +164,7 @@ export default async function handler(req, res) {
           VALUES (${wallet}, ${v.name}, ${v.kind}, ${v.x}, ${v.discord}, ${v.website}, ${v.members}, ${v.requested}, ${v.contactX}, ${v.contactDiscord}, ${v.role}, ${v.pitch})`;
       } catch (err) {
         if (err && (err.code === '23505' || /duplicate key/i.test(String(err.message)))) {
-          return res.status(409).json({ error: `@${v.x} has already applied. DM @FheCat on X if that wasn't you.`, field: 'x' });
+          return res.status(409).json({ error: taken(v.x), field: 'x' });
         }
         throw err;
       }
@@ -170,9 +183,14 @@ export default async function handler(req, res) {
       if (list.error) return res.status(400).json(list);
       const submit = body.action === 'submit';
       if (submit && !list.winners.length) return res.status(400).json({ error: 'Add at least one winner first.' });
+      // The raffle post: kept as it is when the page doesn't send it, needed to submit.
+      const tweet = body.tweet === undefined ? row.tweet || '' : postOf(body.tweet);
+      if (tweet === null) return res.status(400).json({ error: "That isn't a link to a post on X (x.com/name/status/...).", field: 'tweet' });
+      if (submit && !tweet) return res.status(400).json({ error: 'Add the link to your raffle post on X first.', field: 'tweet' });
       const saved = await sql`
         UPDATE collabs
         SET winners = ${JSON.stringify(list.winners)}::jsonb,
+            tweet = ${tweet},
             submitted_at = CASE WHEN ${submit}::boolean THEN now() ELSE NULL END
         WHERE id = ${id} AND manager = ${wallet} AND status = 'approved' AND submitted_at IS NULL AND deadline > now()
         RETURNING id`;

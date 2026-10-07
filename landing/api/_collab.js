@@ -3,12 +3,13 @@
  * The leading underscore keeps Vercel from serving this file as an endpoint.
  *
  * A collab is one community (a DAO, a guild, an alpha group...) asking for
- * allowlist spots. Its manager signs in with a wallet and applies. The team
- * approves it with a number of spots and a deadline; the manager then adds
- * the winners' wallets and submits them before the deadline.
+ * allowlist spots. Its manager fills in the application and signs it with a
+ * wallet. The team approves it with a number of spots and a deadline; the
+ * manager then raffles the spots in a post on X, adds the winners' wallets
+ * and submits them, with the post's link, before the deadline.
  */
 
-export const KINDS = { dao: 'DAO', community: 'Community', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
+export const KINDS = { dao: 'DAO', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
 export const ROLES = { founder: 'Founder', cm: 'Community manager', mod: 'Moderator', other: 'Other' };
 export const STATUSES = ['pending', 'approved', 'rejected'];
 /** Communities one manager wallet can apply with. */
@@ -20,6 +21,7 @@ export const MAX_HOURS = 720;
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;
 const WALLET = /^0x[0-9a-fA-F]{40}$/;
 const INVITE = /^(?:https?:\/\/)?(?:www\.)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/([A-Za-z0-9-]{2,32})\/?$/i;
+const POST = /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x|twitter)\.com\/(?:([A-Za-z0-9_]{1,15})|i(?:\/web)?)\/status(?:es)?\/(\d{1,20})(?:[/?#].*)?$/i;
 
 let ready;
 /** Creates the collabs table the first time it is needed; safe to call on every request. */
@@ -55,9 +57,12 @@ export function ensureSchema(sql) {
           deadline timestamptz,
           submitted_at timestamptz,
           reviewed_at timestamptz,
-          winners jsonb NOT NULL DEFAULT '[]'::jsonb
+          winners jsonb NOT NULL DEFAULT '[]'::jsonb,
+          tweet text NOT NULL DEFAULT ''
         )`
     );
+    // Added after the first release: the link to the raffle post on X.
+    await run(() => sql`ALTER TABLE collabs ADD COLUMN IF NOT EXISTS tweet text NOT NULL DEFAULT ''`);
     await run(() => sql`CREATE UNIQUE INDEX IF NOT EXISTS collabs_x_handle ON collabs (lower(x_handle))`);
     await run(() => sql`CREATE INDEX IF NOT EXISTS collabs_manager ON collabs (manager)`);
   })().catch((err) => {
@@ -105,6 +110,14 @@ function siteOf(raw) {
   } catch {
     return null;
   }
+}
+
+/** A post on X as https://x.com/<handle>/status/<id>; "" when empty, null when it is not a post link. */
+export function postOf(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  const m = s.length <= 300 && POST.exec(s);
+  return m ? `https://x.com/${m[1] || 'i'}/status/${m[2]}` : null;
 }
 
 function whole(raw, min, max) {
@@ -184,7 +197,8 @@ export function managerView(r) {
     deadline: iso(r.deadline),
     submittedAt: iso(r.submitted_at),
     createdAt: iso(r.created_at),
-    winners: Array.isArray(r.winners) ? r.winners : []
+    winners: Array.isArray(r.winners) ? r.winners : [],
+    tweet: r.tweet || ''
   };
 }
 

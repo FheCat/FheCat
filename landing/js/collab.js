@@ -2,10 +2,12 @@
  * fhecat.com/collab: communities (DAOs, guilds, alpha groups) apply for
  * allowlist spots, and once approved add their raffle winners' wallets.
  *
- * Sign-in is a wallet signature (free, no transaction): api/collab hands out
- * a message, the wallet signs it, the server sets a session cookie. Then:
- * 1 Apply -> 2 Review (by the team, in the admin) -> 3 Add wallets and submit
- * before the deadline. Everything goes through api/collab.
+ * The form opens right away. Sending it signs in with a wallet (a signature:
+ * free, no transaction): api/collab checks the form, hands out a message, the
+ * wallet signs it, the server sets a session cookie, then the application
+ * goes in. That wallet is the way back in. Then 2 Review (by the team, in the
+ * admin) -> 3 Post the raffle on X, add the winners' wallets and submit them
+ * with the post's link before the deadline. Everything goes through api/collab.
  */
 (function () {
   'use strict';
@@ -14,10 +16,13 @@
   var P = NS.pixel;
   var API = 'api/collab';
   var SPOT = 'WL'; // what a spot is called on this page
+  // "community" is no longer offered; older applications may still carry it.
   var KIND_TAG = { dao: 'DAO', community: 'COMM', guild: 'GUILD', alpha: 'ALPHA', nft: 'NFT', other: 'OTHER' };
   var KIND_NAME = { dao: 'DAO', community: 'Community', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
   var MAX_COLLABS = 5;
   var WALLET = /^0x[0-9a-fA-F]{40}$/;
+  var POST = /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x|twitter)\.com\/(?:[A-Za-z0-9_]{1,15}|i(?:\/web)?)\/status(?:es)?\/\d{1,20}(?:[/?#].*)?$/i;
+  var APPLY_FIELDS = ['name', 'kind', 'members', 'x', 'requested', 'discord', 'website', 'contactX', 'contactDiscord', 'role', 'pitch', 'company'];
 
   var $ = function (sel, root) {
     return (root || document).querySelector(sel);
@@ -31,9 +36,11 @@
     wallet: null, // signed-in wallet, lowercase
     collabs: [],
     selected: null, // collab id on screen
-    applying: false, // the apply form is open
+    applying: false, // the apply form is open (signed in)
+    signin: false, // signed out, and asked to sign in rather than apply
     offset: 0, // server clock minus this clock, ms
-    drafts: {} // unsaved winner rows per collab id
+    drafts: {}, // unsaved winner rows per collab id
+    tweets: {} // unsaved raffle post links per collab id
   };
 
   // ---------------------------------------------------------------------------
@@ -135,12 +142,21 @@
     renderWallets();
   });
 
-  function renderWallets() {
-    var box = $('#cbWallets');
-    if (!box) return;
-    box.textContent = '';
+  function wallets() {
     var list = providers.slice();
     if (!list.length && window.ethereum) list.push({ info: { name: 'Wallet', icon: '' }, provider: window.ethereum });
+    return list;
+  }
+
+  /** The wallet buttons: "Sign in with…" when coming back, "Apply with…" under the form. */
+  function renderWallets() {
+    fillWallets($('#cbWallets'), 'Sign in with ', 'Connect wallet', false);
+    fillWallets($('#cbApplyWallets'), 'Apply with ', 'Connect wallet and apply', true);
+    $('#cbNoWallet').hidden = !!st.wallet || wallets().length > 0;
+  }
+  function fillWallets(box, verb, plain, submits) {
+    box.textContent = '';
+    var list = wallets();
     if (!list.length) {
       var p = el('p', 'cb-nowallet');
       p.textContent = 'No wallet found in this browser. Open fhecat.com/collab in your wallet app (MetaMask, Rabby, OKX…) or install a wallet extension.';
@@ -149,7 +165,9 @@
     }
     list.forEach(function (w, i) {
       var b = el('button', 'btn' + (i ? ' btn-ghost' : ''));
-      b.type = 'button';
+      // Under the form the buttons send it; the form's submit handler reads which one.
+      b.type = submits ? 'submit' : 'button';
+      b.setAttribute('data-wallet', String(i));
       if (w.info.icon && /^data:image\//.test(w.info.icon)) {
         var img = el('img');
         img.src = w.info.icon;
@@ -158,10 +176,11 @@
         img.height = 24;
         b.appendChild(img);
       }
-      b.appendChild(el('span', '', list.length > 1 || w.info.name !== 'Wallet' ? 'Sign in with ' + w.info.name : 'Connect wallet'));
-      b.addEventListener('click', function () {
-        signIn(w.provider);
-      });
+      b.appendChild(el('span', '', list.length > 1 || w.info.name !== 'Wallet' ? verb + w.info.name : plain));
+      if (!submits)
+        b.addEventListener('click', function () {
+          signIn(w.provider);
+        });
       box.appendChild(b);
     });
   }
@@ -173,14 +192,10 @@
     return out;
   }
 
-  function signIn(provider) {
-    var error = $('#cbSigninError');
-    error.textContent = '';
-    $$('#cbWallets button').forEach(function (b) {
-      b.disabled = true;
-    });
+  /** The wallet shares an address and signs the server's message; resolves once signed in. */
+  function connect(provider) {
     var address;
-    provider
+    return provider
       .request({ method: 'eth_requestAccounts' })
       .then(function (accounts) {
         address = accounts && accounts[0];
@@ -192,14 +207,27 @@
           return call('POST', null, { action: 'signin', address: address, token: ch.token, signature: signature });
         });
       })
-      .then(function (s) {
-        take(s);
+      .then(take);
+  }
+  function cancelled(err) {
+    return !!err && (err.code === 4001 || err.code === 'ACTION_REJECTED');
+  }
+
+  function signIn(provider) {
+    var error = $('#cbSigninError');
+    error.textContent = '';
+    $$('#cbWallets button').forEach(function (b) {
+      b.disabled = true;
+    });
+    connect(provider)
+      .then(function () {
+        st.signin = false;
         st.applying = !st.collabs.length;
         render();
         toast('Signed in');
       })
       .catch(function (err) {
-        error.textContent = err && err.code === 4001 ? 'You cancelled in your wallet.' : (err && err.message) || 'Sign-in failed.';
+        error.textContent = cancelled(err) ? 'You cancelled in your wallet.' : (err && err.message) || 'Sign-in failed.';
       })
       .then(function () {
         $$('#cbWallets button').forEach(function (b) {
@@ -209,7 +237,7 @@
   }
 
   $('#cbSwitch').addEventListener('click', function () {
-    if (dirty() && !window.confirm('You have unsaved wallets. Sign out anyway?')) return;
+    if (dirty() && !window.confirm('You have unsaved changes. Sign out anyway?')) return;
     call('POST', null, { action: 'signout' })
       .catch(function () {})
       .then(function () {
@@ -217,9 +245,25 @@
         st.collabs = [];
         st.selected = null;
         st.applying = false;
+        st.signin = true;
         st.drafts = {};
+        st.tweets = {};
         render();
       });
+  });
+  function toSignin() {
+    st.signin = true;
+    render();
+    var first = $('#cbWallets button');
+    if (first) first.focus();
+  }
+  $('#cbSideSigninBtn').addEventListener('click', toSignin);
+  $('#cbSigninBack').addEventListener('click', function () {
+    st.signin = false;
+    $('#cbSigninError').textContent = '';
+    render();
+    var first = $('#cbApply input[name="name"]');
+    if (first) first.focus();
   });
 
   // ---------------------------------------------------------------------------
@@ -253,8 +297,8 @@
   function renderSide() {
     var list = $('#cbGroups');
     list.textContent = '';
-    $('#cbNone').hidden = !!st.wallet && st.collabs.length > 0;
-    $('#cbNone').textContent = st.wallet ? 'No communities yet. Apply on the right.' : 'Sign in to see the communities you applied with.';
+    $('#cbNone').hidden = !st.wallet || st.collabs.length > 0;
+    $('#cbSideSignin').hidden = !!st.wallet;
     st.collabs.forEach(function (c) {
       var li = el('li');
       var b = el('button', 'cb-group is-' + c.status + (c.id === st.selected && !st.applying ? ' on' : ''));
@@ -317,18 +361,17 @@
 
   function renderMain() {
     stopClock();
-    if (!st.wallet) {
+    renderWallets();
+    var c = st.wallet ? current() : null;
+    if (!st.wallet && st.signin) {
       steps(1);
       show('#cbSignin');
-      renderWallets();
       return;
     }
-    var c = current();
-    if (st.applying || !c) {
+    if (!st.wallet || st.applying || !c) {
       steps(1);
       show('#cbApply');
-      $('#cbApplyWallet').textContent = short(st.wallet);
-      $('#cbApplyCancel').hidden = !st.collabs.length;
+      renderApply();
       return;
     }
     if (c.status === 'pending') {
@@ -361,6 +404,20 @@
     renderWinners(c);
   }
 
+  /** Signed out, the form ends in the wallet buttons that send it; signed in, in a plain Apply. */
+  function renderApply() {
+    var out = !st.wallet;
+    var more = !out && st.collabs.length > 0;
+    $('#cbApplyTitle').textContent = more ? 'Add another community.' : 'Bring your community.';
+    $('#cbApplyIntro').hidden = more;
+    $('#cbApplyAs').hidden = out;
+    $('#cbApplyWallet').textContent = short(st.wallet);
+    $('#cbApplyCancel').hidden = !more;
+    $('#cbApplyBtn').hidden = out;
+    $('#cbApplyActions').hidden = out;
+    $('#cbApplySign').hidden = !out;
+  }
+
   // ---------------------------------------------------------------------------
   // step 3: the winners
   // ---------------------------------------------------------------------------
@@ -374,8 +431,14 @@
     }
     return out;
   }
+  function tweetOf(c) {
+    return st.tweets[c.id] !== undefined ? st.tweets[c.id] : c.tweet || '';
+  }
   function dirty() {
-    return Object.keys(st.drafts).length > 0;
+    if (Object.keys(st.drafts).length) return true;
+    return st.collabs.some(function (c) {
+      return st.tweets[c.id] !== undefined && st.tweets[c.id].trim() !== (c.tweet || '');
+    });
   }
 
   function renderWinners(c) {
@@ -391,6 +454,17 @@
     $('#cbWinActions').hidden = !open;
     $('#cbRowsNote').hidden = !open;
     $('#cbWinError').textContent = '';
+
+    // the raffle post: a field while the list is open, a link once it is locked
+    $('#cbRaffle').hidden = !open;
+    var tweet = $('#cbTweet');
+    tweet.value = tweetOf(c);
+    tweet.classList.remove('bad');
+    $('#cbTweetError').textContent = '';
+    $('#cbRaffleDone').hidden = open || !c.tweet;
+    var link = $('#cbTweetLink');
+    link.href = c.tweet || '#';
+    link.textContent = (c.tweet || '').replace(/^https:\/\//, '');
 
     var list = $('#cbRows');
     list.textContent = '';
@@ -527,21 +601,33 @@
     return problem;
   }
 
+  function badTweet(text) {
+    var input = $('#cbTweet');
+    input.classList.add('bad');
+    input.focus();
+    $('#cbTweetError').textContent = text;
+  }
+
   function send(action) {
     var c = current();
     if (!c) return;
     var error = $('#cbWinError');
+    $('#cbTweet').classList.remove('bad');
+    $('#cbTweetError').textContent = '';
     error.textContent = check();
     if (error.textContent) return;
     var rows = readRows();
     var filled = rows.filter(function (r) {
       return r.name || r.wallet;
     }).length;
+    var tweet = $('#cbTweet').value.trim();
+    if (tweet && !POST.test(tweet)) return badTweet("That isn't a link to a post on X (x.com/name/status/...).");
     if (action === 'submit') {
       if (!filled) {
         error.textContent = 'Add at least one winner first.';
         return;
       }
+      if (!tweet) return badTweet('Add the link to your raffle post on X first.');
       var note = filled < c.spots ? ' You are using ' + filled + ' of ' + c.spots + ' spots.' : '';
       if (!window.confirm('Submit ' + plural(filled, 'wallet', 'wallets') + ' for ' + c.name + '? The list is locked after this.' + note)) return;
     }
@@ -549,15 +635,17 @@
     buttons.forEach(function (b) {
       b.disabled = true;
     });
-    call('POST', null, { action: action, id: c.id, winners: rows })
+    call('POST', null, { action: action, id: c.id, winners: rows, tweet: tweet })
       .then(function (s) {
         delete st.drafts[c.id];
+        delete st.tweets[c.id];
         take(s);
         render();
         toast(action === 'submit' ? 'Submitted · ' + plural(filled, 'wallet', 'wallets') : 'Saved · ' + plural(filled, 'wallet', 'wallets'));
       })
       .catch(function (err) {
         if (err.status === 401) return signedOut();
+        if (err.field === 'tweet') return badTweet(err.message);
         error.textContent = err.message;
         if (typeof err.row === 'number') {
           var li = $$('#cbRows .cb-row')[err.row];
@@ -575,6 +663,12 @@
   }
   $('#cbSave').addEventListener('click', function () {
     send('save');
+  });
+  $('#cbTweet').addEventListener('input', function () {
+    var c = current();
+    this.classList.remove('bad');
+    $('#cbTweetError').textContent = '';
+    if (c) st.tweets[c.id] = this.value;
   });
   $('#cbSubmit').addEventListener('click', function () {
     send('submit');
@@ -628,12 +722,36 @@
       n.classList.remove('bad');
     });
     var body = { action: 'apply' };
-    ['name', 'kind', 'members', 'x', 'requested', 'discord', 'website', 'contactX', 'contactDiscord', 'role', 'pitch', 'company'].forEach(function (k) {
+    APPLY_FIELDS.forEach(function (k) {
       body[k] = form.elements[k].value.trim();
     });
-    var btn = $('#cbApplyBtn');
-    btn.disabled = true;
-    call('POST', null, body)
+    // Signed out: check the form first, then the wallet that was picked signs in, then apply.
+    var signedIn = !!st.wallet;
+    var wallet = null;
+    if (!signedIn) {
+      var list = wallets();
+      var picked = ev.submitter && ev.submitter.getAttribute('data-wallet');
+      wallet = list[Number(picked)] || list[0];
+      if (!wallet) {
+        error.textContent = 'You need a wallet to send this. Open fhecat.com/collab in your wallet app (MetaMask, Rabby, OKX…).';
+        return;
+      }
+    }
+    var busy = function (on) {
+      $$('button[type="submit"]', form).forEach(function (b) {
+        b.disabled = on;
+      });
+    };
+    busy(true);
+    var ready = signedIn
+      ? Promise.resolve()
+      : call('POST', null, Object.assign({}, body, { action: 'check' })).then(function () {
+          return connect(wallet.provider);
+        });
+    ready
+      .then(function () {
+        return call('POST', null, body);
+      })
       .then(function (s) {
         take(s);
         st.selected = st.collabs.length ? st.collabs[st.collabs.length - 1].id : null;
@@ -643,8 +761,23 @@
         toast('Applied · we will DM you on X');
       })
       .catch(function (err) {
-        if (err.status === 401) return signedOut();
-        error.textContent = err.message;
+        if (err.status === 401) {
+          // No session (it ran out, or the signature didn't check out): back to the wallet
+          // buttons, with the answers still in the form.
+          st.wallet = null;
+          st.collabs = [];
+          st.selected = null;
+        }
+        // Signed in on the way (the application itself failed): stay on the form.
+        st.applying = !!st.wallet;
+        st.signin = false;
+        render();
+        error.textContent =
+          err.status === 401 && signedIn
+            ? 'Your session ended. Send the form again to sign in.'
+            : cancelled(err)
+              ? 'You cancelled in your wallet. Your answers are still here.'
+              : (err && err.message) || 'Something went wrong.';
         var field = err.field && form.elements[err.field];
         if (field) {
           field.classList.add('bad');
@@ -652,7 +785,7 @@
         }
       })
       .then(function () {
-        btn.disabled = false;
+        busy(false);
       });
   });
   $('#cbApply').addEventListener('input', function (ev) {
@@ -731,6 +864,7 @@
     st.wallet = null;
     st.collabs = [];
     st.selected = null;
+    st.signin = true;
     render();
     $('#cbSigninError').textContent = 'Your session ended. Sign in again.';
   }

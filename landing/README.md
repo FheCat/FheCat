@@ -72,9 +72,9 @@ giriş 12 saat geçerli bir oturum açar. Panelde:
   (satır başına bir adres, küçük harf). Mint için: Approved sekmesi → Wallets.
 - **Collabs sekmesi:** fhecat.com/collab başvuruları kart olarak listelenir: topluluk ve yönetici bilgileri, linkler, tanıtım.
   - Onaylarken WL yer sayısı ve süre (saat) girilir. Onaylı bir topluluğun yer sayısı ve süresi güncellenebilir, gönderilmiş listesi yeniden açılabilir.
-  - Kazananlar kartta açılıp kopyalanabilir.
+  - Kazananlar kartta açılıp kopyalanabilir. Çekiliş postunun linki de kartta durur; post topluluğun kendi X hesabından değilse yanında uyarı çıkar.
   - **Allowlist .txt:** Onaylı waitlist cüzdanlarını ve onaylı collab'ların kazananlarını tekrarsız tek dosyada birleştirir. Gönderilmemiş taslak listeler varsa onları dahil edip etmeyeceğini sorar.
-  - **Collab wallets .csv:** Topluluk, kazanan, cüzdan ve gönderildi bilgisi.
+  - **Collab wallets .csv:** Topluluk, çekiliş postu, kazanan, cüzdan ve gönderildi bilgisi.
 
 Şifreyi değiştirmek için Vercel → Project → Settings → Environment Variables → `ADMIN_PASSWORD`, sonra yeniden
 deploy. Şifre değişince açık oturumlar kapanır.
@@ -95,14 +95,14 @@ SELECT wallet FROM waitlist WHERE status = 'approved' ORDER BY id;
 
 **https://fhecat.com/collab** adresinde. Ana sayfadaki üçüncü düğme (**Collab**) buraya gelir. DAO'lar, guild'ler ve alpha grupları allowlist yeri ister, onaylanınca kendi topluluklarında çekiliş yapıp kazananların cüzdanlarını girer.
 
-1. **Giriş:** Topluluk yöneticisi cüzdanıyla imza atar (ücretsiz, işlem göndermez). Sunucu imzalı bir mesaj verir, cüzdan imzalar, sunucu imzayı doğrulayıp 7 günlük bir oturum açar.
-2. **Apply:** Topluluk adı, türü (DAO, Community, Guild, Alpha group, NFT project, Other), topluluğun X hesabı, isteğe bağlı Discord daveti ve web sitesi, üye sayısı, istenen yer sayısı, yöneticinin X ve Discord adı, rolü ve kısa bir tanıtım. Bir cüzdan en fazla 5 toplulukla başvurabilir; aynı topluluk X hesabı iki kez başvuramaz.
+1. **Apply:** Form hemen açılır, önce cüzdan bağlamak gerekmez. Topluluk adı, türü (DAO, Guild, Alpha group, NFT project, Other), topluluğun X hesabı, isteğe bağlı Discord daveti ve web sitesi, üye sayısı, istenen yer sayısı, yöneticinin X ve Discord adı, rolü ve kısa bir tanıtım. Bir cüzdan en fazla 5 toplulukla başvurabilir; aynı topluluk X hesabı iki kez başvuramaz.
+2. **Gönderme:** Formun altındaki **Apply with …** düğmesi önce formu sunucuda kontrol ettirir (hatalı bir alan imzaya mal olmasın diye), sonra cüzdan bir kez imza atar (ücretsiz, işlem göndermez) ve başvuru kaydedilir. Sunucu imzalı bir mesaj verir, cüzdan imzalar, sunucu imzayı doğrulayıp 7 günlük bir oturum açar. Bu cüzdan, onaydan sonra kazananları girmenin tek yoludur; daha önce başvuran **Sign in** ile aynı cüzdanla girer.
 3. **Review:** Admin panelindeki Collabs sekmesinde onaylanır (yer sayısı ve süre girilir) ya da reddedilir. Bekleyen başvurunun sayfası dakikada bir kendini yeniler.
-4. **Add wallets:** Onaydan sonra sayfada geri sayım ve yer sayısı kadar satır çıkar: kazananın adı (Discord ya da X) ve EVM cüzdanı. Liste bir satıra yapıştırılabilir (her satırda bir isim ve bir cüzdan). **Save wallets** taslağı kaydeder, **Submit wallets** listeyi kilitler. Süre bitince liste değiştirilemez; admin süreyi uzatabilir ya da listeyi yeniden açabilir.
+4. **Add wallets:** Onaydan sonra sayfada geri sayım, çekiliş postunun linki için bir alan ve yer sayısı kadar satır çıkar: kazananın adı (Discord ya da X) ve EVM cüzdanı. Topluluk çekilişi X'te bir postla yapar (rehberdeki hazır post @FheCat'i takip ettirip repost istiyor) ve linkini girer: **Submit wallets** bu link olmadan çalışmaz. Liste bir satıra yapıştırılabilir (her satırda bir isim ve bir cüzdan). **Save wallets** taslağı (link dahil) kaydeder, **Submit wallets** listeyi kilitler. Süre bitince liste değiştirilemez; admin süreyi uzatabilir ya da listeyi yeniden açabilir.
 
 **Collab guide** penceresi kuralları ve çekiliş için kopyalanabilir hazır bir post içerir.
 
-**Kayıtlar:** Aynı Neon veritabanında `collabs` tablosu. Tablo, ilk istekte API tarafından kendiliğinden oluşturulur. Kazananlar tablodaki `winners` (jsonb) sütununda durur.
+**Kayıtlar:** Aynı Neon veritabanında `collabs` tablosu. Tablo, ilk istekte API tarafından kendiliğinden oluşturulur. Kazananlar tablodaki `winners` (jsonb), çekiliş postunun linki `tweet` sütununda durur (`tweet` sonradan eklendi; API eksikse ilk istekte kendisi ekler).
 
 **Güvenlik:** Oturum çerezi ve imza mesajları `ADMIN_PASSWORD`'dan türetilen bir anahtarla imzalanır; bu şifre değişince collab oturumları da kapanır. Sayfa her kullanıcı verisini düz metin olarak gösterir.
 

@@ -64,7 +64,11 @@
               </button>
 
               <h2 class="cb-h">Your communities</h2>
-              <p class="cb-none" id="cbNone">Sign in to see the communities you applied with.</p>
+              <p class="cb-none" id="cbSideSignin">
+                Applied before? <button type="button" class="link cb-cancel cb-inline" id="cbSideSigninBtn">Sign in</button> with the same wallet to see your
+                communities.
+              </p>
+              <p class="cb-none" id="cbNone" hidden>No communities yet. Fill in the form to apply.</p>
               <ul class="cb-groups" id="cbGroups"></ul>
               <button type="button" class="cb-new" id="cbNew" hidden>+ Add another community</button>
 
@@ -89,27 +93,26 @@
 
               <p class="cb-boot mono" id="cbBoot">Decrypting…</p>
 
-              <!-- signed out -->
+              <!-- coming back: sign in with the wallet you applied with -->
               <div class="cb-view" id="cbSignin" hidden>
-                <h2 class="cb-title">Bring your community.</h2>
-                <p class="cb-lead">
-                  DAOs, guilds and alpha groups can get FheCat allowlist spots to raffle to their members. Sign in with your wallet to apply, or to
-                  manage the spots you already have.
-                </p>
-                <ol class="cb-how">
-                  <li><span><b>Apply</b> with your community's details.</span></li>
-                  <li><span><b>We review</b> it and DM you on X.</span></li>
-                  <li><span><b>Add your winners'</b> wallets before the timer ends.</span></li>
-                </ol>
+                <h2 class="cb-title">Welcome back.</h2>
+                <p class="cb-lead">Sign in with the wallet you applied with to see your communities and add your winners.</p>
                 <div class="cb-wallets" id="cbWallets"></div>
                 <p class="cb-fine">Signing in is free and sends no transaction.</p>
                 <p class="wl-error" id="cbSigninError" role="alert"></p>
+                <div class="cb-actions">
+                  <button type="button" class="link cb-cancel" id="cbSigninBack">New here? Apply</button>
+                </div>
               </div>
 
-              <!-- step 1 -->
+              <!-- step 1: the form opens right away; the wallet signs only when it is sent -->
               <form class="cb-view" id="cbApply" novalidate hidden>
-                <h2 class="cb-title">Apply.</h2>
-                <p class="cb-lead">Tell us about your community. Applying as <b id="cbApplyWallet"></b>.</p>
+                <h2 class="cb-title" id="cbApplyTitle">Bring your community.</h2>
+                <p class="cb-lead">
+                  <span id="cbApplyIntro">DAOs, guilds and alpha groups can get FheCat allowlist spots to raffle to their members. Tell us about yours.</span>
+                  <span id="cbApplyAs" hidden>Applying as <b id="cbApplyWallet"></b>.</span>
+                </p>
+                <p class="cb-warn" id="cbNoWallet" hidden>No wallet in this browser. You'll need one to send this: open fhecat.com/collab in your wallet app.</p>
                 <div class="cb-form">
                   <label class="wl-field cb-wide"><span>Community name</span><input name="name" maxlength="40" autocomplete="off" required /></label>
                   <label class="wl-field">
@@ -117,7 +120,6 @@
                     <select name="kind" required>
                       <option value="">Pick one</option>
                       <option value="dao">DAO</option>
-                      <option value="community">Community</option>
                       <option value="guild">Guild</option>
                       <option value="alpha">Alpha group</option>
                       <option value="nft">NFT project</option>
@@ -148,9 +150,16 @@
                   <label class="wl-trap" aria-hidden="true">Company <input name="company" tabindex="-1" autocomplete="off" /></label>
                 </div>
                 <p class="wl-error" id="cbApplyError" role="alert"></p>
-                <div class="cb-actions">
+                <div class="cb-actions" id="cbApplyActions">
                   <button type="button" class="link cb-cancel" id="cbApplyCancel" hidden>Cancel</button>
                   <button type="submit" class="btn" id="cbApplyBtn"><span>Apply</span><i data-sprite="i-arrow"></i></button>
+                </div>
+                <div class="cb-sign" id="cbApplySign" hidden>
+                  <div class="cb-wallets" id="cbApplyWallets"></div>
+                  <p class="cb-fine">
+                    Your wallet signs once to send this: free, no transaction. Use the wallet you'll come back with. It's how you add your winners
+                    later.
+                  </p>
                 </div>
               </form>
 
@@ -186,6 +195,15 @@
                   <h2 class="cb-title" id="cbWinName"></h2>
                   <span class="cb-badge" id="cbBadge"></span>
                 </div>
+                <div class="cb-raffle" id="cbRaffle">
+                  <label class="wl-field">
+                    <span>Your raffle post on X</span>
+                    <input id="cbTweet" name="tweet" inputmode="url" maxlength="300" placeholder="https://x.com/yourcommunity/status/…" autocomplete="off" spellcheck="false" />
+                  </label>
+                  <p class="cb-fine">Post the raffle on your community's X (the guide has a post ready), then paste its link. You can't submit without it.</p>
+                  <p class="wl-error" id="cbTweetError" role="alert"></p>
+                </div>
+                <p class="cb-raffle-done" id="cbRaffleDone" hidden>Raffle post: <a class="link" id="cbTweetLink" href="#" target="_blank" rel="noopener"></a></p>
                 <div class="cb-sub">
                   <span id="cbWinWhat">Add your WL winners</span>
                   <span id="cbLeft"></span>
@@ -222,12 +240,13 @@
         <ol class="cb-guide-steps">
           <li><span><b>Apply</b> with your community. We review every application by hand and DM you on X.</span></li>
           <li><span><b>Get your spots.</b> Once approved, this page shows how many FheCat allowlist (WL) spots you have and a timer to hand them out.</span></li>
-          <li><span><b>Run a raffle</b> or a giveaway in your community. Use the post below or your own.</span></li>
+          <li><span><b>Post your raffle</b> on your community's X. Use the post below or your own, with @FheCat in it.</span></li>
           <li><span><b>Add the winners</b> here: a name (Discord or X) and an EVM wallet (0x…) per person. Save as you go.</span></li>
-          <li><span><b>Submit</b> before the timer ends. Submitted wallets go on the FheCat allowlist for the mainnet mint.</span></li>
+          <li><span><b>Submit</b> with the link to your raffle post, before the timer ends. Submitted wallets go on the FheCat allowlist for the mainnet mint.</span></li>
         </ol>
         <h3 class="cb-guide-h">Rules</h3>
         <ul class="cb-rules">
+          <li><span>The raffle runs in public, in a post on X. We need its link to take your list.</span></li>
           <li><span>One person per spot, one wallet per person.</span></li>
           <li><span>EVM wallets only (they start with 0x). No exchange deposit addresses.</span></li>
           <li><span>No bots, no farms. We may remove wallets that look like either.</span></li>

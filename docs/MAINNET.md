@@ -51,8 +51,8 @@ Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek
    - **Sahip:** `launch.json`'daki `owner` boşsa deploy cüzdanı sahip olur. Asıl cüzdanın ya da bir Safe (multisig) sahip olacaksa adresini buraya yaz. Deploy'dan sonra o cüzdan siteye bağlanıp Owner bölümünden kabul eder (Safe'te `acceptOwnership()`).
 3. Deploy: `CONFIRM_MAINNET=yes npm run deploy:arbitrum`. Adresleri Fhenix'e ilet (erişim listesi gerekiyorsa) ve Arbiscan doğrulamasını kontrol et.
 4. Allowlist:
-   - Admin panelden onaylı başvuruların cüzdanlarını dışa aktar (Wallets .txt).
-   - `npx hardhat fhecat:allowlist wallets.txt --write-only` yalnızca `web/public/allowlist.json` dosyasını yazar; anahtar gerekmez.
+   - Admin panelinin Collabs sekmesinden **Allowlist .txt** dosyasını indir. Dosya, onaylı waitlist cüzdanlarıyla onaylı collab'ların kazananlarını tekrarsız birleştirir.
+   - `npx hardhat fhecat:allowlist fhecat-allowlist-<tarih>.txt --write-only` yalnızca `web/public/allowlist.json` dosyasını yazar; anahtar gerekmez.
    - Site yayınlanınca sahip, sitedeki Owner bölümünden **Use this site's list** ile kökü kontrata yazar.
 5. Mint sitesi:
    - `deployments.json` ile `allowlist.json` dosyalarını commit'le.

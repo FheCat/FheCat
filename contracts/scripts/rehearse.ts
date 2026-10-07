@@ -20,7 +20,7 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { createPublicClient, createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrumSepolia, baseSepolia, hardhat, sepolia } from 'viem/chains';
-import { FheTypes, type CofheClient } from '@cofhe/sdk';
+import { Encryptable, FheTypes, type CofheClient } from '@cofhe/sdk';
 import { renderCatSvg, renderSealedSvg } from '../../art';
 import { loadDeployment } from '../tasks/lib';
 import type { FheCat, FheCatArena } from '../typechain-types';
@@ -343,25 +343,60 @@ async function main() {
         const [, , a3] = tokens('alice');
         const [b1] = tokens('bob');
         const ar = await arena('alice');
-        await refused('arena', `alice challenges with #${a3} before entering`, 'NotInArena', () => ar.challenge.staticCall(a3, 0));
+        const at = d.arena!;
+        // A tactic encrypted with the player's own key, for this arena only.
+        const lock = async (who: Name, tactic: number) => {
+          const c = await cofhe(who);
+          const [hash, proof] = await c.encryptInputs([Encryptable.uint8(BigInt(tactic))]).setConsumingContract(at).execute();
+          return [hash, proof] as const;
+        };
+        const unused = [ethers.ZeroHash, '0x'] as const; // refusals come before the tactic is read
+        await refused('arena', `alice challenges with #${a3} before entering`, 'NotInArena', () => ar.challenge.staticCall(a3, 0, ...unused));
         await tx('arena', `alice lets the arena in for #${a3}`, (await nft('alice')).enterArena(a3));
         await tx('arena', `bob lets the arena in for #${b1}`, (await nft('bob')).enterArena(b1));
-        const rc = await tx('arena', `alice challenges anyone with #${a3}`, ar.challenge(a3, 0));
+        const [pounce, ms0] = await timed(() => lock('alice', 0));
+        note('arena', 'alice encrypts her tactic (Pounce) with the SDK', { ms: ms0 });
+        const rc = await tx('arena', `alice challenges anyone with #${a3}, her tactic sealed`, ar.challenge(a3, 0, ...pounce));
         const event = (r: typeof rc, name: string) => r.logs.map((l) => ar.interface.parseLog(l)).find((e) => e?.name === name)!;
         const duelId = event(rc, 'DuelOpened').args.duelId as bigint;
         state.duel = duelId.toString();
-        const ra = await tx('arena', `bob accepts duel #${duelId} with #${b1}`, (await arena('bob')).accept(duelId, b1));
+        const open = await ar.duels(duelId);
+        check(!(await acl.isAllowed(open.challengerTactic, w.bob.address)), 'bob cannot see alice’s tactic before he fights');
+        await refused('arena', `carol accepts with bob’s #${b1}`, 'NotHolder', async () => (await arena('carol')).accept.staticCall(duelId, b1, ...unused));
+        const ra = await tx('arena', `bob accepts duel #${duelId} with #${b1}, Guard sealed`, (await arena('bob')).accept(duelId, b1, ...(await lock('bob', 2))));
         const fought = event(ra, 'DuelFought');
+        const duel = await ar.duels(duelId);
+        check(
+          (await acl.isAllowed(duel.challengerTactic, w.bob.address)) && (await acl.isAllowed(duel.opponentTactic, w.alice.address)),
+          'after the fight each holder may see the other’s tactic',
+        );
+        check(
+          !(await acl.isAllowed(duel.challengerTactic, w.carol.address)) && !(await acl.isAllowed(duel.opponentTactic, w.carol.address)),
+          'a bystander may not',
+        );
         const c = await cofhe('carol');
         const [res, ms] = await timed(() => retry(() => c.decryptForTx(fought.args.outcomeHandle).withoutACP().execute()));
-        note('arena', `public decryption of the duel’s result`, { ms });
-        await tx('arena', 'carol (a bystander) settles the duel', (await arena('carol')).settle(duelId, res.decryptedValue === 1n, res.signature));
-        const duel = await ar.duels(duelId);
-        const [winner, loser] = res.decryptedValue === 1n ? [a3, b1] : [b1, a3];
-        check(duel.status === 3n && duel.winner === winner, 'the duel is settled with that winner');
+        const outcome = Number(res.decryptedValue);
+        check(outcome === 1 || outcome === 2, 'the result is 1 (challenger) or 2 (opponent)');
+        note('arena', `public decryption of the duel’s result: the ${outcome === 1 ? 'challenger' : 'opponent'} won`, { ms });
+        await refused('arena', 'carol settles with the other result', 'InvalidDecryptionProof', async () =>
+          (await arena('carol')).settle.staticCall(duelId, 3 - outcome, res.signature),
+        );
+        const rs = await tx('arena', 'carol (a bystander) settles the duel', (await arena('carol')).settle(duelId, outcome, res.signature));
+        const [winner, loser] = outcome === 1 ? [a3, b1] : [b1, a3];
+        check((await ar.duels(duelId)).status === 3n && (await ar.duels(duelId)).winner === winner, 'the duel is settled with that winner');
         const [rw, rl] = [await ar.records(winner), await ar.records(loser)];
         check(rw.wins === 1n && rl.losses === 1n, 'records updated');
-        note('arena', `#${winner} beat #${loser}; neither cat was opened (${await read.stateOf(a3)}, ${await read.stateOf(b1)})`);
+        const week = event(rs, 'DuelSettled').args.week as bigint;
+        const sealedWin = (outcome === 1 ? duel.challengerSealed : duel.opponentSealed) as boolean;
+        check((await ar.weeklyPoints(week, winner)) === (sealedWin ? 4n : 3n) && (await ar.weeklyPoints(week, loser)) === 1n, 'weekly points: the win and the loss');
+        check((rw.badges & 1n) === 1n && ((rw.badges & 2n) === 2n) === sealedWin, 'the winner’s badges');
+        const b = await cofhe('bob');
+        await b.acp.getOrCreateSelfACP();
+        const [ta, tb] = await Promise.all([duel.challengerTactic, duel.opponentTactic].map((h) => retry(() => b.decryptForView(h, FheTypes.Uint8).execute())));
+        check(Number(ta) === 0 && Number(tb) === 2, 'bob decrypts both tactics in private: Pounce and Guard');
+        note('arena', `#${winner} beat #${loser}${sealedWin ? ' with a sealed box' : ''}; neither cat was opened (${await read.stateOf(a3)}, ${await read.stateOf(b1)})`);
+        await refused('arena', `alice challenges #${b1} again this week`, 'AlreadyMetThisWeek', () => ar.challenge.staticCall(a3, b1, ...unused));
         const rt = await tx('arena', `bob asks whether #${b1} is Rare`, (await arena('bob')).claimTier(b1, 1));
         const claimed = event(rt, 'TierClaimed');
         const [ans, ms2] = await timed(() => retry(() => c.decryptForTx(claimed.args.resultHandle).withoutACP().execute()));

@@ -71,7 +71,9 @@ Gizli site push'tan sonra kendini yeniden derler.
 1. fhecat.com/admin'de admin şifresiyle giriş yap ve **Open the test mint**'e bas.
 2. Cüzdanını (MetaMask, Rabby vb.) Arbitrum Sepolia ağında bağla. Test ETH'si için sitedeki **Testnet ETH faucet** linkini kullan ya da Claude'dan iste.
 3. Satış Public aşamada açık: cüzdan başına en fazla 3 kedi, kedi başına 0,00115 ETH.
-4. Deneyebileceklerin: mint, gizlice bakma (peek), kendi kanıtınla reveal, kutuyu herkese açma, kediyi başka cüzdana gönderme, arena (düello ve kademe kanıtı).
+4. Deneyebileceklerin: mint, gizlice bakma (peek), kendi kanıtınla reveal, kutuyu herkese açma, kediyi başka cüzdana gönderme, Kör Arena (şifreli taktikle düello, haftalık tablo, rozetler ve kademe kanıtı).
+   - Arena 7 Ekim'de yenilendi. Kediler yeni arenaya **Enter arena** ile bir kez yeniden girer. Herkese açılmış (Opened ya da Revealed) kedilerin DNA'sı zaten açık olduğu için onlar girmeden dövüşebilir.
+   - Kendi kedinle dövüşemezsin; ikinci bir cüzdan ya da başka bir oyuncu gerekir.
 5. Owner bölümü yalnızca kontratın sahibi olan cüzdanda görünür. Testnet'te sahip, Claude'un test cüzdanıdır. Sahip araçlarını da denemek istersen sahiplik iki adımda senin cüzdanına devredilebilir.
 
 Kopya, mint sitesinin kodundan derlenir. Site değişince `cd web && npm run build:admin-copy` ile yeniden derlenip `landing/admin/mint/` commit'lenir.
@@ -83,7 +85,7 @@ Kopya, mint sitesinin kodundan derlenir. Site değişince `cd web && npm run bui
 3. Gizlice bakma (peek): kedi "Peeked" olur, DNA'yı yalnızca bakan görür.
 4. Peek eden sahibin kendi kanıtıyla reveal'ı. Başkasının ve sahte DNA'nın reddedilmesi.
 5. Peek edilmiş kediyi başka cüzdana gönderme: işaret kalır, yeni sahip DNA'yı çözemez. Kutuyu açma ve reveal'ı herhangi birinin tamamlaması.
-6. Arena: giriş, düello, sonucu üçüncü birinin yazması, kademe kanıtı. Kediler açılmaz.
+6. Kör Arena: giriş, şifreli taktikle meydan okuma ve kabul, sonucu üçüncü birinin yazması, yanlış sonucun reddedilmesi, taktiklerin yalnızca iki oyuncuya açılması, haftalık puan ve rozetler, aynı hafta ikinci karşılaşmanın reddedilmesi, kademe kanıtı. Kediler açılmaz.
 7. Sahip araçları: ekip rezervi, fiyat, limit, royalty, para çekme. Başkasının denemelerinin reddedilmesi.
 8. İki adımlı sahiplik devri ve geri alınması.
 9. Zincirdeki çizimin sitedeki çizimle bayt bayt aynı olması.
@@ -97,7 +99,8 @@ Kopya, mint sitesinin kodundan derlenir. Site değişince `cd web && npm run bui
 |---|---|
 | FheCat | `0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24` (blok 316602853) |
 | FheCatRenderer | `0x363fF5772cfA089e2A16D64a27087Ff54fC02F0C` |
-| FheCatArena | `0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5` |
+| FheCatArena (Kör Arena) | `0x2c72A0cdBB5685A0461989964C9574eAc202c2c7` |
+| FheCatArena (ilk sürüm, güç düellosu; artık kullanılmıyor) | `0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5` |
 
 - Kurulum ve allowlist ayarı yaklaşık 0,0008 ETH tuttu.
 - Test ETH'si Ethereum Sepolia'dan Arbitrum'un resmi köprüsüyle geldi; köprü 13 dakika sürdü.
@@ -190,4 +193,58 @@ Site, fhecat.com/admin/mint/ kopyasından admin girişiyle ve SDK 0.8.0 ile baş
 | Kademe kanıtı: "#15 is not Rare" | 3,5 sn |
 | Sahip 0,00345 ETH'yi çekti | |
 
-- Şu anki durum: 15 kedi var ve kontratta para yok. Satış, proje sahibinin kendi testleri için Public aşamada açık bırakıldı. Sahiplik `owner` cüzdanında.
+- Bu çalıştırmanın sonunda 15 kedi vardı ve kontratta para yoktu.
+
+## Kör Arena (7 Ekim 2026)
+
+İlk arena, iki kedinin Gücünü karşılaştıran basit bir düelloydu. Yerine Kör Arena kuruldu: `arena:deploy` yeni `FheCatArena`'yı deploy etti ve FheCat'i ona yönlendirdi (`setArena`). Zincirdeki bytecode, repodaki derlemeyle bayt bayt aynı (15.105 bayt).
+
+**`rehearse.ts` arena adımı: geçti.** Taktikler Node'da Fhenix SDK'sıyla şifrelendi; sonuçları gerçek eşik ağı çözdü.
+
+- `alice` #3 ile herkese meydan okudu (Pounce, şifreli). `bob` #5 ile Guard seçerek kabul etti. Sonucu üçüncü bir cüzdan (`carol`) kanıtıyla yazdı: "#5 beat #3", kapalı kutuyla.
+- Kontroller:
+  - Dövüşten önce `bob` alice'in taktiğini göremiyordu.
+  - Dövüşten sonra iki taktiği de yalnızca iki oyuncu görebiliyordu; `bob` ikisini de kendi tarayıcısında (izinli) çözdü.
+  - Kazanan 4 puan (kapalı kutuyla galibiyet), kaybeden 1 puan aldı. Kazananın First Blood ve Won Blind rozetleri var.
+  - Hiçbir kedi açılmadı.
+- Toplam gas ücreti 0,00043 ETH.
+
+| İşlem | Gas |
+|---|---|
+| Arenaya giriş | 84.600 |
+| Meydan okuma (şifreli taktik; kedinin içgüdüleri ilk kez hesaplanır) | 1.005.102 |
+| Kabul ve dövüş (rakibin içgüdüleri ilk kez hesaplanır, puanlar FHE ile) | 2.324.001 |
+| Sonucu yazma | 210.685 |
+| Kademe sorusu (Güç ilk kez hesaplanır) | 982.636 |
+| Kademe cevabını yazma | 80.936 |
+
+| Ne | Süre |
+|---|---|
+| Taktiği şifreleme (Node, ilk kez) | 19,4 sn |
+| Düello sonucunun herkese açık çözümü | 4,0 sn |
+| Kademe cevabı | 0,2 sn |
+
+Arenanın ilk işlemleri, şifreli sabitleri bir kez oluşturduğu için daha pahalıdır. Sonraki düellolar daha ucuzdur (aşağıdaki site testinde meydan okuma ≈634k, kabul ≈1,74M).
+
+**Reddedilenler**
+
+| Durum | Hata |
+|---|---|
+| Arenaya girmeden meydan okuma | `NotInArena` |
+| Başkasının kedisiyle kabul | `NotHolder` |
+| Düello sonucunu ters yazma | `InvalidDecryptionProof` |
+| Aynı iki kedinin aynı hafta tekrar karşılaşması | `AlreadyMetThisWeek` |
+
+**Site testi: kör düello tarayıcıda geçti.** Site, yeni arenayla derlendi. İki cüzdan (`dave` ve `bob`) gerçek kullanıcı gibi oynadı; taktikler tarayıcıda, gerçek CoFHE doğrulayıcısıyla şifrelendi.
+
+| Adım | Süre | Gas |
+|---|---|---|
+| `bob`'un kapalı #6'sı arenaya girdi | | 84.600 |
+| `dave`, açık #11 ile Trick seçip herkese meydan okudu (şifreleme ve işlem) | 18,9 sn | 634.405 |
+| `bob`, #6 ile Pounce seçip kabul etti; site sonucu çözüp yazdı ve iki taktiği gösterdi: "You won: #6 beat #11. They played Trick, you played Pounce." | 27,0 sn | 1.743.799 + 192.918 |
+| `dave` sonuçlarda **Tactics**'e bastı: "#6 beat #11 sealed · Pounce vs Trick" | 2,4 sn | |
+
+- Haftalık tablo: #5 ve #6 4'er puan, #3 ve #11 1'er puan.
+- Bu dört işlemin toplam ücreti 0,00024 ETH.
+
+**Şu anki durum:** 18 kedi var (#16–#18 proje sahibinin). Satış, proje sahibinin kendi testleri için Public aşamada açık. Sahiplik `owner` cüzdanında.

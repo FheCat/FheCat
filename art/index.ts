@@ -19,3 +19,16 @@ export {
 export { STATES } from './src/render';
 export type { Trait, TokenState, CatState } from './src/render';
 export { TRAITS } from './src/traits';
+export {
+  TACTICS,
+  beats,
+  INSTINCT_TRAITS,
+  INSTINCT_FROM,
+  instinctFromOption,
+  countsForInstinct,
+  instinctsOf,
+  instinctReasons,
+  RPS_POINTS,
+  duelOutcome,
+} from './src/arena';
+export type { Tactic } from './src/arena';

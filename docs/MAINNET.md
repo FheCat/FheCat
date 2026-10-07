@@ -22,7 +22,8 @@ Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet
 
 - Kontratlar cofhe-contracts 1.0.0 ile derleniyor, yani mainnet'te doğru TaskManager'a ulaşıyor. (0.2.0 ile derlenen sürüm mainnet'te hiç çalışmazdı: eski sabit adreste kontrat yok.)
 - Proje `@cofhe/sdk` ve `@cofhe/hardhat-plugin` 0.8.0'a yükseltildi. Mint sitesi Arbitrum One'ı ve Ethereum'u tanıyor; `deployments.json`'a mainnet adresi girildiği an o zincirde çalışır.
-- 0.8.0 ile 48 birim testi, 4 tarayıcı (E2E) testi ve Arbitrum Sepolia fork testleri geçiyor.
+- 0.8.0 ile 50 birim testi, 4 tarayıcı (E2E) testi (iki cüzdanlı kör düello dahil) ve Arbitrum Sepolia fork testleri geçiyor.
+- Kör Arena testnet'te gerçek şifreli düellolarla denendi: taktikler Node'da ve tarayıcıda `encryptInputs` ile şifrelendi, sonuçları eşik ağı çözdü (`docs/TESTNET.md`).
 - Deploy betiği mainnet'te `CONFIRM_MAINNET=yes` olmadan çalışmaz.
 
 ## 1. Fhenix'e sorulacaklar (en önemli adım)
@@ -31,7 +32,7 @@ Lansmana yetişmek bu cevaplara bağlı:
 
 1. FheCat'in iki kontratı (`FheCat` ve `FheCatArena`) mainnet erişim listesine nasıl alınır? Kontrat adresi mi istiyorlar, başvuru formu mu var?
 2. Hangi zincir öneriliyor? (Önerimiz Arbitrum One: mint ≈174k gas, Ethereum'da aynı işlem çok daha pahalı.)
-3. Lansmanda `FHE.randomEuint64()` (şifreli rastgelelik) ve herkese açık şifre çözme (`decryptForTx(...).withoutACP()`) açık olacak mı?
+3. Lansmanda `FHE.randomEuint64()` (şifreli rastgelelik), şifreli girdiler (`encryptInputs` ve doğrulayıcı imzası; Kör Arena'nın taktikleri bununla gelir) ve herkese açık şifre çözme (`decryptForTx(...).withoutACP()`) açık olacak mı?
 
 Not: Kontratların kurucuları FHE çağrısı yapmaz. Yani erişim listesi için adres gerekiyorsa önce deploy edip adresleri iletebiliriz. Mint, liste onayı gelene kadar açılmaz.
 

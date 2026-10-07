@@ -488,46 +488,6 @@ select.field option {
 
 /* ---------- the arena ---------- */
 
-.tiers {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 24px;
-  margin: 48px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.tier {
-  display: grid;
-  gap: 4px;
-  margin: 0 0 0 4px;
-  padding: 12px 16px;
-  background: var(--deep);
-  color: var(--muted);
-  font: 16px/24px var(--f-text);
-  box-shadow: -4px 0 0 0 var(--c);
-}
-.tier b {
-  color: var(--white);
-  font: 16px/24px var(--f-label);
-  text-transform: uppercase;
-}
-.tier .mono {
-  color: var(--c);
-  font-size: 8px;
-  line-height: 16px;
-}
-.tier-1 {
-  --c: var(--cyan-dim);
-}
-.tier-2 {
-  --c: var(--cyan);
-}
-.tier-3 {
-  --c: #f5c542;
-}
-.tier-4 {
-  --c: #e98baa;
-}
 #arena > .wrap > .note {
   max-width: 880px;
   margin-top: 40px;
@@ -668,6 +628,316 @@ select.field option {
 }
 .arena-results li.is-win .px {
   color: var(--cyan);
+}
+
+/* the blind arena */
+.tactics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tactic {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 16px;
+  align-items: center;
+  margin: 0 0 0 4px;
+  padding: 12px 16px;
+  background: var(--deep);
+  color: var(--muted);
+  font: 16px/24px var(--f-text);
+  box-shadow: -4px 0 0 0 var(--c);
+}
+.tactic .px {
+  --u: 6px;
+  grid-row: span 3;
+  color: var(--c);
+}
+.tactic b {
+  color: var(--white);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.tactic-from {
+  color: var(--steel);
+}
+.tactic-0 {
+  --c: #ff5d73;
+}
+.tactic-1 {
+  --c: #8a74d6;
+}
+.tactic-2 {
+  --c: var(--cyan);
+}
+.arena-rule {
+  max-width: 880px;
+  margin: 24px 4px 0;
+  color: var(--muted);
+  font: 16px/24px var(--f-text);
+}
+.arena-rule b {
+  color: var(--white);
+  font-weight: 400;
+}
+.tactic-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px;
+}
+.tactic-btn {
+  --o: var(--steel-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: var(--deep);
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 -4px 0 0 var(--o),
+    0 4px 0 0 var(--o),
+    -4px 0 0 0 var(--o),
+    4px 0 0 0 var(--o);
+}
+.tactic-btn .px {
+  --u: 3px;
+  color: var(--c);
+}
+.tactic-btn:hover:not(:disabled) {
+  color: var(--white);
+}
+.tactic-btn.on {
+  --o: var(--c);
+  background: var(--c);
+  color: var(--ink);
+}
+.tactic-btn.on .px {
+  color: var(--ink);
+}
+.tactic-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.box-chip {
+  margin: 0;
+}
+.box-0 {
+  --o: var(--cyan-dim);
+  color: var(--cyan);
+}
+.box-1 {
+  --o: #b8860b;
+  color: #f5c542;
+}
+.instincts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+  margin: 4px 0 0;
+  color: var(--text);
+  font: 16px/24px var(--f-text);
+}
+.instincts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.instincts em,
+.instincts.is-sealed {
+  color: var(--steel);
+  font-style: normal;
+}
+.pips {
+  display: inline-flex;
+  gap: 4px;
+}
+.pips i {
+  width: 8px;
+  height: 8px;
+  background: var(--steel-3);
+}
+.pips i.on {
+  background: var(--cyan);
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 4px 0 0;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f5c542;
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.badge .px,
+.board-badges .px,
+.badge-list .px,
+.crown-line .px {
+  --u: 3px;
+  color: #f5c542;
+}
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cyan);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 0 0 var(--cyan-dim);
+}
+.link-btn:hover:not(:disabled) {
+  color: var(--white);
+  box-shadow: 0 4px 0 0 var(--white);
+}
+.link-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.waiting {
+  color: var(--cyan);
+  font-size: 8px;
+  line-height: 16px;
+}
+.arena-thumb.is-small,
+.arena-thumb.is-small img {
+  width: 40px;
+  height: 40px;
+}
+.duel-open {
+  display: grid;
+  gap: 8px;
+  padding: 16px 0;
+}
+.duel-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.duel-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--white);
+  font: 24px/32px var(--f-text);
+}
+.duel-title b {
+  font-weight: 400;
+}
+.duel-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 0;
+}
+.duel-meta .mono {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 16px;
+}
+.bluff {
+  margin: 0;
+  color: var(--steel);
+  font: 16px/24px var(--f-text);
+}
+.duel-open .arena-form {
+  margin-top: 4px;
+}
+.board {
+  margin: 0;
+  padding: 8px 0 0;
+  list-style: none;
+}
+.board li {
+  display: grid;
+  grid-template-columns: 24px 40px auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  color: var(--text);
+  font: 16px/24px var(--f-text);
+}
+.board li.is-mine b {
+  color: var(--cyan);
+}
+.board b {
+  color: var(--white);
+  font-weight: 400;
+}
+.rank {
+  color: var(--steel);
+  font-size: 8px;
+  line-height: 16px;
+  text-align: right;
+}
+.board-badges {
+  display: inline-flex;
+  gap: 4px;
+}
+.pts {
+  color: var(--cyan);
+  font-size: 8px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.board-note {
+  margin: 8px 0 0;
+  color: var(--steel);
+  font: 16px/24px var(--f-text);
+}
+.crown-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  color: var(--text);
+  font: 16px/24px var(--f-text);
+}
+.crown-line b {
+  color: #f5c542;
+  font-weight: 400;
+}
+.badge-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 0 8px;
+  list-style: none;
+}
+.badge-list li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  color: var(--muted);
+  font: 16px/24px var(--f-text);
+}
+.badge-list b {
+  color: var(--white);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.arena-results em {
+  color: var(--steel);
+  font-style: normal;
+}
+.arena-results li .link-btn {
+  margin-left: auto;
 }
 
 /* ---------- how it works ---------- */
@@ -924,8 +1194,8 @@ select.field option {
   .mintbox {
     width: min(440px, 100% - 12px);
   }
-  .tiers {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .tactics {
+    grid-template-columns: minmax(0, 1fr);
   }
   .arena-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -939,6 +1209,18 @@ select.field option {
   .mintbox,
   .cat-card {
     padding: 16px;
+  }
+  .board li {
+    grid-template-columns: 24px 40px auto minmax(0, 1fr) auto;
+  }
+  .board-badges {
+    display: none;
+  }
+  .badge-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .badge-list li span {
+    grid-column: 2;
   }
   .mintbox {
     width: calc(100% - 12px);
@@ -963,11 +1245,22 @@ select.field option {
   .cat-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .tiers {
-    gap: 16px;
-  }
   .arena-panel {
     padding: 0 16px 8px;
+  }
+  /* Three tactics side by side, icon over name. */
+  .tactic-pick {
+    flex-wrap: nowrap;
+    gap: 12px;
+  }
+  .tactic-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    height: auto;
+    padding: 8px 4px;
   }
   .owner-grid {
     grid-template-columns: minmax(0, 1fr);

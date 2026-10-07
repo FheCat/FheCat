@@ -5,8 +5,8 @@
   "owner": "",
   "royaltyReceiver": "",
   "royaltyBps": 500,
-  "publicPriceEth": "0",
-  "allowlistPriceEth": "0",
+  "publicPriceEth": "0.00115",
+  "allowlistPriceEth": "0.00115",
   "maxPerWallet": 3,
-  "allowlistMaxPerWallet": 2
+  "allowlistMaxPerWallet": 3
 }

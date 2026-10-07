@@ -124,6 +124,8 @@
     call('POST', null, { action: 'login', password: $('#admPass').value })
       .then(function () {
         $('#admPass').value = '';
+        // Sent here from the testnet mint copy (middleware.js): go back to it.
+        if (new URLSearchParams(location.search).get('next') === 'mint') return location.assign('admin/mint/');
         return load(true);
       })
       .catch(function (err) {

@@ -3,7 +3,8 @@
  *
  * Signing in with ADMIN_PASSWORD (a Vercel env var) sets a 12-hour session
  * cookie. The cookie is signed with that same password, so changing the
- * password signs every session out.
+ * password signs every session out. The same session opens the testnet mint
+ * copy at /admin/mint/ (see middleware.js).
  *
  *   POST {action: 'login', password}           sign in
  *   POST {action: 'logout'}                    sign out
@@ -24,13 +25,20 @@ const digest = (s) => crypto.createHash('sha256').update(String(s)).digest();
 const same = (a, b) => crypto.timingSafeEqual(digest(a), digest(b));
 const sign = (exp, key) => crypto.createHmac('sha256', key).update(`fhecat-admin.${exp}`).digest('base64url');
 
-function signedIn(req, key) {
+/** The session cookie's expiry and signature, or null unless it is valid. */
+function sessionOf(req, key) {
   const m = new RegExp(`(?:^|;\\s*)${COOKIE}=(\\d{1,12})\\.([\\w-]{1,64})`).exec(req.headers.cookie || '');
-  return !!m && Number(m[1]) > Date.now() / 1000 && same(m[2], sign(m[1], key));
+  return m && Number(m[1]) > Date.now() / 1000 && same(m[2], sign(m[1], key)) ? { exp: Number(m[1]), sig: m[2] } : null;
 }
 
+const signedIn = (req, key) => sessionOf(req, key) !== null;
+
+/** Path=/ so the testnet mint copy under /admin/mint/ sees the session too (middleware.js checks it there). */
 function session(res, value, maxAge) {
-  res.setHeader('Set-Cookie', `${COOKIE}=${value}; Path=/api/admin; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`);
+  const cookies = [`${COOKIE}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`];
+  // Sessions from before the mint copy lived on Path=/api/admin; signing out ends those too.
+  if (!maxAge) cookies.push(`${COOKIE}=; Path=/api/admin; Max-Age=0; HttpOnly; Secure; SameSite=Strict`);
+  res.setHeader('Set-Cookie', cookies);
 }
 
 /** Browsers send Origin on every POST; it has to be this site. */
@@ -104,7 +112,10 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      if (!signedIn(req, key)) return res.status(401).json({ error: 'Sign in first.' });
+      const s = sessionOf(req, key);
+      if (!s) return res.status(401).json({ error: 'Sign in first.' });
+      // Re-set on Path=/, so a session from before the mint copy opens it too.
+      session(res, `${s.exp}.${s.sig}`, s.exp - Math.floor(Date.now() / 1000));
       const query = req.query || {};
       const [page, all] = await Promise.all([list(sql, query), query.after ? null : counts(sql)]);
       return res.status(200).json(all ? { ...page, counts: all } : page);

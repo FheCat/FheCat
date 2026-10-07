@@ -181,7 +181,7 @@ web/         Mint sitesi (İngilizce, ana sayfanın piksel tasarımıyla): Vite 
 docs/        README görselleri
 ```
 
-Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 1.0.0, `@cofhe/sdk` / `@cofhe/hardhat-plugin` 0.0.0-beta-20261005160711 (1.0.0'ı destekleyen ilk sürüm; kararlı sürüm çıkınca güncellenmeli), OpenZeppelin 5.4, Solidity 0.8.28 (cancun).
+Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 1.0.0, `@cofhe/sdk` / `@cofhe/hardhat-plugin` 0.8.0 (Ethereum ve Arbitrum One mainnet'ini tanıyan ilk kararlı sürüm), OpenZeppelin 5.4, Solidity 0.8.28 (cancun).
 
 ---
 

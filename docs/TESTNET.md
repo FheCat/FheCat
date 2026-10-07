@@ -29,8 +29,11 @@ Bu prova, mainnet'te yapılacak işin birebir kopyasıdır. Tek fark ağdır: Ar
 
 ## Prova nasıl gizli kalır
 
-- **Mint:** Satış prova boyunca yalnızca kısa süre açılır ve prova bitince kapatılır. Allowlist'te yalnızca test cüzdanları vardır.
-- **Site:** Yalnızca Vercel hesabınla açılır. Adres: `fhecat-mint-git-claude-fhenix-nft-collection-uwkwk9-akdogan1.vercel.app`
+- **Mint:** Proje sahibinin kendi testleri süresince satış Public aşamada açık kalır; testler bitince Owner bölümünden kapatılır. Allowlist'te yalnızca test cüzdanları vardır.
+- **Site:** İki yoldan açılır:
+  - Vercel hesabınla: `fhecat-mint-git-claude-fhenix-nft-collection-uwkwk9-akdogan1.vercel.app`
+  - fhecat.com/admin'de admin şifresiyle giriş yapıp **Open the test mint** ile: `fhecat.com/admin/mint/`. Bu kopyanın sayfası ve çizimleri içeren dosyaları, admin oturumu olmadan açılmaz (`landing/middleware.js`).
+- **OpenSea:** OpenSea testnet desteğini Temmuz 2025'te kapattığı için testnet kedileri OpenSea'da da görünmez.
 - **Zincir:** Zincirin kendisi herkese açıktır. Kontrat adresini bilmeyen biri provayı fark etmez. Ama çizimler renderer'ın bytecode'unda durduğu için çok kararlı biri bunları çıkarabilir. Risk düşüktür ve mainnet'te zaten aynı durum olacaktır.
 
 ## Adımlar
@@ -62,6 +65,16 @@ Son olarak şu dosyalar commit'lenir:
 - `web/public/allowlist.json`
 
 Gizli site push'tan sonra kendini yeniden derler.
+
+## Admin panelinden kendin test et
+
+1. fhecat.com/admin'de admin şifresiyle giriş yap ve **Open the test mint**'e bas.
+2. Cüzdanını (MetaMask, Rabby vb.) Arbitrum Sepolia ağında bağla. Test ETH'si için sitedeki **Testnet ETH faucet** linkini kullan ya da Claude'dan iste.
+3. Satış Public aşamada açık: cüzdan başına en fazla 3 kedi, kedi başına 0,00115 ETH.
+4. Deneyebileceklerin: mint, gizlice bakma (peek), kendi kanıtınla reveal, kutuyu herkese açma, kediyi başka cüzdana gönderme, arena (düello ve kademe kanıtı).
+5. Owner bölümü yalnızca kontratın sahibi olan cüzdanda görünür. Testnet'te sahip, Claude'un test cüzdanıdır. Sahip araçlarını da denemek istersen sahiplik iki adımda senin cüzdanına devredilebilir.
+
+Kopya, mint sitesinin kodundan derlenir. Site değişince `cd web && npm run build:admin-copy` ile yeniden derlenip `landing/admin/mint/` commit'lenir.
 
 ## Test listesi
 

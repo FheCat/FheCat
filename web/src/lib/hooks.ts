@@ -125,7 +125,7 @@ export function useAllowlistTree(): AllowlistTree | null {
   const [tree, setTree] = useState<AllowlistTree | null>(null);
   useEffect(() => {
     let live = true;
-    published ??= fetch('/allowlist.json')
+    published ??= fetch(`${import.meta.env.BASE_URL}allowlist.json`)
       .then((r) => (r.ok ? r.json() : null))
       .then((dump: Dump | null) => (dump ? StandardMerkleTree.load(dump) : null))
       .catch(() => null);

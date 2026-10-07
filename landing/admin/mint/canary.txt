@@ -1,1 +1,0 @@
-gate check: this file is served only to a signed-in admin

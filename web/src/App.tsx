@@ -80,7 +80,7 @@ export function App() {
         {live && (
           <>
             <Clouds seed={1} />
-            <MyCats n={n('cats')} chainId={col.chainId} contract={live.fheCat} totalSupply={col.totalSupply} />
+            <MyCats n={n('cats')} chainId={col.chainId} contract={live.fheCat} totalSupply={col.loaded ? col.totalSupply : undefined} />
           </>
         )}
         {live && col.arena && (

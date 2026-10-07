@@ -12,6 +12,8 @@ async function connect(page: Page, path = '/') {
 
 /** Mints `n` cats and returns their cards, newest first. */
 async function mint(page: Page, n: number): Promise<Locator[]> {
+  // Count only once the wallet's cats have loaded (the empty box shows only then).
+  await expect(page.locator('#cats .cat-card').first().or(page.locator('#cats').getByText('No cats yet'))).toBeVisible();
   const before = await page.locator('#cats .cat-card').count();
   for (let i = 1; i < n; i++) await page.locator('#mint').getByRole('button', { name: 'One more' }).click();
   const button = page.locator('#mint .btn-mint');

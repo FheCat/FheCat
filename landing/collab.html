@@ -53,7 +53,7 @@
           <div class="cb-body">
             <!-- left: the guide, your communities, you -->
             <aside class="cb-side">
-              <p class="label"><i class="blink-dot" aria-hidden="true"></i>Collab live</p>
+              <p class="label" id="cbLive"><i class="blink-dot" aria-hidden="true"></i><span>Collab live</span></p>
               <button type="button" class="cb-guide" id="cbGuideOpen">
                 <i data-sprite="i-star" class="cb-guide-icon"></i>
                 <span class="cb-guide-text">
@@ -105,6 +105,18 @@
                 </div>
               </div>
 
+              <!-- applications are closed (the admin's switch); those who applied can still sign in -->
+              <div class="cb-view" id="cbClosed" hidden>
+                <h2 class="cb-title">Applications are closed.</h2>
+                <p class="cb-lead">
+                  We're not taking new communities right now. Follow <a class="link" href="https://x.com/FheCat" target="_blank" rel="noopener">@FheCat</a> on X
+                  for the next round.
+                </p>
+                <div class="cb-actions">
+                  <button type="button" class="link cb-cancel" id="cbClosedSignin">Applied before? Sign in</button>
+                </div>
+              </div>
+
               <!-- step 1: the form opens right away; the wallet signs only when it is sent -->
               <form class="cb-view" id="cbApply" novalidate hidden>
                 <h2 class="cb-title" id="cbApplyTitle">Bring your community.</h2>
@@ -128,9 +140,6 @@
                   </label>
                   <label class="wl-field"><span>Members</span><input name="members" inputmode="numeric" placeholder="1200" autocomplete="off" required /></label>
                   <label class="wl-field"><span>Community X</span><input name="x" placeholder="@community" autocomplete="off" spellcheck="false" required /></label>
-                  <label class="wl-field"><span>Spots you'd like</span><input name="requested" inputmode="numeric" placeholder="10" autocomplete="off" required /></label>
-                  <label class="wl-field"><span>Discord invite <i>optional</i></span><input name="discord" placeholder="discord.gg/…" autocomplete="off" spellcheck="false" /></label>
-                  <label class="wl-field"><span>Website <i>optional</i></span><input name="website" placeholder="community.xyz" autocomplete="off" spellcheck="false" /></label>
                   <label class="wl-field"><span>Your X</span><input name="contactX" placeholder="@you" autocomplete="off" spellcheck="false" required /></label>
                   <label class="wl-field"><span>Your Discord <i>optional</i></span><input name="contactDiscord" placeholder="username" autocomplete="off" spellcheck="false" /></label>
                   <label class="wl-field">
@@ -143,6 +152,11 @@
                       <option value="other">Other</option>
                     </select>
                   </label>
+                  <label class="wl-field cb-wide">
+                    <span>Your post about FheCat on X</span>
+                    <input name="post" inputmode="url" maxlength="300" placeholder="https://x.com/yourcommunity/status/…" autocomplete="off" spellcheck="false" required />
+                  </label>
+                  <p class="cb-fine cb-wide cb-hint">Post about FheCat on your community's X (tag @FheCat), then paste the link here. You can't apply without it.</p>
                   <label class="wl-field cb-wide">
                     <span>About your community</span>
                     <textarea name="pitch" rows="4" maxlength="600" placeholder="Who you are, what you do, why FheCat fits." required></textarea>
@@ -238,7 +252,7 @@
         </div>
         <h2 class="cb-title" id="cbGuideTitle">Run your raffle.</h2>
         <ol class="cb-guide-steps">
-          <li><span><b>Apply</b> with your community. We review every application by hand and DM you on X.</span></li>
+          <li><span><b>Apply</b> with your community and a post about FheCat on its X. We review every application by hand and DM you on X.</span></li>
           <li><span><b>Get your spots.</b> Once approved, this page shows how many FheCat allowlist (WL) spots you have and a timer to hand them out.</span></li>
           <li><span><b>Post your raffle</b> on your community's X. Use the post below or your own, with @FheCat in it.</span></li>
           <li><span><b>Add the winners</b> here: a name (Discord or X) and an EVM wallet (0x…) per person. Save as you go.</span></li>
@@ -246,6 +260,7 @@
         </ol>
         <h3 class="cb-guide-h">Rules</h3>
         <ul class="cb-rules">
+          <li><span>One X account can send up to 2 applications.</span></li>
           <li><span>The raffle runs in public, in a post on X. We need its link to take your list.</span></li>
           <li><span>One person per spot, one wallet per person.</span></li>
           <li><span>EVM wallets only (they start with 0x). No exchange deposit addresses.</span></li>

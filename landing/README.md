@@ -70,7 +70,9 @@ giriş 12 saat geçerli bir oturum açar. Panelde:
   kutucukları işaretleyerek toplu işlem.
 - **Dışa aktarma** (seçili sekme için, tüm sayfalar): başvurular `.csv`, cüzdanlar `.csv` ya da `.txt`
   (satır başına bir adres, küçük harf). Mint için: Approved sekmesi → Wallets.
-- **Collabs sekmesi:** fhecat.com/collab başvuruları kart olarak listelenir: topluluk ve yönetici bilgileri, linkler, tanıtım.
+- **Collabs sekmesi:** fhecat.com/collab başvuruları kart olarak listelenir: topluluk ve yönetici bilgileri, başvurunun X postu, tanıtım.
+  - **Applications · Open / Closed:** Başlıktaki düğme yeni başvuruları açar ya da kapatır (onay sorar). Kapalıyken ana sayfadaki **Collab** düğmesi gizlenir, /collab sayfası "Applications are closed" yazar ve API yeni başvuru almaz; daha önce başvuranlar yine cüzdanla girip kazananlarını ekleyebilir. API anında kapanır; ana sayfa ve /collab durumu CDN önbelleği yüzünden en geç bir dakika içinde günceller.
+  - Başvurunun postu kartta link olarak durur; post ne topluluğun ne de yöneticinin X hesabından değilse yanında uyarı çıkar. Eski başvurularda istenen yer sayısı da görünür.
   - Onaylarken WL yer sayısı ve süre (saat) girilir. Onaylı bir topluluğun yer sayısı ve süresi güncellenebilir, gönderilmiş listesi yeniden açılabilir.
   - Kazananlar kartta açılıp kopyalanabilir. Çekiliş postunun linki de kartta durur; post topluluğun kendi X hesabından değilse yanında uyarı çıkar.
   - **Allowlist .txt:** Onaylı waitlist cüzdanlarını ve onaylı collab'ların kazananlarını tekrarsız tek dosyada birleştirir. Gönderilmemiş taslak listeler varsa onları dahil edip etmeyeceğini sorar.
@@ -96,20 +98,22 @@ SELECT wallet FROM waitlist WHERE status = 'approved' ORDER BY id;
 
 ## Collab
 
-**https://fhecat.com/collab** adresinde. Ana sayfadaki üçüncü düğme (**Collab**) buraya gelir. DAO'lar, guild'ler ve alpha grupları allowlist yeri ister, onaylanınca kendi topluluklarında çekiliş yapıp kazananların cüzdanlarını girer.
+**https://fhecat.com/collab** adresinde. Ana sayfadaki üçüncü düğme (**Collab**) buraya gelir; başvurular kapalıyken bu düğme görünmez. DAO'lar, guild'ler ve alpha grupları allowlist yeri ister, onaylanınca kendi topluluklarında çekiliş yapıp kazananların cüzdanlarını girer.
 
-1. **Apply:** Form hemen açılır, önce cüzdan bağlamak gerekmez. Topluluk adı, türü (DAO, Guild, Alpha group, NFT project, Other), topluluğun X hesabı, isteğe bağlı Discord daveti ve web sitesi, üye sayısı, istenen yer sayısı, yöneticinin X ve Discord adı, rolü ve kısa bir tanıtım. Bir cüzdan en fazla 5 toplulukla başvurabilir; aynı topluluk X hesabı iki kez başvuramaz.
+1. **Apply:** Form hemen açılır, önce cüzdan bağlamak gerekmez. Kısa bir form: topluluk adı, türü (DAO, Guild, Alpha group, NFT project, Other), üye sayısı, topluluğun X hesabı, yöneticinin X'i, isteğe bağlı Discord adı, rolü, **FheCat hakkında X'te atılmış postun linki (zorunlu)** ve kısa bir tanıtım. Post linki olmadan başvuru gönderilemez; link `x.com/kullanıcı/status/…` biçiminde olmalı.
+   - **Sınırlar:** Bir X hesabı (formdaki "Your X") en fazla 2 başvuru yapabilir. Bir cüzdan da en fazla 2 başvuru gönderebilir. Aynı topluluk X hesabı iki kez başvuramaz.
+   - **Kapalıyken:** Admin başvuruları kapattıysa form yerine "Applications are closed" görünür; daha önce başvuranlar **Sign in** ile girmeye devam eder. Sunucu da kapalıyken başvuru almaz.
 2. **Gönderme:** Formun altındaki **Apply with …** düğmesi önce formu sunucuda kontrol ettirir (hatalı bir alan imzaya mal olmasın diye), sonra cüzdan bir kez imza atar (ücretsiz, işlem göndermez) ve başvuru kaydedilir. Sunucu imzalı bir mesaj verir, cüzdan imzalar, sunucu imzayı doğrulayıp 7 günlük bir oturum açar. Bu cüzdan, onaydan sonra kazananları girmenin tek yoludur; daha önce başvuran **Sign in** ile aynı cüzdanla girer.
 3. **Review:** Admin panelindeki Collabs sekmesinde onaylanır (yer sayısı ve süre girilir) ya da reddedilir. Bekleyen başvurunun sayfası dakikada bir kendini yeniler.
 4. **Add wallets:** Onaydan sonra sayfada geri sayım, çekiliş postunun linki için bir alan ve yer sayısı kadar satır çıkar: kazananın adı (Discord ya da X) ve EVM cüzdanı. Topluluk çekilişi X'te bir postla yapar (rehberdeki hazır post @FheCat'i takip ettirip repost istiyor) ve linkini girer: **Submit wallets** bu link olmadan çalışmaz. Liste bir satıra yapıştırılabilir (her satırda bir isim ve bir cüzdan). **Save wallets** taslağı (link dahil) kaydeder, **Submit wallets** listeyi kilitler. Süre bitince liste değiştirilemez; admin süreyi uzatabilir ya da listeyi yeniden açabilir.
 
 **Collab guide** penceresi kuralları ve çekiliş için kopyalanabilir hazır bir post içerir.
 
-**Kayıtlar:** Aynı Neon veritabanında `collabs` tablosu. Tablo, ilk istekte API tarafından kendiliğinden oluşturulur. Kazananlar tablodaki `winners` (jsonb), çekiliş postunun linki `tweet` sütununda durur (`tweet` sonradan eklendi; API eksikse ilk istekte kendisi ekler).
+**Kayıtlar:** Aynı Neon veritabanında `collabs` tablosu. Tablo, ilk istekte API tarafından kendiliğinden oluşturulur. Kazananlar tablodaki `winners` (jsonb), çekiliş postunun linki `tweet`, başvurunun postu `apply_post` sütununda durur (ikisi de sonradan eklendi; API eksikse ilk istekte kendisi ekler). Eski formdan kalan `discord`, `website` ve `requested` sütunları eski başvurular için duruyor. Başvuruların açık/kapalı durumu `site_settings` tablosunda (`key = 'collab'`, `value` = `open` ya da `closed`); satır yoksa başvurular açıktır.
 
 **Güvenlik:** Oturum çerezi ve imza mesajları `ADMIN_PASSWORD`'dan türetilen bir anahtarla imzalanır; bu şifre değişince collab oturumları da kapanır. Sayfa her kullanıcı verisini düz metin olarak gösterir.
 
-## ## Teknik doğruluk
+## Teknik doğruluk
 
 FHE / Fhenix ile ilgili ifadeler, projedeki `@fhenixprotocol/cofhe-contracts` (0.2.0) kütüphanesine
 göre kontrol edildi. Kontrol edilenler:

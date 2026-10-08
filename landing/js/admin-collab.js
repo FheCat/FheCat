@@ -3,7 +3,8 @@
  * Approve one with a number of WL spots and the hours its manager gets to
  * add the winners; reject it or send it back to pending; reopen a submitted
  * list; see and copy the winners. The allowlist export joins the approved
- * waitlist wallets with every approved collab's winners.
+ * waitlist wallets with every approved collab's winners. The switch at the top
+ * opens or closes new applications (and the homepage's Collab button with them).
  * Uses js/admin.js for the session and helpers (window.FheCat.admin).
  */
 (function () {
@@ -27,7 +28,8 @@
   };
   var el = A.el;
 
-  var cv = { list: [], counts: null, status: '', q: '', offset: 0, loaded: false, open: {} };
+  // applying: whether /collab takes new applications (null until loaded).
+  var cv = { list: [], counts: null, status: '', q: '', offset: 0, loaded: false, open: {}, applying: null };
 
   // ---------------------------------------------------------------------------
   // tabs
@@ -61,6 +63,7 @@
         cv.list = r.collabs || [];
         cv.counts = r.counts;
         cv.offset = Date.parse(r.now) - Date.now();
+        cv.applying = r.open !== false;
         cv.loaded = true;
         render();
       })
@@ -110,6 +113,7 @@
     var badge = $('#admCollabTab');
     badge.hidden = !c.pending;
     badge.textContent = A.fmt(c.pending);
+    renderSwitch();
 
     var q = cv.q.toLowerCase().replace(/^@/, '');
     var rows = cv.list.filter(function (x) {
@@ -160,14 +164,24 @@
     return span;
   }
 
+  /** A post on X as a link, with a flag when none of `accounts` posted it. */
+  function post(url, accounts, flag) {
+    var by = (/^https:\/\/x\.com\/([A-Za-z0-9_]{1,15})\/status\//.exec(url) || [])[1];
+    var known = by && by !== 'i';
+    var parts = [link(known ? 'Post by @' + by : 'Post on X', url)];
+    var theirs = accounts.some(function (a) {
+      return by && by.toLowerCase() === String(a || '').toLowerCase();
+    });
+    if (known && !theirs) parts.push(flag);
+    return group(parts);
+  }
+  /** The application's post about FheCat (older applications have none). */
+  function applyPost(x) {
+    return x.post ? post(x.post, [x.x, x.contactX], 'not the community or the manager') : 'None, an older application';
+  }
   /** The raffle post's link, and a flag when it isn't from the community's account. */
   function raffle(x) {
-    if (!x.tweet) return 'Not added yet';
-    var by = (/^https:\/\/x\.com\/([A-Za-z0-9_]{1,15})\/status\//.exec(x.tweet) || [])[1];
-    var known = by && by !== 'i';
-    var parts = [link(known ? 'Post by @' + by : 'Post on X', x.tweet)];
-    if (known && by.toLowerCase() !== String(x.x).toLowerCase()) parts.push("not the community's account");
-    return group(parts);
+    return x.tweet ? post(x.tweet, [x.x], "not the community's account") : 'Not added yet';
   }
 
   function card(x) {
@@ -209,7 +223,9 @@
     wallet.appendChild(addr);
     wallet.appendChild(copy);
     facts.appendChild(fact('Signed in as', wallet));
-    facts.appendChild(fact('Asked for', x.requested + ' ' + SPOT + ' spots'));
+    facts.appendChild(fact('Post', applyPost(x)));
+    // Older applications asked for a number of spots; the form no longer does.
+    if (x.requested > 0) facts.appendChild(fact('Asked for', x.requested + ' ' + SPOT + ' spots'));
     if (x.status === 'approved') {
       var progress = x.winners.length + '/' + x.spots + ' ' + SPOT;
       progress += x.submittedAt ? ' · submitted ' + A.when(x.submittedAt) : isOpen(x) ? ' · ' + left(x) + ' left' : " · time's up, not submitted";
@@ -225,7 +241,8 @@
     spots.type = 'number';
     spots.min = '1';
     spots.max = '500';
-    spots.value = String(x.status === 'approved' ? x.spots : x.requested);
+    spots.value = x.status === 'approved' ? String(x.spots) : x.requested > 0 ? String(x.requested) : '';
+    spots.placeholder = '10';
     spots.setAttribute('aria-label', 'WL spots for ' + x.name);
     var hours = el('input', 'adm-c-in');
     hours.type = 'number';
@@ -368,6 +385,43 @@
   });
 
   // ---------------------------------------------------------------------------
+  // applications open or closed
+  // ---------------------------------------------------------------------------
+  function renderSwitch() {
+    var on = cv.applying;
+    var state = $('#admCollabState');
+    var b = $('#admCollabSwitch');
+    $('.adm-dot', state).className = 'adm-dot' + (on === null ? '' : on ? ' is-approved' : ' is-rejected');
+    state.lastChild.textContent = on === null ? 'Checking…' : on ? 'Open' : 'Closed';
+    b.className = 'btn btn-sm btn-ghost' + (on ? ' is-close' : '');
+    b.textContent = on ? 'Close' : 'Open';
+    b.setAttribute('aria-label', on ? 'Close collab applications' : 'Open collab applications');
+    b.hidden = on === null;
+    b.disabled = switching;
+  }
+
+  var switching = false;
+  $('#admCollabSwitch').addEventListener('click', function () {
+    var next = !cv.applying;
+    var ask = next
+      ? 'Open collab applications? The Collab button comes back on the homepage and new communities can apply.'
+      : 'Close collab applications? The homepage hides its Collab button and /collab stops taking new applications. Communities that already applied can still sign in and add their winners.';
+    if (!window.confirm(ask)) return;
+    switching = true;
+    renderSwitch();
+    A.call('POST', null, { action: 'collabOpen', open: next })
+      .then(function (r) {
+        cv.applying = r.open;
+        A.toast(r.open ? 'Collab applications are open' : 'Collab applications are closed');
+      })
+      .catch(A.fail)
+      .then(function () {
+        switching = false;
+        renderSwitch();
+      });
+  });
+
+  // ---------------------------------------------------------------------------
   // exports
   // ---------------------------------------------------------------------------
   function approved() {
@@ -462,9 +516,10 @@
       if (!cv.loaded) load();
     },
     reset: function () {
-      cv = { list: [], counts: null, status: '', q: '', offset: 0, loaded: false, open: {} };
+      cv = { list: [], counts: null, status: '', q: '', offset: 0, loaded: false, open: {}, applying: null };
       $('#admCollabSearch').value = '';
       $('#admCollabList').textContent = '';
+      renderSwitch();
       tab('waitlist');
     }
   };

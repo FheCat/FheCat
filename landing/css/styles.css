@@ -2524,6 +2524,10 @@ h2 {
 .cb-wide {
   grid-column: 1 / -1;
 }
+/* a field's note, under it in the form */
+.cb-hint {
+  margin: -8px 4px 16px;
+}
 .wl-field span i {
   color: var(--steel-2);
   font-style: normal;
@@ -3047,6 +3051,38 @@ body.cb-locked {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 12px;
+}
+.adm-head-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px 48px;
+}
+/* collab applications: open or closed, and the switch */
+.adm-cswitch {
+  align-items: center;
+}
+.adm-cstate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 96px;
+  margin: 0 4px;
+  color: var(--text);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.adm-cswitch .btn-ghost.is-close {
+  --fg: var(--red);
+  box-shadow:
+    0 -4px 0 0 var(--red),
+    0 4px 0 0 var(--red),
+    -4px 0 0 0 var(--red),
+    4px 0 0 0 var(--red);
+}
+.adm-cswitch .btn-ghost.is-close:hover {
+  --bg: var(--red);
+  --fg: var(--ink);
 }
 
 /* counts; each tile is also the status filter */

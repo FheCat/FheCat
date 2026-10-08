@@ -155,17 +155,27 @@
                 <p class="label"><i data-sprite="i-star"></i>Collab admin</p>
                 <h1 class="adm-title">Collabs</h1>
               </div>
-              <div class="adm-export">
-                <p class="adm-export-what">For the mint</p>
-                <div class="adm-export-btns">
-                  <button type="button" class="btn btn-sm" id="admAllowlist"><i data-sprite="i-down"></i><span>Allowlist .txt</span></button>
-                  <button type="button" class="btn btn-sm btn-ghost" id="admCollabCsv"><span>Collab wallets .csv</span></button>
+              <div class="adm-head-side">
+                <div class="adm-export">
+                  <p class="adm-export-what">Applications</p>
+                  <div class="adm-export-btns adm-cswitch">
+                    <span class="adm-cstate" id="admCollabState"><i class="adm-dot"></i><span>Checking…</span></span>
+                    <button type="button" class="btn btn-sm btn-ghost" id="admCollabSwitch" hidden>Close</button>
+                  </div>
+                </div>
+                <div class="adm-export">
+                  <p class="adm-export-what">For the mint</p>
+                  <div class="adm-export-btns">
+                    <button type="button" class="btn btn-sm" id="admAllowlist"><i data-sprite="i-down"></i><span>Allowlist .txt</span></button>
+                    <button type="button" class="btn btn-sm btn-ghost" id="admCollabCsv"><span>Collab wallets .csv</span></button>
+                  </div>
                 </div>
               </div>
             </div>
             <p class="adm-collab-note">
               Approve a community with a number of WL spots and the hours they get to add their winners. The allowlist file joins the approved
-              waitlist wallets with every approved collab's winners, without duplicates.
+              waitlist wallets with every approved collab's winners, without duplicates. Closing applications hides the Collab button on the
+              homepage and stops new applications; communities that already applied can still sign in and add their winners.
             </p>
 
             <div class="adm-stats adm-cstats" aria-label="Filter collabs by status">

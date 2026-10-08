@@ -1,6 +1,7 @@
 import type { FighterLook } from '@art';
 import { fighterFrame, lookKey } from './pixels';
 import { buildScript, captionOf, type Side } from './script';
+import { SOUND_ICON, SOUND_OFF_ICON, arenaSound, unlockArenaSound } from './sound';
 import { STAGE_W, render, type Script } from './stage';
 
 /**
@@ -36,6 +37,15 @@ const BOX = ['Sealed', 'Peeked', 'Opened', 'Revealed'];
 const LOCK_ICON = ['.XXX.', 'X...X', 'X...X', 'XXXXX', 'XX.XX', 'XXXXX'];
 const POINTS = { win: 3, sealedWin: 4, loss: 1 };
 const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+/** The announcer's clips sit next to this script, in the admin copy's arena/voice/. */
+function voiceBase() {
+  try {
+    return new URL('arena/voice/', (document.currentScript as HTMLScriptElement | null)?.src || location.href).href;
+  } catch {
+    return 'arena/voice/'; // an inline copy on a blank page: no clips, the fight plays on
+  }
+}
+const sound = arenaSound(voiceBase());
 
 /** A revealed cat as itself; any other as its sealed box, with its own barcode. */
 function lookOf(cat: CatLook | undefined): FighterLook {
@@ -142,6 +152,7 @@ function phaseAt(s: Script, t: number): Phase {
 
 /** Plays a settled duel in a dialog over the page; Escape, Close or a click outside ends it. */
 export function watch(bout: Bout) {
+  unlockArenaSound(); // still inside the click on Watch
   const plan = { winner: bout.winner, tactics: null };
   const script = buildScript(plan);
   const looks: [FighterLook, FighterLook] = [lookOf(bout.cats[0]), lookOf(bout.cats[1])];
@@ -158,7 +169,23 @@ export function watch(bout: Bout) {
   title.id = 'fight-title';
   const close = h('button', 'btn btn-sm btn-ghost fight-close', 'Close');
   close.type = 'button';
-  top.append(title, close);
+  const soundBtn = h('button', 'btn btn-sm btn-ghost fight-sound');
+  soundBtn.type = 'button';
+  soundBtn.setAttribute('aria-label', 'Sound');
+  const paintSound = () => {
+    const off = sound.muted();
+    soundBtn.setAttribute('aria-pressed', String(!off));
+    soundBtn.title = off ? 'Sound off' : 'Sound on';
+    soundBtn.replaceChildren(icon(off ? SOUND_OFF_ICON : SOUND_ICON));
+  };
+  paintSound();
+  soundBtn.addEventListener('click', () => {
+    sound.setMuted(!sound.muted());
+    paintSound();
+  });
+  const tools = h('div', 'fight-tools');
+  tools.append(soundBtn, close);
+  top.append(title, tools);
 
   const cards = h('div', 'fight-cards');
   const slots: HTMLElement[] = [];
@@ -248,6 +275,7 @@ export function watch(bout: Bout) {
     last = now;
     const t = moving ? clock : script.marks.end;
     render(ctx, script, { looks }, t);
+    if (moving) sound.tick(t);
     show(phaseAt(script, t));
     if (moving) raf = requestAnimationFrame(frame);
   }
@@ -267,6 +295,7 @@ export function watch(bout: Bout) {
 
   function end() {
     cancelAnimationFrame(raf);
+    sound.pause();
     ro.disconnect();
     document.documentElement.classList.remove('fight-open');
     if (dialog.open) dialog.close(); // hands focus back to the Watch button
@@ -291,7 +320,9 @@ export function watch(bout: Bout) {
   dialog.addEventListener('click', (e) => {
     if (e.target === dialog) end();
   });
+  dialog.addEventListener('pointerdown', unlockArenaSound);
 
+  sound.scene(script, { winner: bout.winner, sealed: bout.sealed, mine: null });
   document.body.append(dialog);
   dialog.showModal();
   document.documentElement.classList.add('fight-open');

@@ -43,6 +43,26 @@ html.fight-open {
   flex: none;
   margin: 4px;
 }
+.fight-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+/* sound on or off: a speaker, dimmed with a cross when off */
+.fight-sound {
+  flex: none;
+  margin: 4px;
+  padding: 0 12px;
+}
+.fight-sound[aria-pressed='false'] {
+  --fg: var(--steel);
+  box-shadow:
+    0 -4px 0 0 var(--steel-2),
+    0 4px 0 0 var(--steel-2),
+    -4px 0 0 0 var(--steel-2),
+    4px 0 0 0 var(--steel-2);
+}
 .fight-cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);

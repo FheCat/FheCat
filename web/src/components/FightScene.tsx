@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TACTICS, type FighterLook, type Tactic } from '@art';
 import { lookKey } from '../arena/pixels';
 import { BEATS, buildScript, captionOf, type FightPlan, type Side } from '../arena/script';
+import { SOUND_ICON, SOUND_OFF_ICON, arenaSound, unlockArenaSound } from '../arena/sound';
 import { STAGE_W, render, type Script } from '../arena/stage';
 import { POINTS, TACTIC_LIST } from '../lib/arena';
 import { REDUCED_MOTION } from '../pixel/fc';
@@ -11,6 +12,9 @@ const BOX = ['Sealed', 'Peeked', 'Opened', 'Revealed'];
 
 /** A lock, for a tactic nobody can see yet. */
 const LOCK_ICON = ['.XXX.', 'X...X', 'X...X', 'XXXXX', 'XX.XX', 'XXXXX'];
+
+/** The announcer's clips, next to the site's other public files. */
+const sound = arenaSound(`${import.meta.env.BASE_URL}arena/voice/`);
 
 export interface FightView {
   duelId: bigint;
@@ -87,6 +91,7 @@ export function FightScene({ fight, onClose, onReveal }: Props) {
   const [moving, setMoving] = useState(!REDUCED_MOTION);
   const [revealing, setRevealing] = useState(false);
   const [revealError, setRevealError] = useState<string | null>(null);
+  const [muted, setMuted] = useState(sound.muted());
   const looksRef = useRef(fight.looks);
   looksRef.current = fight.looks;
 
@@ -134,11 +139,21 @@ export function FightScene({ fight, onClose, onReveal }: Props) {
     const d = dialog.current;
     if (d && !d.open) d.showModal();
     document.documentElement.classList.add('fight-open');
+    unlockArenaSound();
     return () => {
       document.documentElement.classList.remove('fight-open');
       if (d?.open) d.close();
+      sound.pause();
     };
   }, []);
+
+  // The sound follows the script: a new fight, a result coming in, the tactics coming in.
+  useEffect(() => {
+    sound.scene(script, { winner: plan.winner, sealed: fight.sealedWin, mine: fight.mine });
+  }, [script, plan.winner, fight.sealedWin, fight.mine]);
+  useEffect(() => {
+    if (!moving) sound.pause();
+  }, [moving]);
 
   const castKey = `${lookKey(fight.looks[0])}|${lookKey(fight.looks[1])}`;
   useEffect(() => {
@@ -152,6 +167,7 @@ export function FightScene({ fight, onClose, onReveal }: Props) {
       last = now;
       const t = moving ? clock.current : stillAt(s);
       render(ctx, s, { looks: [looksRef.current[0], looksRef.current[1]] }, t);
+      if (moving) sound.tick(t);
       const p = phaseAt(s, t);
       if (p !== phaseRef.current) {
         phaseRef.current = p;
@@ -215,15 +231,31 @@ export function FightScene({ fight, onClose, onReveal }: Props) {
       onClick={(e) => {
         if (e.target === dialog.current) onClose();
       }}
+      onPointerDown={unlockArenaSound}
     >
       <div className="box fight-box" data-phase={phase}>
         <div className="fight-top">
           <h2 className="fight-title" id="fight-title">
             Blind Arena · Duel #{fight.duelId.toString()}
           </h2>
-          <button type="button" className="btn btn-sm btn-ghost fight-close" onClick={onClose}>
-            Close
-          </button>
+          <div className="fight-tools">
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost fight-sound"
+              aria-label="Sound"
+              aria-pressed={!muted}
+              title={muted ? 'Sound off' : 'Sound on'}
+              onClick={() => {
+                sound.setMuted(!muted);
+                setMuted(!muted);
+              }}
+            >
+              <Sprite art={muted ? SOUND_OFF_ICON : SOUND_ICON} />
+            </button>
+            <button type="button" className="btn btn-sm btn-ghost fight-close" onClick={onClose}>
+              Close
+            </button>
+          </div>
         </div>
 
         <div className="fight-cards">

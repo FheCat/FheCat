@@ -107,6 +107,7 @@ test('two sealed cats duel blind: tactics stay hidden, the winner tops the week'
   // The fight plays out on screen. The rival holds one of the cats, so it sees both tactics played.
   const scene = rival.getByRole('dialog', { name: /Duel #\d+/ });
   await expect(scene).toBeVisible({ timeout: 60_000 });
+  await expect(scene.getByRole('button', { name: 'Sound' })).toHaveAttribute('aria-pressed', 'true');
   await expect(scene.locator('.fight-banner')).toContainText(/#\d+ wins/, { timeout: 60_000 });
   await expect(scene.locator('.fight-tactic')).toHaveText(['Pounce', 'Guard']);
   await expect(scene).toContainText(/You (won · \+4 points|lost · \+1 point)/);
@@ -238,6 +239,13 @@ test("the admin's arena tab draws the same fighters and plays the same fight", a
   const scene = page.getByRole('dialog', { name: 'Blind Arena · Duel #7' });
   await expect(scene).toBeVisible();
   await expect(scene.locator('.fight-tactic')).toHaveText(['Ready', 'Ready']);
+  // Music, effects and the announcer play along; one button turns them off.
+  const sound = scene.getByRole('button', { name: 'Sound' });
+  await expect(sound).toHaveAttribute('aria-pressed', 'true');
+  await sound.click();
+  await expect(sound).toHaveAttribute('aria-pressed', 'false');
+  await sound.click();
+  await expect(sound).toHaveAttribute('aria-pressed', 'true');
   await scene.getByRole('button', { name: 'Skip' }).click();
   await expect(scene.locator('.fight-banner')).toHaveText('#9 wins');
   await expect(scene.locator('.fight-tactic')).toHaveText(['Secret', 'Secret']);

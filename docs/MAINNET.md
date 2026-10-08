@@ -19,6 +19,16 @@ Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet
   8 Ekim'de yeniden okundu: testnet TaskManager'ı açık (`isEnabled: true`, erişim listesi kapalı). Mainnet TaskManager'ı hâlâ kapalı (`isEnabled: false`) ve erişim listesi açık (`accessListEnabled: true`).
 
 - Mainnet TaskManager'ında kontrat bazlı bir **erişim listesi** var: listede olmayan bir kontratın FHE işlemi `NotOnAccessList(address)` hatası alıyor. Bu listenin lansmandan sonra kalıp kalmayacağı ve nasıl başvurulacağı herkese açık bir belgede yazmıyor.
+- **8 Ekim, Arbitrum One'ın bir kopyasında (fork) denendi** (`npx hardhat run scripts/access-list-fork.ts`, `COFHE_SKIP_MOCKS_DEPLOY=1 FORK=arbitrum`). Fhenix'in yönetici anahtarı taklit edilerek TaskManager'ın kendi fonksiyonlarıyla:
+
+  | Durum | FheCat mint'i |
+  |---|---|
+  | Bugünkü gibi: CoFHE kapalı | `CofheIsUnavailable()` ile reddediliyor |
+  | `enable()`: CoFHE açık, liste açık, FheCat listede yok | `NotOnAccessList(address)` ile reddediliyor |
+  | `addToAccessList([FheCat])` | çalışıyor |
+  | `disableAccessList()`: liste tamamen kapalı | çalışıyor |
+
+  Yani 21 Ekim'de mint için iki yoldan biri gerekiyor: Fhenix listeyi kapatır ya da FheCat ve FheCatArena'yı listeye ekler. Duyuruda mainnet'le birlikte seçilmiş beş uygulamanın yayına gireceği yazıyor; başkalarının kapalı kalacağı yazmıyor.
 - `@cofhe/sdk` 0.8.0 (6 Ekim) mainnet zincir tanımlarını getirdi: Ethereum ve Arbitrum One (`https://cofhe.mainnet.fhenix.zone`).
 
 **FheCat tarafı**

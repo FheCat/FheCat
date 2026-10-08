@@ -3,6 +3,9 @@
 // with real wallets. It talks to the published deployments only: a local-dev
 // deployments.local.json is set aside for the build.
 //
+// The admin's Arena tab gets its fighters and fights from the same folder
+// (arena-game.js, scripts/build-admin-game.mjs).
+//
 //   npm run build:admin-copy   (then commit landing/admin/mint/)
 import { execFileSync } from 'node:child_process';
 import { existsSync, renameSync } from 'node:fs';
@@ -19,6 +22,8 @@ try {
   execFileSync('npx', ['vite', 'build', '--base', '/admin/mint/', '--outDir', '../landing/admin/mint', '--emptyOutDir'], {
     stdio: 'inherit',
   });
+  // The arena game for the admin's Arena tab lives in the same folder, behind the same sign-in.
+  execFileSync('node', ['scripts/build-admin-game.mjs'], { stdio: 'inherit' });
 } finally {
   if (setAside) renameSync(aside, local);
 }

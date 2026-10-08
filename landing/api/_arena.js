@@ -1,8 +1,10 @@
 /*
  * The Blind Arena on the testnet, for the admin's Arena tab (GET /api/admin?view=arena).
- * Everything here is public on-chain: who challenged whom, who won, the week's table.
- * The tactics, scores and DNA stay sealed. The admin page reads it through its own API
- * because its content security policy keeps it on this site.
+ * Everything here is public on-chain: who challenged whom, who won, the week's table, and
+ * for each cat on show its box, its ciphertext handle (the box's barcode) and its DNA once
+ * revealed, so the tab can draw it as it fights. The tactics, scores and sealed DNA stay
+ * sealed. The admin page reads it through its own API because its content security policy
+ * keeps it on this site.
  */
 import { createPublicClient, http, parseAbi } from 'viem';
 import { arbitrumSepolia } from 'viem/chains';
@@ -12,9 +14,10 @@ const FHECAT = '0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24';
 const RPC = process.env.ARBITRUM_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc';
 
 const catAbi = parseAbi([
+  'struct CatView { uint256 tokenId; address owner; bytes32 dnaHandle; uint8 state; bool peeked; bool opened; bool revealed; uint64 dna; }',
   'function arena() view returns (address)',
   'function totalSupply() view returns (uint256)',
-  'function stateOf(uint256 tokenId) view returns (uint8)',
+  'function catOf(uint256 tokenId) view returns (CatView)',
 ]);
 const arenaAbi = parseAbi([
   'struct Duel { uint256 challenger; uint256 opponent; address challengerHolder; address opponentHolder; bytes32 challengerTactic; bytes32 opponentTactic; bytes32 outcome; uint64 openedAt; uint64 foughtAt; uint8 status; bool challengerSealed; bool opponentSealed; uint256 winner; }',
@@ -37,6 +40,7 @@ const FOUGHT = 2;
 const SETTLED = 3;
 const CANCELLED = 4;
 const BOX = ['Sealed', 'Peeked', 'Opened', 'Revealed'];
+const REVEALED = 3;
 const TIERS = ['', 'Rare', 'Epic', 'Legendary', 'Mythic'];
 const BADGES = ['First Blood', 'Won Blind', 'Hat-trick', 'Sealed Legend', 'Weekly Crown'];
 /** The latest duels and tier claims looked at; the totals count them. */
@@ -110,16 +114,23 @@ export async function arenaView() {
     .sort(([a, x], [b, y]) => y.points - x.points || y.wins - x.wins || Number(a - b))
     .slice(0, 10);
 
-  // Box states for the cats on show.
+  // Every cat on show, as it fights: its box, its barcode's handle, its DNA once revealed.
+  const recent = settled.slice(-12);
+  const claims = claimRows.map(([tokenId, tier, , isSettled, result], i) => ({ id: num(claimIds[i]), cat: num(tokenId), tier: TIERS[tier], settled: isSettled, result }));
   const shown = new Set();
-  for (const d of open) shown.add(d.challenger);
+  for (const d of [...open, ...waiting, ...recent]) for (const id of [d.challenger, d.opponent]) if (id) shown.add(id);
   for (const [id] of board) shown.add(id);
+  for (const x of claims.slice(-8)) shown.add(BigInt(x.cat));
   const ids = [...shown];
-  const states = ids.length ? await c.multicall({ contracts: ids.map((id) => cat('stateOf', [id])), allowFailure: false }) : [];
-  const box = new Map(ids.map((id, i) => [id, BOX[num(states[i])] ?? '']));
+  const views = ids.length ? await c.multicall({ contracts: ids.map((id) => cat('catOf', [id])), allowFailure: false }) : [];
+  const looks = {};
+  ids.forEach((id, i) => {
+    const v = views[i];
+    looks[num(id)] = { state: num(v.state), handle: v.dnaHandle, ...(num(v.state) === REVEALED ? { dna: '0x' + v.dna.toString(16).padStart(16, '0') } : {}) };
+  });
+  const box = new Map(ids.map((id) => [id, BOX[looks[num(id)].state] ?? '']));
 
   const lastLeaderPoints = leader ? num(await c.readContract(at('weeklyPoints', [last, leader]))) : 0;
-  const claims = claimRows.map(([tokenId, tier, , isSettled, result], i) => ({ id: num(claimIds[i]), cat: num(tokenId), tier: TIERS[tier], settled: isSettled, result }));
   let players = 0;
   let badges = 0;
   for (const r of records.values()) {
@@ -157,19 +168,18 @@ export async function arenaView() {
       endsAt: num(d.openedAt) + num(openFor),
     })),
     waiting: waiting.reverse().map((d) => ({ id: num(d.id), challenger: num(d.challenger), opponent: num(d.opponent), foughtAt: num(d.foughtAt) })),
-    results: settled
-      .reverse()
-      .slice(0, 12)
-      .map((d) => {
-        const challengerWon = d.winner === d.challenger;
-        return {
-          id: num(d.id),
-          winner: num(d.winner),
-          loser: num(challengerWon ? d.opponent : d.challenger),
-          sealed: challengerWon ? d.challengerSealed : d.opponentSealed,
-          foughtAt: num(d.foughtAt),
-        };
-      }),
+    results: recent.reverse().map((d) => {
+      const challengerWon = d.winner === d.challenger;
+      return {
+        id: num(d.id),
+        challenger: num(d.challenger),
+        opponent: num(d.opponent),
+        winner: num(d.winner),
+        loser: num(challengerWon ? d.opponent : d.challenger),
+        sealed: challengerWon ? d.challengerSealed : d.opponentSealed,
+        foughtAt: num(d.foughtAt),
+      };
+    }),
     board: board.map(([id, r]) => ({
       cat: num(id),
       points: r.points,
@@ -182,5 +192,6 @@ export async function arenaView() {
     })),
     lastWeek: { week: num(last), champion: num(champion), leader: num(leader), points: lastLeaderPoints },
     claims: claims.reverse().slice(0, 8),
+    looks,
   };
 }

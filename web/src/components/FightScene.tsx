@@ -233,7 +233,7 @@ export function FightScene({ fight, onClose, onReveal }: Props) {
                 <b>#{ids[s].toString()}</b>
                 {fight.mine === s && <span className="fight-you">you</span>}
               </p>
-              <span className={`chip box-chip box-${fight.boxes[s]}`}>{BOX[fight.boxes[s]]}</span>
+              <span className={`fight-chip is-${fight.boxes[s]}`}>{BOX[fight.boxes[s]]}</span>
               <TacticSlot phase={phase} tactic={plan.tactics?.[s]} live={!known} />
             </div>
           ))}
@@ -309,7 +309,7 @@ export function FightScene({ fight, onClose, onReveal }: Props) {
             </button>
           )}
           {!known && (
-            <span className="step-text">
+            <span className="fight-status">
               <i className="blink-dot" aria-hidden="true" />
               {fight.status ?? 'The arena is fighting under FHE…'}
             </span>

@@ -3828,6 +3828,39 @@ a.adm-handle:hover {
 .adm-a-row.is-win .adm-a-main {
   color: var(--text);
 }
+/* a cat as it fights, full body, before its number (js/admin-arena.js, once the game is in) */
+.adm-a-fcat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.adm-a-fcat .fighter {
+  background: var(--night);
+}
+.adm-a-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+.adm-a-watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cyan);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.adm-a-watch .px {
+  --u: 2px;
+}
+.adm-a-watch:hover {
+  color: var(--white);
+}
 .adm-a-vs {
   padding: 0 4px;
   background: #ff5c6c;

@@ -1,12 +1,13 @@
 # Mainnet'e geçiş planı (21 Ekim 2026)
 
-Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet'ine taşımak için yapılacakları sıralar. Durum bilgileri 7 Ekim 2026 tarihlidir.
+Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet'ine taşımak için yapılacakları sıralar. Durum bilgileri 7 Ekim 2026 tarihlidir; zincir kontrolü 8 Ekim'de yenilendi.
 
 ## Bugünkü durum
 
 **Fhenix tarafı**
 
 - Fhenix, mainnet'i 21 Ekim'de Ethereum ve Arbitrum One'da açacağını duyurdu. Lansmanda ekibin seçtiği beş uygulama yayına giriyor.
+- **8 Ekim:** Tarih Fhenix ekibiyle doğrudan konuşularak teyit edildi: mainnet 21 Ekim'de açılıyor.
 - `@fhenixprotocol/cofhe-contracts` 1.0.0, 5 Ekim'de yayımlandı. Bu sürümde FHE.sol, TaskManager'ı her zincirde aynı adreste duran **CoFHEAddressBook** (`0xC0F4e00E531a2B086492Ae3DCC1515038307196b`) üzerinden bulur.
 - Zincir üstü kontrol (fork testi, 7 Ekim):
 
@@ -14,6 +15,8 @@ Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet
   |---|---|---|
   | Arbitrum / Base / Ethereum Sepolia | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9` | FheCat ve arena testleri geçiyor |
   | Arbitrum One, Ethereum | `0x52E7a0cAF234b266bCFAa6aA933a412FDe58432A` | Mint `CofheIsUnavailable()` ile reddediliyor |
+
+  8 Ekim'de yeniden okundu: testnet TaskManager'ı açık (`isEnabled: true`, erişim listesi kapalı). Mainnet TaskManager'ı hâlâ kapalı (`isEnabled: false`) ve erişim listesi açık (`accessListEnabled: true`).
 
 - Mainnet TaskManager'ında kontrat bazlı bir **erişim listesi** var: listede olmayan bir kontratın FHE işlemi `NotOnAccessList(address)` hatası alıyor. Bu listenin lansmandan sonra kalıp kalmayacağı ve nasıl başvurulacağı herkese açık bir belgede yazmıyor.
 - `@cofhe/sdk` 0.8.0 (6 Ekim) mainnet zincir tanımlarını getirdi: Ethereum ve Arbitrum One (`https://cofhe.mainnet.fhenix.zone`).

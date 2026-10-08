@@ -18,7 +18,7 @@
   var HANDLE = /^[A-Za-z0-9_]{1,15}$/;
   var WALLET = /^0x[0-9a-fA-F]{40}$/;
   var STATUS = /^https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status\/(\d{1,25})(?:[/?#].*)?$/i;
-  var POST_TEXT = 'My cat is still encrypted. 🔒🐾\n\nJust joined the @FheCat waitlist. Mainnet mint in October.\n\nfhecat.com/waitlist';
+  var POST_TEXT = 'My cat is still encrypted. 🔒🐾\n\nJust joined the @FheCat waitlist, powered by @fhenix FHE. Mainnet mint in October.\n\nfhecat.com/waitlist';
   var REPLY_TEXT = 'Card attached. My cat stays encrypted until the reveal. 🐾';
 
   var $ = function (sel, root) {

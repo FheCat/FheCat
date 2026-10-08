@@ -35,6 +35,12 @@ test('a cat is born unopened, can be peeked in private and revealed with its own
   await expect(card.locator('.chip')).toHaveText('Unopened');
   await expect(card.locator('.traits')).toHaveCount(0);
 
+  // Sealed, it fights as its box.
+  const id = await card.getAttribute('data-token');
+  await card.getByRole('button', { name: 'Full body' }).click();
+  await expect(card.getByRole('img', { name: `FheCat #${id}, sealed, as its box fighter` })).toBeVisible();
+  await card.getByRole('button', { name: 'Portrait' }).click();
+
   await card.getByRole('button', { name: 'Peek' }).click();
   await expect(card).toContainText('marks this cat as Peeked for good');
   await card.getByRole('button', { name: 'Peek in private' }).click();
@@ -42,6 +48,9 @@ test('a cat is born unopened, can be peeked in private and revealed with its own
   await expect(card.locator('.traits li')).toHaveCount(8);
   await expect(card.locator('.chip')).toHaveText('Peeked');
   const peeked = await card.locator('.traits li').allTextContents();
+  // Only its holder sees it, so only its holder sees it fight as itself.
+  await card.getByRole('button', { name: 'Full body' }).click();
+  await expect(card.getByRole('img', { name: `FheCat #${id}, full body` })).toBeVisible();
 
   await card.getByRole('button', { name: 'Hide' }).click();
   await expect(card.locator('.traits')).toHaveCount(0);
@@ -93,6 +102,15 @@ test('two sealed cats duel blind: tactics stay hidden, the winner tops the week'
   await duel.getByLabel('Accept with').selectOption(idB);
   await duel.getByRole('radio', { name: 'Guard' }).click();
   await duel.getByRole('button', { name: 'Lock & fight' }).click();
+
+  // The fight plays out on screen. The rival holds one of the cats, so it sees both tactics played.
+  const scene = rival.getByRole('dialog', { name: /Duel #\d+/ });
+  await expect(scene).toBeVisible({ timeout: 60_000 });
+  await expect(scene.locator('.fight-banner')).toContainText(/#\d+ wins/, { timeout: 60_000 });
+  await expect(scene.locator('.fight-tactic')).toHaveText(['Pounce', 'Guard']);
+  await expect(scene).toContainText(/You (won · \+4 points|lost · \+1 point)/);
+  await scene.getByRole('button', { name: 'Close' }).click();
+  await expect(scene).toBeHidden();
   const told = rival.locator('#arena .note.ok');
   await expect(told).toContainText(/You (won|lost): #\d+ beat #\d+\. They played Pounce, you played Guard\./, { timeout: 60_000 });
   const winner = (await told.textContent())!.match(/#(\d+) beat/)![1]!;
@@ -105,7 +123,17 @@ test('two sealed cats duel blind: tactics stay hidden, the winner tops the week'
   await expect(result(rival)).toContainText(tactics);
   await expect(result(page)).toBeVisible();
   await expect(result(page)).not.toContainText('Pounce');
-  await result(page).getByRole('button', { name: 'Tactics' }).click();
+
+  // The challenger replays it: a fight cloud while the tactics stay sealed, the fight itself once it decrypts them.
+  await result(page).getByRole('button', { name: /^Watch duel/ }).click();
+  const replay = page.getByRole('dialog', { name: /Duel #\d+/ });
+  await replay.getByRole('button', { name: 'Skip' }).click();
+  await expect(replay.locator('.fight-banner')).toContainText(`#${winner} wins`);
+  await expect(replay.locator('.fight-tactic')).toHaveText(['Secret', 'Secret']);
+  await replay.getByRole('button', { name: 'Watch with tactics' }).click();
+  await expect(replay.locator('.fight-tactic')).toHaveText(['Pounce', 'Guard'], { timeout: 30_000 });
+  await page.keyboard.press('Escape');
+  await expect(replay).toBeHidden();
   await expect(result(page)).toContainText(tactics);
 
   // Records, badges and the week's table: 4 points for a sealed win, 1 for the loss.
@@ -128,6 +156,47 @@ test('two sealed cats duel blind: tactics stay hidden, the winner tops the week'
   await expect(cardA.locator('.chip')).toHaveText('Unopened');
   await expect(cardB.locator('.chip')).toHaveText('Unopened');
   await rival.context().close();
+});
+
+test('every fight is choreographed to its result and stays on the stage', async ({ page }) => {
+  await page.goto('/');
+  // The fight scripts and the stage, loaded as the site loads them, run for every pairing.
+  const problems = await page.evaluate(async () => {
+    const { BEATS, buildScript, captionOf } = await import('/src/arena/script.ts');
+    const { render } = await import('/src/arena/stage.ts');
+    const out: string[] = [];
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    const cast = { looks: [{ kind: 'cat', dna: 0x9c4a2e71b05d8f36n }, { kind: 'box', state: 1, handle: 7n }] };
+    const pairs = [null, ...[0, 1, 2].flatMap((a) => [0, 1, 2].map((b) => [a, b]))];
+    for (const tactics of pairs)
+      for (const winner of [0, 1]) {
+        const name = `${tactics ? tactics.join('-') : 'blind'}, ${winner} wins`;
+        const s = buildScript({ tactics, winner });
+        const m = s.marks;
+        const ordered = m.vs[0] < m.vs[1] && m.vs[1] <= m.lock && m.lock < m.clash && m.clash <= m.impact && m.impact <= m.result && m.result < m.end;
+        if (!ordered || !Number.isFinite(m.end)) out.push(`${name}: marks ${JSON.stringify(m)}`);
+        s.tracks.forEach((segs: { t0: number; t1: number; poses: string[]; from: number; to: number; hidden?: boolean }[], i: number) => {
+          if (segs[0].t0 !== 0) out.push(`${name}: fighter ${i} starts at ${segs[0].t0}`);
+          for (let k = 1; k < segs.length; k++) if (segs[k].t0 !== segs[k - 1].t1) out.push(`${name}: fighter ${i} skips ${segs[k - 1].t1}-${segs[k].t0}`);
+          const last = segs[segs.length - 1];
+          if (last.t1 !== Infinity) out.push(`${name}: fighter ${i} vanishes at ${last.t1}`);
+          if (i === winner ? !last.poses.includes('win') : last.poses.join() !== 'down') out.push(`${name}: fighter ${i} ends ${last.poses}`);
+          for (const seg of segs)
+            if (seg.t0 >= BEATS.arrive && !seg.hidden && [seg.from, seg.to].some((x) => x < 12 || x > 148)) out.push(`${name}: fighter ${i} off stage at ${seg.t0}`);
+        });
+        if (!captionOf({ tactics, winner })) out.push(`${name}: no caption`);
+        for (let t = 0; t < m.end + 1; t += 1 / 20) render(ctx, s, cast, t);
+      }
+    // A live fight waits under FHE; once the result is in, the clash takes over without a jump.
+    const waiting = buildScript({ winner: null });
+    const live = buildScript({ winner: 1, tactics: [2, 0], clashAt: 9.25 });
+    const before = (x: { tracks: { t0: number; poses: string[]; from: number; to: number; facing: string }[][] }, i: number) =>
+      JSON.stringify(x.tracks[i].filter((g) => g.t0 < 9.25).map((g) => [g.t0, g.poses, g.from, g.to, g.facing]));
+    for (const i of [0, 1]) if (before(waiting, i) !== before(live, i)) out.push(`live fighter ${i} jumps when the result comes in`);
+    if (waiting.marks.clash !== Infinity || live.marks.clash !== 9.25) out.push('live clash timing');
+    return out;
+  });
+  expect(problems).toEqual([]);
 });
 
 test('the owner runs the sale from the site', async ({ page }) => {

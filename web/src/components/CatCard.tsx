@@ -7,9 +7,13 @@ import { explorerUrl } from '../config/chains';
 import { ensurePermit } from '../lib/cofhe';
 import { STATE, STATE_NAMES, type CatView } from '../lib/hooks';
 import { dnaHex, failure, retry } from '../lib/format';
+import { fighterLook } from '../lib/arena';
+import { forgetDna, rememberDna } from '../lib/privateDna';
 import { Sprite } from '../pixel/Sprite';
 import { useToast } from '../pixel/Toast';
 import { CatImage } from './CatImage';
+import { Fighter } from './Fighter';
+
 
 type Step = 'idle' | 'confirm' | 'mining' | 'signing' | 'decrypting';
 
@@ -49,6 +53,7 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
   const publicClient = usePublicClient({ chainId });
   const [seen, setSeen] = useState<bigint | null>(null);
   const [ask, setAsk] = useState<'peek' | 'open' | null>(null);
+  const [body, setBody] = useState(false);
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -105,8 +110,15 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
       setStep('signing');
       await ensurePermit(c);
       setStep('decrypting');
-      setSeen((await retry(() => c.decryptForView(cat.dnaHandle, FheTypes.Uint64).execute())) as bigint);
+      const dna = (await retry(() => c.decryptForView(cat.dnaHandle, FheTypes.Uint64).execute())) as bigint;
+      setSeen(dna);
+      rememberDna(cat.owner, id, dna); // so it fights as itself in the arena, on this screen only
     });
+
+  const hide = () => {
+    setSeen(null);
+    forgetDna(cat.owner, id);
+  };
 
   /** Open the box for everyone, then finish the reveal straight away. */
   const open = () =>
@@ -144,7 +156,14 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
         <span className={`chip state-${state} ${revealed ? 'chip-ok' : privateView ? 'chip-private' : ''}`}>{STATE_NAMES[state]}</span>
       </p>
       <div className="cat-art">
-        {dna !== null ? (
+        {body ? (
+          <Fighter
+            look={fighterLook(cat, seen ?? undefined)}
+            scale={4}
+            full
+            label={dna !== null ? `FheCat #${id}, full body` : `FheCat #${id}, sealed, as its box fighter`}
+          />
+        ) : dna !== null ? (
           <CatImage dna={dna} alt={`FheCat #${id}`} />
         ) : (
           <CatImage handle={cat.dnaHandle} state={state as 0 | 1 | 2} alt={`FheCat #${id}, sealed`} />
@@ -155,6 +174,14 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
             Only you
           </span>
         )}
+      </div>
+      <div className="tabs art-views" role="group" aria-label={`How to show FheCat #${id}`}>
+        <button type="button" className={body ? undefined : 'active'} aria-pressed={!body} onClick={() => setBody(false)}>
+          Portrait
+        </button>
+        <button type="button" className={body ? 'active' : undefined} aria-pressed={body} onClick={() => setBody(true)}>
+          Full body
+        </button>
       </div>
 
       <dl className="spec-data">
@@ -233,7 +260,7 @@ export function CatCard({ cat, chainId, contract, cofhe, canDecrypt, onChanged }
                   Peek
                 </button>
               ) : (
-                <button className="btn btn-sm btn-ghost" onClick={() => setSeen(null)} disabled={busy}>
+                <button className="btn btn-sm btn-ghost" onClick={hide} disabled={busy}>
                   Hide
                 </button>
               )}

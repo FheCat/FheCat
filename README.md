@@ -63,6 +63,7 @@ Hiçbir şey reveal'ı zorlamaz. Ekip dahil kimse başkasının kedisini açamaz
 - **Sızıntıya karşı sınırlar:** Tekrarlanan karşılaştırmalar gizli gücü sızdırabilir. Bu yüzden iki kedi haftada bir kez karşılaşır ve bir kedinin aynı anda tek açık meydan okuması olur. Meydan okumalar 3 gün açık kalır.
 - **Haftalık tablo ve rozetler:** Galibiyet 3 puan, kapalı kutuyla galibiyet 4 puan, mağlubiyet 1 puan. Hafta Pazartesi 00:00 UTC'de başlar. Haftanın lideri, sonraki haftanın ilk sonucuyla (ya da herkesin çağırabildiği `crownWeek` ile) Weekly Crown alır. Rozetler kediyle birlikte el değiştirir: First Blood (ilk galibiyet), Won Blind (kapalı kutuyla galibiyet), Hat-trick (üst üste 3 galibiyet), Sealed Legend (hiç görülmeden 5 galibiyet), Weekly Crown.
 - **Kademe kanıtı:** `claimTier(kedim, kademe)` → arena `FHE.gte(güç, eşik)` sonucunu açar → `settleTier()`. Güç, DNA'nın 8 baytının toplamıdır (0–2040). Kademeler: Rare ≥1200 (en iyi ~%20), Epic ≥1350 (~%6), Legendary ≥1500 (~%1), Mythic ≥1600 (~%0,2). Cevap evet de olsa hayır da olsa herkese açık olur; DNA, özellikler ve Gücün kendisi kapalı kalır.
+- **Oyun gibi dövüşler:** Her kedinin tam vücut bir piksel dövüşçüsü vardır. Başı portredekinin aynısıdır (kürk, desen, gözler, ağız, başlık); gövdesi kürkü ve deseniyle çizilir, aksesuarı ve aurası üstündedir. Kapalı bir kedi, kendi barkodlu kutusu olarak gölge patiler üzerinde dövüşür ve hiçbir şey sızdırmaz. Kabul edilen düello sahnede canlı oynar: iki kedi koşarak girer, karşılaşır ve taktiklerini kilitler. Arena FHE ile hesaplarken bitler yükselir, ardından çarpışma gelir ve kazanan, sersemlemiş rakibinin karşısında poz verir. Her taktiğin kendi hareketleri vardır: Pounce sıçrar, Trick dumanda kaybolup arkadan vurur, Guard kalkan kaldırır. Beklenen galibiyetle içgüdünün çevirdiği sürpriz ayrı oynanır. Taktikleri yalnızca iki oyuncu izler; başkaları bir kavga bulutu ve içinden çıkan kazananı görür. Her sonuç tekrar izlenebilir. "My cats" kartlarındaki **Full body** kedinin dövüşçü halini gösterir. Gizlice bakılmış bir kedi kendisi olarak yalnızca sahibinin ekranında görünür. Hareketi azaltmayı seçen ziyaretçi doğrudan sonucu görür.
 
 Oynamak için sahip önce `FheCat.enterArena()` ile arenanın kedisinin şifreli DNA'sı üzerinde hesap yapmasına izin verir. Bu izin o arena adresine bağlıdır; arena değişirse kediler yeniden girer. Düello açmayı, kabul etmeyi veya kademe istemeyi yalnızca kedinin o anki sahibi yapabilir ve kişi kendi kedileriyle dövüşemez. İçgüdüler ve Güç kedi başına bir kez hesaplanır ve şifreli saklanır; onları kimse çözemez, arena dahil.
 
@@ -103,13 +104,13 @@ Aynı test mainnet fork'unda da çalışır (`FORK=arbitrum npm run test:fork`; 
 Gereksinim: Node.js 20+ (22 önerilir).
 
 ```bash
-cd contracts && npm install && npm test   # 50 test: mint, kutu durumları, ACL, reveal, Kör Arena, metadata, TS↔Solidity render birebirliği
+cd contracts && npm install && npm test   # 55 test: mint, kutu durumları, ACL, reveal, Kör Arena, metadata, TS↔Solidity render birebirliği, dövüşçüler
 cd ../web && npm install
 bash e2e/stack.sh                          # Hardhat + CoFHE mock'ları + yerel deploy + site
 # http://localhost:5173 → "Cüzdan bağla" → "Geliştirici cüzdanı"
 ```
 
-- `npm run test:e2e` (web klasöründe): aynı yığını kurar ve tarayıcıda mint → gizli bakış → reveal akışını ve iki cüzdan arasında kör bir düelloyu test eder. İkinci cüzdan `?dev=1` ile açılır.
+- `npm run test:e2e` (web klasöründe): aynı yığını kurar ve tarayıcıda mint → gizli bakış → reveal akışını ve iki cüzdan arasında kör bir düelloyu test eder: canlı dövüş sahnesi, rakibin taktiksiz tekrarı ve taktikleri açınca tekrar oynayan dövüş dahil. Ayrıca 9 taktik eşleşmesinin her iki sonucunu ve seyirci bulutunu sahnede oynatıp her dövüşün sonuca ulaştığını ve dövüşçülerin sahnede kaldığını doğrular. İkinci cüzdan `?dev=1` ile açılır.
 - `npm run test:fork` (contracts klasöründe): üretim kontratını canlı bir testnet'in fork'unda çalıştırır. Farklı bir ağ için başına `FORK=base-sepolia` ekleyin.
 
 > **Not:** CoFHE mock'ları şifreli rastgele sayı üretemiyor. Bu yüzden yerel zincirde `FheCatLocal` ve `FheCatArenaLocal` deploy edilir. Bu varyantlar rastgeleliği (DNA ve düello şansı) mock'lanabilir bir FHE işlemiyle taklit eder, geri kalan her kod yolu üretimdekiyle aynıdır. Gerçek `FHE.randomEuint64()` yolu fork testinde ve testnet'te doğrulanır. İki varyant da 31337 dışındaki bir zincire deploy edilemez.
@@ -183,9 +184,9 @@ cd web && npm run build    # çıktı: web/dist
 ## Proje yapısı
 
 ```
-art/         Sprite'lar, özellik/nadirlik tabloları ve TypeScript SVG render'ı (tek doğruluk kaynağı)
+art/         Sprite'lar, özellik/nadirlik tabloları, TypeScript SVG render'ı (tek doğruluk kaynağı) ve arenanın tam vücut dövüşçüleri
 contracts/   Hardhat: FheCat.sol, FheCatRenderer.sol, FheCatArena.sol, üretilen FheCatArt.sol, testler, deploy ve yönetim komutları
-web/         Mint sitesi (İngilizce, ana sayfanın piksel tasarımıyla): Vite + React 19 + wagmi 3 + @cofhe/sdk, Playwright E2E
+web/         Mint sitesi (İngilizce, ana sayfanın piksel tasarımıyla): Vite + React 19 + wagmi 3 + @cofhe/sdk, Playwright E2E; src/arena: dövüş sahnesi ve koreografi
 docs/        README görselleri
 ```
 
@@ -203,13 +204,14 @@ Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 1.0.0, `@cofhe/sdk` / 
 - A reveal submits the threshold network's signed decryption, which the contract checks with `FHE.verifyDecryptResultSafe`. Anyone can reveal an Opened cat; a holder who peeked can reveal with their own proof.
 - Nothing forces a reveal, and a cat may stay sealed forever.
 - **Blind Arena:** after `enterArena()`, holders duel with sealed tactics: Pounce beats Trick, Trick beats Guard, Guard beats Pounce. Each tactic is encrypted in the player's browser, bound to their wallet and the arena. `FheCatArena` scores both sides under FHE with each cat's hidden instincts (from its encrypted traits) and encrypted luck, and publishes only the winner. A sealed box wins ties; peeking shows your instincts but marks the cat. Two cats meet once a week; a weekly points table and badges that stay with the cat. Tier claims publish only whether a cat reaches Rare, Epic, Legendary or Mythic (`FHE.gte`). The DNA, tactics, traits and scores stay sealed. *You don't need to see your cat to become a legend.*
+- **Fights you can watch:** every cat has a full-body pixel fighter: its portrait's head on a body in its fur and coat, with its accessory and aura. A sealed cat fights as its own barcoded box on shadow paws, so nothing leaks. An accepted duel plays live: run-in, face-off, tactics locked while bits rise under FHE, then the clash, scripted per tactic (Pounce leaps, Trick vanishes and strikes from behind, Guard raises a shield) and differently for an upset. Only the two players see the tactics played; everyone else sees a fight cloud and who walks out of it. Every result can be replayed.
 
 Art and metadata are rendered fully on-chain by `FheCatRenderer`: 8 traits with 93 options, a sealed box per state with a barcode of the token's own ciphertext handle, and 4 stars per cat picked from its whole DNA, so no two cats look alike. The site renders them with an identical TypeScript renderer; tests enforce byte-for-byte parity, so a private peek never leaves the browser.
 
 **Testing:**
-- **Contracts:** 50 Hardhat tests against the CoFHE mocks.
+- **Contracts:** 55 Hardhat tests against the CoFHE mocks, including every fighter trait and pose.
 - **Fork test:** runs the production contract against the live TaskManager/ACL on Arbitrum Sepolia, Base Sepolia and Ethereum Sepolia.
-- **End to end:** Playwright tests cover the site's mint → peek → reveal flow, opening a box, and a blind duel between two wallets.
+- **End to end:** Playwright tests cover the site's mint → peek → reveal flow, opening a box, a blind duel between two wallets with its live fight and replays, and every fight choreography on the stage.
 - **Testnet:** a real encrypted duel on Arbitrum Sepolia: tactics encrypted with the SDK, the result decrypted by the threshold network and settled with its proof.
 
 **Deploy:** settings live in `contracts/launch.json`, the same file for the testnet rehearsal and mainnet; the key comes from the `PRIVATE_KEY` environment variable. `cd contracts && npm run deploy:arb-sepolia`, then set the allowlist and phase with the `fhecat:*` tasks or from the site's owner chapter. The site is a static Vite build (`cd web && npm run build`). See `docs/TESTNET.md` and `docs/MAINNET.md`.

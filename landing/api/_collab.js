@@ -3,24 +3,25 @@
  * The leading underscore keeps Vercel from serving this file as an endpoint.
  *
  * A collab is one community (a DAO, a guild, an alpha group...) asking for
- * allowlist spots. Its manager fills in the application and signs it with a
- * wallet. The team approves it with a number of spots and a deadline; the
- * manager then raffles the spots in a post on X, adds the winners' wallets
- * and submits them, with the post's link, before the deadline.
+ * allowlist spots. Its manager fills in a short application, with the link to
+ * a post about FheCat on X, and signs it with a wallet. The team approves it
+ * with a number of spots and a deadline; the manager then raffles the spots in
+ * a post on X, adds the winners' wallets and submits them, with the post's
+ * link, before the deadline. The admin can close the applications.
  */
 
 export const KINDS = { dao: 'DAO', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
 export const ROLES = { founder: 'Founder', cm: 'Community manager', mod: 'Moderator', other: 'Other' };
 export const STATUSES = ['pending', 'approved', 'rejected'];
-/** Communities one manager wallet can apply with. */
-export const MAX_COLLABS = 5;
+/** Applications one manager wallet can send, and one X account (the applicant's own). */
+export const MAX_COLLABS = 2;
+export const MAX_PER_X = 2;
 export const MAX_SPOTS = 500;
 /** Longest submission window the review can give, in hours (30 days). */
 export const MAX_HOURS = 720;
 
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;
 const WALLET = /^0x[0-9a-fA-F]{40}$/;
-const INVITE = /^(?:https?:\/\/)?(?:www\.)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/([A-Za-z0-9-]{2,32})\/?$/i;
 const POST = /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x|twitter)\.com\/(?:([A-Za-z0-9_]{1,15})|i(?:\/web)?)\/status(?:es)?\/(\d{1,20})(?:[/?#].*)?$/i;
 
 let ready;
@@ -61,15 +62,40 @@ export function ensureSchema(sql) {
           tweet text NOT NULL DEFAULT ''
         )`
     );
-    // Added after the first release: the link to the raffle post on X.
+    // Added after the first release: the link to the raffle post on X, then the application's own post.
     await run(() => sql`ALTER TABLE collabs ADD COLUMN IF NOT EXISTS tweet text NOT NULL DEFAULT ''`);
+    await run(() => sql`ALTER TABLE collabs ADD COLUMN IF NOT EXISTS apply_post text NOT NULL DEFAULT ''`);
     await run(() => sql`CREATE UNIQUE INDEX IF NOT EXISTS collabs_x_handle ON collabs (lower(x_handle))`);
     await run(() => sql`CREATE INDEX IF NOT EXISTS collabs_manager ON collabs (manager)`);
+    await run(() => sql`CREATE INDEX IF NOT EXISTS collabs_contact_x ON collabs (lower(contact_x))`);
+    // Switches the admin flips, such as whether applications are open.
+    await run(
+      () => sql`
+        CREATE TABLE IF NOT EXISTS site_settings (
+          key text PRIMARY KEY,
+          value text NOT NULL,
+          updated_at timestamptz NOT NULL DEFAULT now()
+        )`
+    );
   })().catch((err) => {
     ready = undefined;
     throw err;
   });
   return ready;
+}
+
+/** Whether new applications are taken: open until the admin closes them. */
+export async function collabOpen(sql) {
+  await ensureSchema(sql);
+  const [row] = await sql`SELECT value FROM site_settings WHERE key = 'collab'`;
+  return !row || row.value !== 'closed';
+}
+
+export async function setCollabOpen(sql, open) {
+  await ensureSchema(sql);
+  await sql`
+    INSERT INTO site_settings (key, value) VALUES ('collab', ${open ? 'open' : 'closed'})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`;
 }
 
 /** One line of plain text: control characters and runs of spaces collapsed. */
@@ -92,26 +118,6 @@ export function handleOf(raw) {
   return HANDLE.test(s) ? s : null;
 }
 
-/** A Discord invite as https://discord.gg/<code>; "" when empty, null when it is not an invite. */
-function inviteOf(raw) {
-  const s = String(raw ?? '').trim();
-  if (!s) return '';
-  const m = INVITE.exec(s);
-  return m ? `https://discord.gg/${m[1]}` : null;
-}
-
-/** An http(s) address; "" when empty, null when it is not one. */
-function siteOf(raw) {
-  const s = String(raw ?? '').trim();
-  if (!s) return '';
-  try {
-    const url = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
-    return /^https?:$/.test(url.protocol) && url.hostname.includes('.') && url.href.length <= 200 ? url.href : null;
-  } catch {
-    return null;
-  }
-}
-
 /** A post on X as https://x.com/<handle>/status/<id>; "" when empty, null when it is not a post link. */
 export function postOf(raw) {
   const s = String(raw ?? '').trim();
@@ -132,25 +138,22 @@ export function readApplication(body) {
   if (name.length < 2 || name.length > 40) return { error: 'Give your community a name (2-40 characters).', field: 'name' };
   const kind = String(b.kind || '');
   if (!KINDS[kind]) return { error: 'Pick what kind of community it is.', field: 'kind' };
-  const x = handleOf(b.x);
-  if (!x) return { error: "Your community's X handle doesn't look right.", field: 'x' };
-  const discord = inviteOf(b.discord);
-  if (discord === null) return { error: 'Use a Discord invite link, like discord.gg/yourcommunity.', field: 'discord' };
-  const website = siteOf(b.website);
-  if (website === null) return { error: "That website address doesn't look right.", field: 'website' };
+  // In the form's order, so the first field flagged is the first one wrong.
   const members = whole(b.members, 1, 10_000_000);
   if (members === null) return { error: 'Roughly how many members does it have?', field: 'members' };
-  const requested = whole(b.requested, 1, MAX_SPOTS);
-  if (requested === null) return { error: `Ask for 1 to ${MAX_SPOTS} spots.`, field: 'requested' };
+  const x = handleOf(b.x);
+  if (!x) return { error: "Your community's X handle doesn't look right.", field: 'x' };
   const contactX = handleOf(b.contactX);
   if (!contactX) return { error: "Your own X handle doesn't look right.", field: 'contactX' };
   const contactDiscord = line(b.contactDiscord, 40);
   if (contactDiscord && !/^[A-Za-z0-9_.]{2,32}$/.test(contactDiscord)) return { error: "That Discord username doesn't look right.", field: 'contactDiscord' };
   const role = String(b.role || '');
   if (!ROLES[role]) return { error: 'Pick your role in the community.', field: 'role' };
+  const post = postOf(b.post);
+  if (!post) return { error: post === '' ? 'Add the link to your post about FheCat on X.' : "That isn't a link to a post on X (x.com/name/status/...).", field: 'post' };
   const pitch = line(b.pitch, 600);
   if (pitch.length < 10) return { error: 'Tell us a little about your community (at least 10 characters).', field: 'pitch' };
-  return { value: { name, kind, x, discord, website, members, requested, contactX, contactDiscord, role, pitch } };
+  return { value: { name, kind, x, members, post, contactX, contactDiscord, role, pitch } };
 }
 
 /**
@@ -198,7 +201,8 @@ export function managerView(r) {
     submittedAt: iso(r.submitted_at),
     createdAt: iso(r.created_at),
     winners: Array.isArray(r.winners) ? r.winners : [],
-    tweet: r.tweet || ''
+    tweet: r.tweet || '',
+    post: r.apply_post || ''
   };
 }
 

@@ -2,12 +2,15 @@
  * fhecat.com/collab: communities (DAOs, guilds, alpha groups) apply for
  * allowlist spots, and once approved add their raffle winners' wallets.
  *
- * The form opens right away. Sending it signs in with a wallet (a signature:
- * free, no transaction): api/collab checks the form, hands out a message, the
- * wallet signs it, the server sets a session cookie, then the application
- * goes in. That wallet is the way back in. Then 2 Review (by the team, in the
- * admin) -> 3 Post the raffle on X, add the winners' wallets and submit them
- * with the post's link before the deadline. Everything goes through api/collab.
+ * The form opens right away: a short application with the link to a post
+ * about FheCat on the community's X. Sending it signs in with a wallet (a
+ * signature: free, no transaction): api/collab checks the form, hands out a
+ * message, the wallet signs it, the server sets a session cookie, then the
+ * application goes in. That wallet is the way back in. Then 2 Review (by the
+ * team, in the admin) -> 3 Post the raffle on X, add the winners' wallets and
+ * submit them with the post's link before the deadline. When the admin closes
+ * applications the form gives way to a notice; those who applied can still
+ * sign in. Everything goes through api/collab.
  */
 (function () {
   'use strict';
@@ -19,10 +22,10 @@
   // "community" is no longer offered; older applications may still carry it.
   var KIND_TAG = { dao: 'DAO', community: 'COMM', guild: 'GUILD', alpha: 'ALPHA', nft: 'NFT', other: 'OTHER' };
   var KIND_NAME = { dao: 'DAO', community: 'Community', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
-  var MAX_COLLABS = 5;
+  var MAX_COLLABS = 2; // applications per wallet (and per X account), as api/_collab.js
   var WALLET = /^0x[0-9a-fA-F]{40}$/;
   var POST = /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x|twitter)\.com\/(?:[A-Za-z0-9_]{1,15}|i(?:\/web)?)\/status(?:es)?\/\d{1,20}(?:[/?#].*)?$/i;
-  var APPLY_FIELDS = ['name', 'kind', 'members', 'x', 'requested', 'discord', 'website', 'contactX', 'contactDiscord', 'role', 'pitch', 'company'];
+  var APPLY_FIELDS = ['name', 'kind', 'members', 'x', 'contactX', 'contactDiscord', 'role', 'post', 'pitch', 'company'];
 
   var $ = function (sel, root) {
     return (root || document).querySelector(sel);
@@ -33,6 +36,7 @@
 
   /** Everything the page knows. */
   var st = {
+    open: true, // new applications are taken (the admin's switch)
     wallet: null, // signed-in wallet, lowercase
     collabs: [],
     selected: null, // collab id on screen
@@ -96,6 +100,7 @@
           err.status = res.status;
           err.field = j.field;
           err.row = j.row;
+          err.closed = !!j.closed;
           throw err;
         });
     });
@@ -258,6 +263,7 @@
     if (first) first.focus();
   }
   $('#cbSideSigninBtn').addEventListener('click', toSignin);
+  $('#cbClosedSignin').addEventListener('click', toSignin);
   $('#cbSigninBack').addEventListener('click', function () {
     st.signin = false;
     $('#cbSigninError').textContent = '';
@@ -295,9 +301,12 @@
   }
 
   function renderSide() {
+    $('#cbLive .blink-dot').hidden = !st.open;
+    $('#cbLive span').textContent = st.open ? 'Collab live' : 'Applications closed';
     var list = $('#cbGroups');
     list.textContent = '';
     $('#cbNone').hidden = !st.wallet || st.collabs.length > 0;
+    $('#cbNone').textContent = st.open ? 'No communities yet. Fill in the form to apply.' : 'No communities on this wallet.';
     $('#cbSideSignin').hidden = !!st.wallet;
     st.collabs.forEach(function (c) {
       var li = el('li');
@@ -318,7 +327,7 @@
       li.appendChild(b);
       list.appendChild(li);
     });
-    $('#cbNew').hidden = !st.wallet || st.applying || !st.collabs.length || st.collabs.length >= MAX_COLLABS;
+    $('#cbNew').hidden = !st.open || !st.wallet || st.applying || !st.collabs.length || st.collabs.length >= MAX_COLLABS;
 
     var me = $('#cbMe');
     me.hidden = !st.wallet;
@@ -341,9 +350,10 @@
   }
 
   function show(id) {
-    ['#cbSignin', '#cbApply', '#cbReview', '#cbRejected', '#cbWinners'].forEach(function (v) {
+    ['#cbSignin', '#cbClosed', '#cbApply', '#cbReview', '#cbRejected', '#cbWinners'].forEach(function (v) {
       $(v).hidden = v !== id;
     });
+    $('#cbSteps').hidden = id === '#cbClosed';
   }
 
   function steps(at, opts) {
@@ -366,9 +376,15 @@
     if (!st.wallet && st.signin) {
       steps(1);
       show('#cbSignin');
+      $('#cbSigninBack').textContent = st.open ? 'New here? Apply' : 'Back';
       return;
     }
     if (!st.wallet || st.applying || !c) {
+      if (!st.open) {
+        show('#cbClosed');
+        $('#cbClosedSignin').hidden = !!st.wallet;
+        return;
+      }
       steps(1);
       show('#cbApply');
       renderApply();
@@ -381,15 +397,24 @@
       $('#cbRevContact').textContent = '@' + c.contactX;
       var dl = $('#cbRevFacts');
       dl.textContent = '';
-      [
+      var facts = [
         ['Type', KIND_NAME[c.kind] || c.kind],
         ['Community X', '@' + c.x],
-        ['Members', Number(c.members).toLocaleString('en-US')],
-        ['Spots asked', String(c.requested)],
-        ['Applied', day(c.createdAt)]
-      ].forEach(function (f) {
+        ['Members', Number(c.members).toLocaleString('en-US')]
+      ];
+      if (c.post) {
+        var a = el('a', 'link', c.post.replace(/^https:\/\//, ''));
+        a.href = c.post;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        facts.push(['Your post', a]);
+      }
+      facts.push(['Applied', day(c.createdAt)]);
+      facts.forEach(function (f) {
         dl.appendChild(el('dt', '', f[0]));
-        dl.appendChild(el('dd', '', f[1]));
+        var dd = el('dd');
+        dd.appendChild(typeof f[1] === 'string' ? document.createTextNode(f[1]) : f[1]);
+        dl.appendChild(dd);
       });
       return;
     }
@@ -771,6 +796,12 @@
         // Signed in on the way (the application itself failed): stay on the form.
         st.applying = !!st.wallet;
         st.signin = false;
+        // Closed while it was being filled in: the notice replaces the form (or shows the
+        // communities this wallet already has).
+        if (err.closed) {
+          st.open = false;
+          st.applying = false;
+        }
         render();
         error.textContent =
           err.status === 401 && signedIn
@@ -915,7 +946,14 @@
     });
     steps(1);
     window.dispatchEvent(new Event('eip6963:requestProvider'));
-    refresh();
+    // Whether applications are open, then the signed-in wallet's communities. If the switch
+    // can't be read the form shows; the server refuses applications while closed anyway.
+    call('GET', { state: 1 })
+      .then(function (s) {
+        st.open = s.open !== false;
+      })
+      .catch(function () {})
+      .then(refresh);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

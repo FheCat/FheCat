@@ -755,6 +755,20 @@
     });
   }
 
+  // The Collab button shows only while collab applications are open (the admin's switch).
+  function collabButton() {
+    var btn = $('#heroCollab');
+    if (!btn || !window.fetch) return;
+    fetch('api/collab?state=1', { cache: 'no-store' })
+      .then(function (r) {
+        return r.ok ? r.json() : null;
+      })
+      .then(function (s) {
+        if (s && s.open === true) btn.hidden = false;
+      })
+      .catch(function () {});
+  }
+
   // ---------------------------------------------------------------------------
   function start() {
     P.mountAll(NS.sprites);
@@ -773,6 +787,7 @@
     inbox();
     reveals();
     easterEggs();
+    collabButton();
     $('#year').textContent = String(new Date().getFullYear());
     document.documentElement.classList.add('ready');
   }

@@ -10,7 +10,9 @@
  *   POST {action: 'logout'}                    sign out
  *   GET  ?status=&q=&after=&limit=&order=      entries (keyset paging by id) + counts
  *   POST {action: 'status', ids: [...], status} approve, reject, or back to pending
- *   GET  ?view=collabs                         every collab (community applications) + counts
+ *   GET  ?view=collabs                         every collab (community applications) + counts, and whether
+ *                                              applications are open
+ *   POST {action: 'collabOpen', open}          open or close collab applications (fhecat.com/collab)
  *   POST {action: 'collab', id, status, spots?, hours?, reopen?}
  *                                              approve with spots and a deadline `hours` from now,
  *                                              reject, or back to pending; `reopen` unlocks a submitted list
@@ -20,7 +22,7 @@
  */
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
-import { MAX_HOURS, MAX_SPOTS, STATUSES as COLLAB_STATUSES, adminView, ensureSchema } from './_collab.js';
+import { MAX_HOURS, MAX_SPOTS, STATUSES as COLLAB_STATUSES, adminView, collabOpen, ensureSchema, setCollabOpen } from './_collab.js';
 import { arenaView } from './_arena.js';
 
 const COOKIE = 'fhecat_admin';
@@ -119,7 +121,7 @@ async function collabs(sql) {
     counts[c.status] += 1;
     if (c.status === 'approved' && c.submittedAt) counts.submitted += 1;
   }
-  return { now: new Date().toISOString(), collabs: rows, counts };
+  return { now: new Date().toISOString(), collabs: rows, counts, open: await collabOpen(sql) };
 }
 
 /** Approve (spots + a deadline `hours` from now), reject or send back to pending one collab. */
@@ -214,6 +216,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, ids: done.map((r) => Number(r.id)), status: body.status, counts: await counts(sql) });
     }
     if (body.action === 'collab') return await reviewCollab(sql, body, res);
+    if (body.action === 'collabOpen') {
+      if (typeof body.open !== 'boolean') return res.status(400).json({ error: 'Say whether applications are open.' });
+      await setCollabOpen(sql, body.open);
+      return res.status(200).json({ ok: true, open: body.open });
+    }
     return res.status(400).json({ error: 'Unknown action.' });
   } catch (err) {
     console.error('admin failed', err);

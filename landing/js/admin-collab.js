@@ -404,8 +404,8 @@
   $('#admCollabSwitch').addEventListener('click', function () {
     var next = !cv.applying;
     var ask = next
-      ? 'Open collab applications? The Collab button comes back on the homepage and new communities can apply.'
-      : 'Close collab applications? The homepage hides its Collab button and /collab stops taking new applications. Communities that already applied can still sign in and add their winners.';
+      ? "Open collab applications? The homepage's Collab button works again and new communities can apply."
+      : "Close collab applications? The homepage's Collab button turns into \"Soon\" and /collab stops taking new applications. Communities that already applied can still sign in and add their winners.";
     if (!window.confirm(ask)) return;
     switching = true;
     renderSwitch();

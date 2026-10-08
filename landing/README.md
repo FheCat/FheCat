@@ -17,7 +17,8 @@ Site yalnızca **https://fhecat.com** adresinde (Vercel). Bu dala her push'ta ke
 Sayfa bir gece yürüyüşü gibi ilerler; her bölümün kendine ait küçük bir piksel sahnesi var:
 
 1. **Giriş:** banner'daki gökyüzü canlı. "FheCat" yazısı gürültüden çözülerek belirir,
-   kediye dokununca önce şifreli, sonra "Meow" der.
+   kediye dokununca önce şifreli, sonra "Meow" der. Altında mint tarihi ve resmi OpenSea logosuyla
+   **OpenSea · Soon** rozeti durur (koleksiyon sayfası açılınca link yapılabilir).
 2. **Every cat is a secret:** şifreli kedi kartı. "Try to peek" denemesi hep "Access denied" ile biter.
 3. **Math on locked boxes:** FHE'nin mantığı: `enc(3) + enc(4)` makineye girer, `enc(7)` çıkar,
    yalnızca izni olan açabilir.
@@ -71,14 +72,14 @@ giriş 12 saat geçerli bir oturum açar. Panelde:
 - **Dışa aktarma** (seçili sekme için, tüm sayfalar): başvurular `.csv`, cüzdanlar `.csv` ya da `.txt`
   (satır başına bir adres, küçük harf). Mint için: Approved sekmesi → Wallets.
 - **Collabs sekmesi:** fhecat.com/collab başvuruları kart olarak listelenir: topluluk ve yönetici bilgileri, başvurunun X postu, tanıtım.
-  - **Applications · Open / Closed:** Başlıktaki düğme yeni başvuruları açar ya da kapatır (onay sorar). Kapalıyken ana sayfadaki **Collab** düğmesi gizlenir, /collab sayfası "Applications are closed" yazar ve API yeni başvuru almaz; daha önce başvuranlar yine cüzdanla girip kazananlarını ekleyebilir. API anında kapanır; ana sayfa ve /collab durumu CDN önbelleği yüzünden en geç bir dakika içinde günceller.
+  - **Applications · Open / Closed:** Başlıktaki düğme yeni başvuruları açar ya da kapatır (onay sorar). Kapalıyken ana sayfadaki **Collab** düğmesi yerinde durur ama tıklanmaz ve üzerinde **Soon** etiketi olur, /collab sayfası "Applications are closed" yazar ve API yeni başvuru almaz; daha önce başvuranlar yine cüzdanla girip kazananlarını ekleyebilir. API anında kapanır; ana sayfa ve /collab durumu CDN önbelleği yüzünden en geç bir dakika içinde günceller.
   - Başvurunun postu kartta link olarak durur; post ne topluluğun ne de yöneticinin X hesabından değilse yanında uyarı çıkar. Eski başvurularda istenen yer sayısı da görünür.
   - Onaylarken WL yer sayısı ve süre (saat) girilir. Onaylı bir topluluğun yer sayısı ve süresi güncellenebilir, gönderilmiş listesi yeniden açılabilir.
   - Kazananlar kartta açılıp kopyalanabilir. Çekiliş postunun linki de kartta durur; post topluluğun kendi X hesabından değilse yanında uyarı çıkar.
   - **Allowlist .txt:** Onaylı waitlist cüzdanlarını ve onaylı collab'ların kazananlarını tekrarsız tek dosyada birleştirir. Gönderilmemiş taslak listeler varsa onları dahil edip etmeyeceğini sorar.
   - **Collab wallets .csv:** Topluluk, çekiliş postu, kazanan, cüzdan ve gönderildi bilgisi.
 - **Arena sekmesi:** Testnet'teki Kör Arena, doğrudan zincirden okunur ve sekme açıkken 30 saniyede bir yenilenir: düello sayısı, açık meydan okumalar (sekmedeki sayı), sonuç bekleyenler, son sonuçlar, haftanın tablosu (puan, galibiyet/mağlubiyet, rozetler, kutu durumu), geçen haftanın tacı ve kademe kanıtları. Taktikler, puanlar ve DNA görünmez; zaten kimse göremez. Oynamak için **Open the arena**, test mint kopyasında doğrudan arena bölümünü açar.
-  - Her kedi listede dövüştüğü haliyle, tam vücut ve nefes alarak durur: açılmış kedi kendisi olarak, diğerleri kendi barkodlu kutusu olarak. Her sonucun yanındaki **Watch** düelloyu mint sitesindeki sahneyle oynatır; admin de bir seyirci gibi kavga bulutunu ve kazananı görür, taktikleri yalnızca iki oyuncu görebilir.
+  - Her kedi listede dövüştüğü haliyle, tam vücut ve nefes alarak durur: açılmış kedi kendisi olarak, diğerleri kendi barkodlu kutusu olarak. Her sonucun yanındaki **Watch** düelloyu mint sitesindeki sahneyle, müziği ve anonsuyla oynatır; admin de bir seyirci gibi kavga bulutunu ve kazananı görür, taktikleri yalnızca iki oyuncu görebilir.
   - Dövüşçüler ve sahne `admin/mint/arena-game.js`'ten gelir: mint sitesinin oyun motoru, React'siz tek dosya (`cd web && npm run build:admin-copy` ya da yalnızca `npm run build:admin-game`). Koleksiyonun çizimlerini taşıdığı için test mint kopyasıyla aynı klasörde, aynı girişin arkasındadır ve sekme onu giriş yapınca yükler. Yüklenemezse sekme yazıyla çalışmaya devam eder. CI, dosyanın güncel koddan derlendiğini kontrol eder.
 
 Şifreyi değiştirmek için Vercel → Project → Settings → Environment Variables → `ADMIN_PASSWORD`, sonra yeniden
@@ -98,7 +99,7 @@ SELECT wallet FROM waitlist WHERE status = 'approved' ORDER BY id;
 
 ## Collab
 
-**https://fhecat.com/collab** adresinde. Ana sayfadaki üçüncü düğme (**Collab**) buraya gelir; başvurular kapalıyken bu düğme görünmez. DAO'lar, guild'ler ve alpha grupları allowlist yeri ister, onaylanınca kendi topluluklarında çekiliş yapıp kazananların cüzdanlarını girer.
+**https://fhecat.com/collab** adresinde. Ana sayfadaki üçüncü düğme (**Collab**) buraya gelir; başvurular kapalıyken düğme tıklanmaz ve üzerinde **Soon** etiketi olur. DAO'lar, guild'ler ve alpha grupları allowlist yeri ister, onaylanınca kendi topluluklarında çekiliş yapıp kazananların cüzdanlarını girer.
 
 1. **Apply:** Form hemen açılır, önce cüzdan bağlamak gerekmez. Kısa bir form: topluluk adı, türü (DAO, Guild, Alpha group, NFT project, Other), üye sayısı, topluluğun X hesabı, yöneticinin X'i, isteğe bağlı Discord adı, rolü, **FheCat hakkında X'te atılmış postun linki (zorunlu)** ve kısa bir tanıtım. Post linki olmadan başvuru gönderilemez; link `x.com/kullanıcı/status/…` biçiminde olmalı.
    - **Sınırlar:** Bir X hesabı (formdaki "Your X") en fazla 2 başvuru yapabilir. Bir cüzdan da en fazla 2 başvuru gönderebilir. Aynı topluluk X hesabı iki kez başvuramaz.

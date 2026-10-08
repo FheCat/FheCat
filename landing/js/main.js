@@ -755,7 +755,8 @@
     });
   }
 
-  // The Collab button shows only while collab applications are open (the admin's switch).
+  // The Collab button is a link only while collab applications are open (the admin's switch);
+  // otherwise it stays on the page as "soon", not clickable.
   function collabButton() {
     var btn = $('#heroCollab');
     if (!btn || !window.fetch) return;
@@ -764,7 +765,11 @@
         return r.ok ? r.json() : null;
       })
       .then(function (s) {
-        if (s && s.open === true) btn.hidden = false;
+        if (!s || s.open !== true) return;
+        btn.href = 'collab.html';
+        btn.classList.remove('is-soon');
+        var tag = $('.soon', btn);
+        if (tag) tag.remove();
       })
       .catch(function () {});
   }

@@ -15,6 +15,7 @@ import { Stars } from '../pixel/Sky';
 import { useToast } from '../pixel/Toast';
 import { ChapterHead } from './Chapter';
 import { Fighter } from './Fighter';
+import { unlockArenaSound } from '../arena/sound';
 import { FightScene, type FightView } from './FightScene';
 
 interface Props {
@@ -653,7 +654,10 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
                               ))}
                             </select>
                             <TacticPicker value={tactic[key]} onChange={(t) => setTactic({ ...tactic, [key]: t })} disabled={!ready} />
-                            <button className="btn btn-sm" onClick={() => accept(d, BigInt(choice!))} disabled={!ready || tactic[key] === undefined}>
+                            <button className="btn btn-sm" onClick={() => {
+                              unlockArenaSound(); // the fight opens later, after the wallet: sound needs this click
+                              accept(d, BigInt(choice!));
+                            }} disabled={!ready || tactic[key] === undefined}>
                               Lock &amp; fight
                             </button>
                           </div>
@@ -680,7 +684,10 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
                         <b>#{d.challenger.toString()}</b> <i className="vs">vs</i> <b>#{d.opponent.toString()}</b>
                       </span>
                       <div className="cat-actions">
-                        <button className="btn btn-sm btn-ghost" onClick={() => settle(d)} disabled={!ready}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => {
+                          unlockArenaSound();
+                          settle(d);
+                        }} disabled={!ready}>
                           Settle
                         </button>
                         {working(`duel-${d.id}`)}
@@ -731,7 +738,10 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
                             </em>
                           )}
                         </span>
-                        <button className="link-btn watch-btn" onClick={() => watch(d)} aria-label={`Watch duel ${d.id}: #${d.winner} against #${loser}`}>
+                        <button className="link-btn watch-btn" onClick={() => {
+                          unlockArenaSound();
+                          watch(d);
+                        }} aria-label={`Watch duel ${d.id}: #${d.winner} against #${loser}`}>
                           <Sprite art={PLAY_ICON} />
                           Watch
                         </button>

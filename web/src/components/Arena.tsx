@@ -6,13 +6,16 @@ import { instinctsOf, type Tactic } from '@art';
 import { fheCatAbi, fheCatArenaAbi } from '../config/abi';
 import { ensurePermit, useCofhe } from '../lib/cofhe';
 import { DUEL, STATE, TIERS, tierName, useAllowed, useArena, useCats, useMyCats, type CatView, type Duel, type TierClaim } from '../lib/hooks';
-import { BADGES, OPEN_FOR, TACTIC_LIST, arenaFailure, badgesOf, lockTactic, timeLeft } from '../lib/arena';
+import { BADGES, OPEN_FOR, TACTIC_LIST, arenaFailure, asTactic, badgeName, badgesOf, fighterLook, lockTactic, timeLeft } from '../lib/arena';
+import type { FightPlan, Side } from '../arena/script';
 import { retry } from '../lib/format';
+import { rememberDna, usePrivateDna } from '../lib/privateDna';
 import { Sprite } from '../pixel/Sprite';
 import { Stars } from '../pixel/Sky';
 import { useToast } from '../pixel/Toast';
 import { ChapterHead } from './Chapter';
-import { CatImage } from './CatImage';
+import { Fighter } from './Fighter';
+import { FightScene, type FightView } from './FightScene';
 
 interface Props {
   n: string;
@@ -31,18 +34,13 @@ async function publicValue(c: CofheClient, handle: `0x${string}`) {
   return { value: decryptedValue, signature };
 }
 
-function Thumb({ cat, small }: { cat?: CatView; small?: boolean }) {
-  return (
-    <div className={`arena-thumb ${small ? 'is-small' : ''}`}>
-      {cat &&
-        (Number(cat.state) === STATE.Revealed ? (
-          <CatImage dna={cat.dna} alt="" />
-        ) : (
-          <CatImage handle={cat.dnaHandle} state={Number(cat.state) as 0 | 1 | 2} alt="" />
-        ))}
-    </div>
-  );
+/** A cat as it fights, full body and breathing: itself if revealed (or peeked by you), else its sealed box. */
+function Thumb({ cat, dna, small }: { cat?: CatView; dna?: bigint; small?: boolean }) {
+  return <div className={`arena-thumb ${small ? 'is-small' : ''}`}>{cat && <Fighter look={fighterLook(cat, dna)} scale={small ? 1 : 2} />}</div>;
 }
+
+/** A play triangle, for watching a fight. */
+const PLAY_ICON = ['X...', 'XX..', 'XXX.', 'XXXX', 'XXX.', 'XX..', 'X...'];
 
 function BoxChip({ state }: { state: number }) {
   return <span className={`chip box-chip box-${state}`}>{BOX[state]}</span>;
@@ -96,7 +94,7 @@ function useNow() {
  */
 export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
   const toast = useToast();
-  const { isConnected } = useConnection();
+  const { isConnected, address } = useConnection();
   const cofhe = useCofhe();
   const write = useWriteContract();
   const publicClient = usePublicClient({ chainId });
@@ -122,6 +120,10 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
   const [tier, setTier] = useState(1);
   const [seen, setSeen] = useState<Record<string, [number, number]>>({});
   const [instincts, setInstincts] = useState<Record<string, [number, number, number]>>({});
+  /** Your own peeked cats' DNA, decrypted in private: they fight as themselves, on your screen only. */
+  const dnaOf = usePrivateDna(address);
+  /** The fight on screen, live or replayed. */
+  const [fight, setFight] = useState<FightView | null>(null);
 
   const arenaCall = { address: arena, abi: fheCatArenaAbi, chainId } as const;
   const ready = Boolean(cofhe) && busy === null;
@@ -136,6 +138,7 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
     } catch (e) {
       console.error(e);
       setError(arenaFailure(e));
+      setFight((f) => (f && f.plan.winner === null ? null : f)); // a live fight that never got its result
     } finally {
       setBusy(null);
       setStep(null);
@@ -173,9 +176,16 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
     setStep('Decrypting the winner…');
     const { value, signature } = await publicValue(c, d.outcome);
     setStep('Confirm in your wallet');
-    await mined(await write.mutateAsync({ ...arenaCall, functionName: 'settle', args: [d.id, Number(value), signature] }));
+    const receipt = await mined(await write.mutateAsync({ ...arenaCall, functionName: 'settle', args: [d.id, Number(value), signature] }));
     const [w, l] = value === 1n ? [d.challenger, d.opponent] : [d.opponent, d.challenger];
-    return { winner: w, loser: l };
+    const [settled] = parseEventLogs({ abi: fheCatArenaAbi, logs: receipt.logs, eventName: 'DuelSettled' });
+    const earned = parseEventLogs({ abi: fheCatArenaAbi, logs: receipt.logs, eventName: 'BadgeEarned' });
+    return {
+      winner: w,
+      loser: l,
+      sealedWin: Boolean(settled?.args.sealedWin),
+      badges: earned.map((e) => ({ id: e.args.tokenId, name: badgeName(Number(e.args.badge)) })),
+    };
   }
 
   async function settleClaim(c: CofheClient, claimId: bigint, tokenId: bigint, level: number, handle: `0x${string}`) {
@@ -216,17 +226,23 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
       setStep('Confirm in your wallet');
       const receipt = await mined(await write.mutateAsync({ ...arenaCall, functionName: 'accept', args: [d.id, token, hash, proof] }));
       const [fought] = parseEventLogs({ abi: fheCatArenaAbi, logs: receipt.logs, eventName: 'DuelFought' });
+      // The fight is on: both cats step into the arena while it computes the winner under FHE.
+      const duel = { id: d.id, challenger: d.challenger, opponent: token };
+      setFight(fightOf(duel, { winner: null }));
       setStep('The arena is fighting under FHE…');
-      const { winner, loser } = await settleDuel(c, { id: d.id, challenger: d.challenger, opponent: token, outcome: fought.args.outcomeHandle });
+      const { winner, loser, sealedWin, badges } = await settleDuel(c, { ...duel, outcome: fought.args.outcomeHandle });
       const won = winner === token;
       let text = `${won ? 'You won' : 'You lost'}: #${winner} beat #${loser}.`;
+      let tactics: FightPlan['tactics'] = null;
       try {
         setStep('Sign once to see both tactics (free)');
         const [a, b] = await revealTactics(c, { id: d.id, challengerTactic: d.challengerTactic, opponentTactic: await opponentTacticOf(d.id) });
         text += ` They played ${tacticName(a)}, you played ${tacticName(b)}.`;
+        tactics = [asTactic(a), asTactic(b)];
       } catch (e) {
         console.warn('tactics stay hidden for now', e); // seeing them is optional
       }
+      showResult(d.id, { winner: winner === d.challenger ? 0 : 1, tactics }, { sealedWin, badges });
       announce(text);
     });
 
@@ -238,9 +254,38 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
 
   const settle = (d: Duel) =>
     act(`duel-${d.id}`, async (c) => {
-      const { winner, loser } = await settleDuel(c, d);
+      setFight(fightOf(d, { winner: null }));
+      const { winner, loser, sealedWin, badges } = await settleDuel(c, d);
+      const pair = seen[d.id.toString()];
+      showResult(d.id, { winner: winner === d.challenger ? 0 : 1, tactics: pair ? [asTactic(pair[0]), asTactic(pair[1])] : null }, { sealedWin, badges });
       announce(`#${winner} beat #${loser}`);
     });
+
+  /** A settled duel, played again: with its tactics for the two holders who decrypted them, as a fight cloud for everyone else. */
+  const watch = (d: Duel) => {
+    const pair = seen[d.id.toString()];
+    setFight(
+      fightOf(
+        d,
+        { winner: d.winner === d.challenger ? 0 : 1, tactics: pair ? [asTactic(pair[0]), asTactic(pair[1])] : null },
+        { sealedWin: d.winner === d.challenger ? d.challengerSealed : d.opponentSealed },
+      ),
+    );
+  };
+
+  /** In the fight scene: a holder of one of the two cats decrypts both tactics and watches them played. */
+  async function revealInFight() {
+    const f = fight;
+    if (!cofhe || !f) throw new Error('Connect your wallet to see the tactics.');
+    try {
+      const d = (await publicClient!.readContract({ ...arenaCall, functionName: 'duels', args: [f.duelId] })) as readonly unknown[];
+      const [a, b] = await revealTactics(cofhe, { id: f.duelId, challengerTactic: d[4] as `0x${string}`, opponentTactic: d[5] as `0x${string}` });
+      showResult(f.duelId, { winner: f.plan.winner, tactics: [asTactic(a), asTactic(b)] });
+    } catch (e) {
+      console.error(e);
+      throw new Error(arenaFailure(e));
+    }
+  }
 
   const cancel = (d: Duel) =>
     act(`duel-${d.id}`, async () => {
@@ -257,6 +302,7 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
       setStep('Decrypting in private…');
       const dna = (await retry(() => c.decryptForView(cat.dnaHandle, FheTypes.Uint64).execute())) as bigint;
       setInstincts((s) => ({ ...s, [cat.tokenId.toString()]: instinctsOf(dna) }));
+      if (address) rememberDna(address, cat.tokenId, dna);
     });
 
   const crown = (week: bigint) =>
@@ -306,6 +352,26 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
   }, [A.duels, A.points, A.lastWeek.champion]);
   const catsById = useCats(others);
   const catOf = (id: bigint) => cats.find((c) => c.tokenId === id) ?? catsById.get(id);
+
+  /** A fight between a duel's two cats, as this viewer may see it. */
+  function fightOf(d: Pick<Duel, 'id' | 'challenger' | 'opponent'>, plan: FightPlan, more: Partial<FightView> = {}): FightView {
+    const [a, b] = [catOf(d.challenger), catOf(d.opponent)];
+    const mineSide: Side | null = isMine(d.challenger) ? 0 : isMine(d.opponent) ? 1 : null;
+    return {
+      duelId: d.id,
+      ids: [d.challenger, d.opponent],
+      looks: [fighterLook(a, dnaOf(d.challenger)), fighterLook(b, dnaOf(d.opponent))],
+      boxes: [Number(a?.state ?? 0), Number(b?.state ?? 0)],
+      plan,
+      mine: mineSide,
+      ...more,
+    };
+  }
+
+  /** The result reaches the fight on screen, if it is still open on that duel. */
+  function showResult(duelId: bigint, plan: FightPlan, more: Partial<FightView> = {}) {
+    setFight((f) => (f && f.duelId === duelId ? { ...f, ...more, plan } : f));
+  }
 
   const working = (key: string) =>
     busy === key && (
@@ -369,7 +435,7 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
                     const formKey = `cat-${id}`;
                     return (
                       <li key={key} className="arena-cat" data-token={key}>
-                        <Thumb cat={cat} />
+                        <Thumb cat={cat} dna={dnaOf(id)} />
                         <div className="arena-main">
                           <div className="arena-info">
                             <b>#{key}</b>
@@ -665,6 +731,10 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
                             </em>
                           )}
                         </span>
+                        <button className="link-btn watch-btn" onClick={() => watch(d)} aria-label={`Watch duel ${d.id}: #${d.winner} against #${loser}`}>
+                          <Sprite art={PLAY_ICON} />
+                          Watch
+                        </button>
                         {fought && !pair && (
                           <button className="link-btn" onClick={() => showTactics(d)} disabled={!ready}>
                             Tactics
@@ -705,6 +775,13 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
           </div>
         </div>
       </div>
+      {fight && (
+        <FightScene
+          fight={{ ...fight, status: fight.plan.winner === null ? step : null }}
+          onClose={() => setFight(null)}
+          onReveal={fight.mine !== null && fight.mine !== undefined && cofhe ? revealInFight : undefined}
+        />
+      )}
     </section>
   );
 }

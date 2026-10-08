@@ -1,5 +1,5 @@
 import { Encryptable, type CofheClient } from '@cofhe/sdk';
-import { TACTICS, type Tactic } from '@art';
+import { TACTICS, type FighterLook, type Tactic } from '@art';
 import type { Rows } from '../pixel/fc';
 import { failure } from './format';
 
@@ -45,6 +45,25 @@ export const BADGES = [
 ] as const;
 
 export const badgesOf = (bits: number) => BADGES.filter((b) => (bits & b.bit) !== 0);
+
+/** A badge's name by its bit, as BadgeEarned reports it. */
+export const badgeName = (bit: number) => BADGES.find((b) => b.bit === bit)?.name ?? 'Badge';
+
+/** A decrypted tactic; anything out of range counts as Pounce, as on chain. */
+export const asTactic = (n: number | bigint): Tactic => (Number(n) < 3 ? Number(n) : 0) as Tactic;
+
+/**
+ * How a cat fights on screen: a revealed cat as itself; a holder's own peeked cat as itself too,
+ * from the DNA they decrypted in private (only they see it); every other cat as its sealed box,
+ * with its own barcode.
+ */
+export function fighterLook(cat: { state: number | bigint; dna: bigint; dnaHandle: `0x${string}` } | undefined, privateDna?: bigint): FighterLook {
+  if (!cat) return { kind: 'box', state: 0 };
+  const state = Number(cat.state);
+  if (state === 3) return { kind: 'cat', dna: cat.dna };
+  if (privateDna !== undefined) return { kind: 'cat', dna: privateDna };
+  return { kind: 'box', state: Math.min(state, 2) as 0 | 1 | 2, handle: cat.dnaHandle };
+}
 
 /** Weekly points, as FheCatArena counts them. */
 export const POINTS = { win: 3, sealedWin: 4, loss: 1 } as const;

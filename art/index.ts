@@ -32,3 +32,5 @@ export {
   duelOutcome,
 } from './src/arena';
 export type { Tactic } from './src/arena';
+export { FIGHTER_W, FIGHTER_H, POSES, POSE_NAMES, fighterGrid } from './src/fighter';
+export type { FighterGrid, FighterLook, FighterOptions, PoseName } from './src/fighter';

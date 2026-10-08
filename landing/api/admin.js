@@ -14,12 +14,14 @@
  *   POST {action: 'collab', id, status, spots?, hours?, reopen?}
  *                                              approve with spots and a deadline `hours` from now,
  *                                              reject, or back to pending; `reopen` unlocks a submitted list
+ *   GET  ?view=arena                           the Blind Arena on the testnet, read from the chain
  *
  * Exports are built in the browser from the GET pages, so there is no size cap.
  */
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { MAX_HOURS, MAX_SPOTS, STATUSES as COLLAB_STATUSES, adminView, ensureSchema } from './_collab.js';
+import { arenaView } from './_arena.js';
 
 const COOKIE = 'fhecat_admin';
 const TTL = 12 * 60 * 60; // seconds
@@ -165,6 +167,14 @@ export default async function handler(req, res) {
       session(res, `${s.exp}.${s.sig}`, s.exp - Math.floor(Date.now() / 1000));
       const query = req.query || {};
       if (query.view === 'collabs') return res.status(200).json(await collabs(sql));
+      if (query.view === 'arena') {
+        try {
+          return res.status(200).json(await arenaView());
+        } catch (err) {
+          console.error('arena read failed', err);
+          return res.status(502).json({ error: 'The testnet did not answer. Try again in a moment.' });
+        }
+      }
       const [page, all] = await Promise.all([list(sql, query), query.after ? null : counts(sql)]);
       return res.status(200).json(all ? { ...page, counts: all } : page);
     }

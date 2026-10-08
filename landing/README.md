@@ -75,6 +75,7 @@ giriş 12 saat geçerli bir oturum açar. Panelde:
   - Kazananlar kartta açılıp kopyalanabilir. Çekiliş postunun linki de kartta durur; post topluluğun kendi X hesabından değilse yanında uyarı çıkar.
   - **Allowlist .txt:** Onaylı waitlist cüzdanlarını ve onaylı collab'ların kazananlarını tekrarsız tek dosyada birleştirir. Gönderilmemiş taslak listeler varsa onları dahil edip etmeyeceğini sorar.
   - **Collab wallets .csv:** Topluluk, çekiliş postu, kazanan, cüzdan ve gönderildi bilgisi.
+- **Arena sekmesi:** Testnet'teki Kör Arena, doğrudan zincirden okunur ve sekme açıkken 30 saniyede bir yenilenir: düello sayısı, açık meydan okumalar (sekmedeki sayı), sonuç bekleyenler, son sonuçlar, haftanın tablosu (puan, galibiyet/mağlubiyet, rozetler, kutu durumu), geçen haftanın tacı ve kademe kanıtları. Taktikler, puanlar ve DNA görünmez; zaten kimse göremez. Oynamak için **Open the arena**, test mint kopyasında doğrudan arena bölümünü açar.
 
 Şifreyi değiştirmek için Vercel → Project → Settings → Environment Variables → `ADMIN_PASSWORD`, sonra yeniden
 deploy. Şifre değişince açık oturumlar kapanır.
@@ -147,7 +148,9 @@ python3 -m http.server 8080   # sonra http://localhost:8080
 | `js/waitlist.js` | Waitlist adımları; `LAUNCH_POST` burada |
 | `api/waitlist.js` | Kaydı doğrulayıp veritabanına yazan Vercel fonksiyonu |
 | `admin.html`, `js/admin.js` | Admin paneli: inceleme ve dışa aktarma |
-| `api/admin.js` | Admin API'si: şifreyle giriş, liste, durum değiştirme |
+| `js/admin-collab.js`, `js/admin-arena.js` | Admin panelinin Collabs ve Arena sekmeleri |
+| `api/admin.js` | Admin API'si: şifreyle giriş, liste, durum değiştirme, collab'lar ve arena |
+| `api/_arena.js` | Testnet'teki Kör Arena'yı zincirden okur (Arena sekmesi için) |
 | `package.json` | Fonksiyonun tek bağımlılığı (`@neondatabase/serverless`) |
 | `assets/` | Favicon'lar, paylaşım görseli (`og.png`, 1200×630), orijinal logo ve banner |
 | `fonts/` | Tiny5, Silkscreen, Press Start 2P (SIL Open Font License) |

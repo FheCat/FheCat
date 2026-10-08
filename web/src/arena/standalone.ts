@@ -46,6 +46,7 @@ function voiceBase() {
   }
 }
 const sound = arenaSound(voiceBase());
+sound.preload(); // the Arena tab is open: its Watch buttons are a click away
 
 /** A revealed cat as itself; any other as its sealed box, with its own barcode. */
 function lookOf(cat: CatLook | undefined): FighterLook {

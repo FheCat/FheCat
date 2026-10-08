@@ -3689,6 +3689,222 @@ a.adm-handle:hover {
   }
 }
 
+/* admin: the Blind Arena tab, live from the testnet */
+.adm-mint-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+.adm-tab-n.is-live {
+  background: var(--cyan);
+}
+.adm-stat.is-static {
+  cursor: default;
+}
+.adm-stat.is-static:hover {
+  --bd: var(--cloud);
+}
+.adm-a-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: start;
+  gap: 32px;
+}
+.adm-a-side {
+  display: grid;
+  gap: 32px;
+}
+.adm-a-box {
+  margin: 4px;
+  padding: 20px 24px 24px;
+  background: var(--deep);
+  box-shadow:
+    0 -4px 0 0 var(--steel-3),
+    0 4px 0 0 var(--steel-3),
+    -4px 0 0 0 var(--steel-3),
+    4px 0 0 0 var(--steel-3);
+}
+.adm-a-head {
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 4px solid var(--ink);
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+.adm-a-board,
+.adm-a-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adm-a-brow {
+  display: grid;
+  grid-template-columns: 24px auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 0;
+  border-bottom: 4px solid var(--ink);
+}
+.adm-a-rank {
+  color: var(--steel);
+  font: 8px/24px var(--f-mono);
+}
+.adm-a-who,
+.adm-a-main {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+.adm-a-cat {
+  color: var(--white);
+  font: 24px/32px var(--f-text);
+  font-weight: 400;
+}
+.adm-a-wl,
+.adm-a-meta {
+  color: var(--muted);
+  font: 8px/24px var(--f-mono);
+  white-space: nowrap;
+}
+.adm-a-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+.adm-a-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f5c542;
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+.adm-a-badge .px,
+.adm-a-crown .px {
+  --u: 2px;
+}
+.adm-a-pts {
+  color: var(--cyan);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.adm-a-chip {
+  --bd: var(--steel-3);
+  padding: 0 8px;
+  color: var(--muted);
+  font: 8px/24px var(--f-mono);
+  text-transform: uppercase;
+  box-shadow:
+    0 -2px 0 0 var(--bd),
+    0 2px 0 0 var(--bd),
+    -2px 0 0 0 var(--bd),
+    2px 0 0 0 var(--bd);
+}
+.adm-a-chip.is-sealed {
+  --bd: var(--cyan-dim);
+  color: var(--cyan);
+}
+.adm-a-chip.is-peeked {
+  --bd: #8a6d1f;
+  color: #f5c542;
+}
+.adm-a-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-bottom: 4px solid var(--ink);
+  color: var(--muted);
+}
+.adm-a-row.is-win .adm-a-main {
+  color: var(--text);
+}
+.adm-a-vs {
+  padding: 0 4px;
+  background: #ff5c6c;
+  color: var(--ink);
+  font: 8px/16px var(--f-mono);
+  font-style: normal;
+  text-transform: uppercase;
+}
+.adm-a-any {
+  color: var(--white);
+  font: 24px/32px var(--f-text);
+}
+.adm-a-sealed {
+  color: var(--cyan);
+  font: 8px/24px var(--f-mono);
+  font-style: normal;
+  text-transform: uppercase;
+}
+.adm-a-none {
+  padding: 12px 0;
+  color: var(--steel);
+}
+.adm-a-crown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  color: var(--text);
+}
+.adm-a-crown .px {
+  color: #f5c542;
+}
+.adm-a-rule {
+  margin: 12px 0 0;
+  color: var(--steel);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+.adm-a-addr {
+  margin: 24px 4px 0;
+  color: var(--steel);
+  font: 8px/16px var(--f-mono);
+  text-transform: uppercase;
+}
+@media (max-width: 1000px) {
+  .adm-a-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .adm-a-box {
+    padding: 16px;
+  }
+  .adm-a-brow {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'rank who pts'
+      '. wl wl'
+      '. badges badges';
+  }
+  .adm-a-rank {
+    grid-area: rank;
+  }
+  .adm-a-who {
+    grid-area: who;
+  }
+  .adm-a-wl {
+    grid-area: wl;
+  }
+  .adm-a-badges {
+    grid-area: badges;
+  }
+  .adm-a-pts {
+    grid-area: pts;
+  }
+}
+
 @media (max-width: 400px) {
   .adm-tag {
     display: none;

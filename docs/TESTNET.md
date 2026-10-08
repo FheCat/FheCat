@@ -68,11 +68,11 @@ Gizli site push'tan sonra kendini yeniden derler.
 
 ## Admin panelinden kendin test et
 
-1. fhecat.com/admin'de admin şifresiyle giriş yap ve **Open the test mint**'e bas.
+1. fhecat.com/admin'de admin şifresiyle giriş yap ve **Open the test mint**'e bas. **Open the arena** doğrudan arena bölümünü açar; paneldeki **Arena** sekmesi de arenanın canlı durumunu gösterir.
 2. Cüzdanını (MetaMask, Rabby vb.) Arbitrum Sepolia ağında bağla. Test ETH'si için sitedeki **Testnet ETH faucet** linkini kullan ya da Claude'dan iste.
 3. Satış Public aşamada açık: cüzdan başına en fazla 3 kedi, kedi başına 0,00115 ETH.
 4. Deneyebileceklerin: mint, gizlice bakma (peek), kendi kanıtınla reveal, kutuyu herkese açma, kediyi başka cüzdana gönderme, Kör Arena (şifreli taktikle düello, haftalık tablo, rozetler ve kademe kanıtı).
-   - Arena 7 Ekim'de yenilendi. Kediler yeni arenaya **Enter arena** ile bir kez yeniden girer. Herkese açılmış (Opened ya da Revealed) kedilerin DNA'sı zaten açık olduğu için onlar girmeden dövüşebilir.
+   - Arena 7 Ekim'de yenilendi. Kediler yeni arenaya **Enter arena** ile bir kez yeniden girer. Kutusu herkese açılmış (**Open the box**) kedilerin DNA'sı zaten açık olduğu için onlar girmeden dövüşebilir; yalnızca kendi kanıtıyla reveal edilen bir kedi önce girer.
    - Kendi kedinle dövüşemezsin; ikinci bir cüzdan ya da başka bir oyuncu gerekir.
 5. Owner bölümü yalnızca kontratın sahibi olan cüzdanda görünür. Testnet'te sahip, Claude'un test cüzdanıdır. Sahip araçlarını da denemek istersen sahiplik iki adımda senin cüzdanına devredilebilir.
 

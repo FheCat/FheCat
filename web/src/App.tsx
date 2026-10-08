@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { MintPanel } from './components/MintPanel';
@@ -36,6 +37,17 @@ export function App() {
     { id: 'traits', label: 'Traits', on: true },
   ].filter((c) => c.on);
   const n = (id: string) => String(chapters.findIndex((c) => c.id === id) + 1).padStart(2, '0');
+
+  // A link to a chapter (admin/mint/#arena) can arrive before the chapter is on the page,
+  // which waits for the chain: go there once it shows up.
+  const landed = useRef(false);
+  const onPage = chapters.map((c) => c.id).join(' ');
+  useEffect(() => {
+    const target = !landed.current && location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+    if (!target) return;
+    landed.current = true;
+    target.scrollIntoView();
+  }, [onPage]);
 
   const status = !live
     ? 'Mint opens soon'

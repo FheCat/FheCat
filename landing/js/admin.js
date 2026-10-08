@@ -110,6 +110,7 @@
     $('#admPanel').hidden = which !== 'panel';
     $('#admSignOut').hidden = which !== 'panel';
     if (which === 'panel' && NS.adminCollab) NS.adminCollab.shown();
+    if (which === 'panel' && NS.adminArena) NS.adminArena.shown();
   }
   function showLogin(msg) {
     show('login');
@@ -145,6 +146,7 @@
         view = { status: '', q: '', rows: [], next: null, counts: null, sel: {} };
         $('#admSearch').value = '';
         if (NS.adminCollab) NS.adminCollab.reset();
+        if (NS.adminArena) NS.adminArena.reset();
         showLogin('');
       });
   });

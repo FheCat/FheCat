@@ -37,10 +37,11 @@
       var on = b.getAttribute('data-tab') === name;
       b.classList.toggle('on', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
+      $('#' + b.getAttribute('aria-controls')).hidden = !on;
     });
-    $('#admWaitlist').hidden = name !== 'waitlist';
-    $('#admCollabs').hidden = name !== 'collabs';
     if (name === 'collabs') load();
+    // The arena tab lives in js/admin-arena.js.
+    if (name === 'arena' && NS.adminArena) NS.adminArena.show();
   }
   $$('.adm-tab').forEach(function (b) {
     b.addEventListener('click', function () {

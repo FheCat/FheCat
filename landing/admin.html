@@ -51,16 +51,22 @@
               <p class="label"><i data-sprite="i-lock"></i>Testnet mint</p>
               <p class="adm-mint-text">
                 The mint site on Arbitrum Sepolia, only for signed-in admins. Test the sale with your own wallet and test ETH: mint, peek, open
-                and the arena. The Owner section shows up for the contract owner's wallet.
+                and fight in the Blind Arena. The Owner section shows up for the contract owner's wallet.
               </p>
             </div>
-            <a class="btn" href="admin/mint/"><span>Open the test mint</span><i data-sprite="i-arrow"></i></a>
+            <div class="adm-mint-btns">
+              <a class="btn" href="admin/mint/"><span>Open the test mint</span><i data-sprite="i-arrow"></i></a>
+              <a class="btn btn-ghost" href="admin/mint/#arena"><span>Open the arena</span></a>
+            </div>
           </div>
 
           <div class="adm-tabs" role="tablist" aria-label="Lists">
             <button type="button" class="adm-tab on" role="tab" aria-selected="true" aria-controls="admWaitlist" data-tab="waitlist">Waitlist</button>
             <button type="button" class="adm-tab" role="tab" aria-selected="false" aria-controls="admCollabs" data-tab="collabs">
               Collabs <span class="adm-tab-n" id="admCollabTab" hidden></span>
+            </button>
+            <button type="button" class="adm-tab" role="tab" aria-selected="false" aria-controls="admArena" data-tab="arena">
+              Arena <span class="adm-tab-n is-live" id="admArenaTab" title="Open challenges" hidden></span>
             </button>
           </div>
 
@@ -195,6 +201,82 @@
             <ol class="adm-clist" id="admCollabList"></ol>
             <p class="adm-empty" id="admCollabEmpty" hidden></p>
           </div>
+
+          <!-- the Blind Arena on the testnet, live from the chain (js/admin-arena.js) -->
+          <div class="adm-arena" id="admArena" role="tabpanel" hidden>
+            <div class="adm-head">
+              <div>
+                <p class="label"><i data-sprite="i-star"></i>Blind Arena</p>
+                <h1 class="adm-title">Arena</h1>
+              </div>
+              <div class="adm-export">
+                <p class="adm-export-what" id="admArenaWeek">This week</p>
+                <div class="adm-export-btns">
+                  <a class="btn btn-sm" href="admin/mint/#arena"><span>Open the arena</span><i data-sprite="i-arrow"></i></a>
+                  <button type="button" class="btn btn-sm btn-ghost" id="admArenaRefresh"><span>Refresh</span></button>
+                </div>
+              </div>
+            </div>
+            <p class="adm-collab-note">
+              Holders duel with sealed tactics on the testnet. This tab shows what is public on-chain: who challenged whom, who won and the
+              week's table. Tactics, scores and DNA stay sealed. To play, open the arena with your wallet. It refreshes every 30 seconds.
+            </p>
+
+            <div id="admArenaBody">
+              <div class="adm-stats adm-astats">
+                <div class="adm-stat is-static">
+                  <span class="adm-stat-label">Duels</span>
+                  <b class="adm-stat-value" data-acount="settled">0</b>
+                  <span class="adm-stat-note" data-anote="sealed">&nbsp;</span>
+                </div>
+                <div class="adm-stat is-static">
+                  <span class="adm-stat-label"><i class="adm-dot is-approved"></i>Open</span>
+                  <b class="adm-stat-value" data-acount="open">0</b>
+                  <span class="adm-stat-note">challenges right now</span>
+                </div>
+                <div class="adm-stat is-static">
+                  <span class="adm-stat-label"><i class="adm-dot is-pending"></i>Waiting</span>
+                  <b class="adm-stat-value" data-acount="waiting">0</b>
+                  <span class="adm-stat-note">for a result</span>
+                </div>
+                <div class="adm-stat is-static">
+                  <span class="adm-stat-label">Players</span>
+                  <b class="adm-stat-value" data-acount="players">0</b>
+                  <span class="adm-stat-note" data-anote="badges">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="adm-a-grid">
+                <section class="adm-a-box adm-a-week">
+                  <h2 class="adm-a-head">This week</h2>
+                  <ol class="adm-a-board" id="admArenaBoard"></ol>
+                  <p class="adm-a-crown"><i data-sprite="i-star"></i><span id="admArenaCrown"></span></p>
+                  <p class="adm-a-rule">A win is 3 points, 4 with a sealed box; a loss is 1. Two cats meet once a week.</p>
+                </section>
+                <div class="adm-a-side">
+                  <section class="adm-a-box">
+                    <h2 class="adm-a-head">Open challenges</h2>
+                    <ol class="adm-a-list" id="admArenaOpen"></ol>
+                  </section>
+                  <section class="adm-a-box" id="admArenaWaitBox" hidden>
+                    <h2 class="adm-a-head">Waiting for a result</h2>
+                    <ol class="adm-a-list" id="admArenaWait"></ol>
+                    <p class="adm-a-rule">Anyone can settle these from the arena: the result is already public.</p>
+                  </section>
+                  <section class="adm-a-box">
+                    <h2 class="adm-a-head">Latest results</h2>
+                    <ol class="adm-a-list" id="admArenaResults"></ol>
+                  </section>
+                  <section class="adm-a-box">
+                    <h2 class="adm-a-head">Tier proofs</h2>
+                    <ol class="adm-a-list" id="admArenaClaims"></ol>
+                  </section>
+                </div>
+              </div>
+              <p class="adm-a-addr mono" id="admArenaAddr"></p>
+            </div>
+            <p class="adm-empty" id="admArenaEmpty" hidden></p>
+          </div>
         </section>
       </div>
     </main>
@@ -214,5 +296,6 @@
     <script src="js/scene.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/admin-collab.js"></script>
+    <script src="js/admin-arena.js"></script>
   </body>
 </html>

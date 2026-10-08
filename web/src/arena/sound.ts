@@ -28,6 +28,8 @@ export interface ArenaSound {
   tick(t: number): void;
   /** The fight stopped playing: closed, or held on a still frame. */
   pause(): void;
+  /** Starts downloading the announcer's clips (no sound, no AudioContext yet). */
+  preload(): void;
 }
 
 type Line = 'arena' | 'locked' | 'fight' | 'ko' | 'challenger' | 'defender' | 'sealed' | 'youwin' | 'youlose';
@@ -127,7 +129,10 @@ function audio(): Graph | null {
 export function unlockArenaSound() {
   if (mutedNow) return;
   const g = audio();
-  if (g && g.ctx.state !== 'running') void g.ctx.resume().catch(() => {});
+  if (!g) return;
+  if (g.ctx.state !== 'running') void g.ctx.resume().catch(() => {});
+  // Decode the announcer now, so the first line is ready when the fight opens.
+  for (const s of sounds.values()) s.decodeAll(g);
 }
 
 // ---------------------------------------------------------------------------
@@ -474,18 +479,31 @@ function songAt(cues: Cue[], t: number) {
 // The sound of one page's fights
 // ---------------------------------------------------------------------------
 
-const clips = new Map<Line, AudioBuffer>();
-let loadingFrom: string | null = null;
+// The clips download as soon as a fight is near (preload) and decode once there is an
+// AudioContext. A clip that cannot load just leaves its line out: the fight goes on.
+const files = new Map<string, Promise<ArrayBuffer | null>>();
+const clips = new Map<string, Promise<AudioBuffer | null>>();
 
-function loadClips(g: Graph, base: string) {
-  if (loadingFrom === base) return;
-  loadingFrom = base;
-  for (const l of LINES)
-    fetch(`${base}${l}.mp3`)
-      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
-      .then((buf) => g.ctx.decodeAudioData(buf))
-      .then((clip) => clips.set(l, clip))
-      .catch(() => {}); // no clip, no line: the fight goes on
+function download(url: string) {
+  let f = files.get(url);
+  if (!f) {
+    f = fetch(url)
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .catch(() => null);
+    files.set(url, f);
+  }
+  return f;
+}
+
+function clipAt(g: Graph, url: string) {
+  let c = clips.get(url);
+  if (!c) {
+    c = download(url)
+      .then((buf) => (buf ? g.ctx.decodeAudioData(buf.slice(0)) : null))
+      .catch(() => null);
+    clips.set(url, c);
+  }
+  return c;
 }
 
 class Sound implements ArenaSound {
@@ -497,8 +515,22 @@ class Sound implements ArenaSound {
   private current: Cue['song'];
   /** When the announcer is free again (AudioContext time). */
   private voiceFree = 0;
+  /** Bumped when the fight stops or starts over, so a line still loading for the old one stays quiet. */
+  private generation = 0;
 
   constructor(private readonly voiceBase: string) {}
+
+  preload() {
+    for (const l of LINES) void download(this.url(l));
+  }
+
+  decodeAll(g: Graph) {
+    for (const l of LINES) void clipAt(g, this.url(l));
+  }
+
+  private url(line: Line) {
+    return `${this.voiceBase}${line}.mp3`;
+  }
 
   muted() {
     return mutedNow;
@@ -520,7 +552,7 @@ class Sound implements ArenaSound {
     if (!g) return;
     void g.ctx.resume().catch(() => {});
     g.master.gain.setTargetAtTime(LEVEL.master, g.ctx.currentTime, 0.03);
-    loadClips(g, this.voiceBase);
+    this.preload();
     // Back mid-fight: pick the music up where the fight is.
     if (this.last !== null) this.startSong(songAt(this.cues, this.last), true);
   }
@@ -531,16 +563,14 @@ class Sound implements ArenaSound {
     this.cues = cuesOf(script, info);
     // Whatever is already behind the clock has had its turn.
     if (this.last !== null) this.cursor = this.indexAt(this.last + 1e-6);
-    if (!mutedNow) {
-      const g = audio();
-      if (g) loadClips(g, this.voiceBase);
-    }
+    if (!mutedNow) this.preload();
   }
 
   tick(t: number) {
     if (!this.script) return;
     if (this.last === null || t < this.last - 0.05) {
       // The first frame, a Replay, or back to the lock for the tactics: go on from here.
+      this.generation++;
       this.stopMusic();
       this.cursor = this.indexAt(t);
       this.last = t - 0.001;
@@ -572,6 +602,7 @@ class Sound implements ArenaSound {
   }
 
   pause() {
+    this.generation++;
     this.stopMusic();
     this.last = null;
   }
@@ -604,12 +635,21 @@ class Sound implements ArenaSound {
     this.current = undefined;
   }
 
-  /** The announcer: one line at a time; a line that would come too late is dropped, unless it says who won. */
+  /**
+   * The announcer: one line at a time. A line whose clip is still loading waits for it; a line that
+   * would come too late is dropped, unless it says who won.
+   */
   private say(g: Graph, line: Line, at: number, mustSay: boolean) {
-    const clip = clips.get(line);
-    if (!clip) return;
-    const start = Math.max(at, this.voiceFree);
-    if (start - at > 0.6 && !mustSay) return;
+    const generation = this.generation;
+    void clipAt(g, this.url(line)).then((clip) => {
+      if (!clip || generation !== this.generation || mutedNow) return;
+      const start = Math.max(at, g.ctx.currentTime + 0.005, this.voiceFree);
+      if (start - at > (mustSay ? 4 : 0.6)) return;
+      this.speak(g, clip, start);
+    });
+  }
+
+  private speak(g: Graph, clip: AudioBuffer, start: number) {
     const src = g.ctx.createBufferSource();
     src.buffer = clip;
     src.connect(g.voice);

@@ -13,8 +13,9 @@ const BOX = ['Sealed', 'Peeked', 'Opened', 'Revealed'];
 /** A lock, for a tactic nobody can see yet. */
 const LOCK_ICON = ['.XXX.', 'X...X', 'X...X', 'XXXXX', 'XX.XX', 'XXXXX'];
 
-/** The announcer's clips, next to the site's other public files. */
-const sound = arenaSound(`${import.meta.env.BASE_URL}arena/voice/`);
+/** The arena's sound; the announcer's clips sit next to the site's other public files. */
+export const fightSound = arenaSound(`${import.meta.env.BASE_URL}arena/voice/`);
+const sound = fightSound;
 
 export interface FightView {
   duelId: bigint;

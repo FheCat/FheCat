@@ -16,7 +16,7 @@ import { useToast } from '../pixel/Toast';
 import { ChapterHead } from './Chapter';
 import { Fighter } from './Fighter';
 import { unlockArenaSound } from '../arena/sound';
-import { FightScene, type FightView } from './FightScene';
+import { FightScene, fightSound, type FightView } from './FightScene';
 
 interface Props {
   n: string;
@@ -125,6 +125,8 @@ export function Arena({ n, chainId, contract, arena, totalSupply }: Props) {
   const dnaOf = usePrivateDna(address);
   /** The fight on screen, live or replayed. */
   const [fight, setFight] = useState<FightView | null>(null);
+  // A fight is a click away: fetch the announcer now, so its first line is on time.
+  useEffect(() => fightSound.preload(), []);
 
   const arenaCall = { address: arena, abi: fheCatArenaAbi, chainId } as const;
   const ready = Boolean(cofhe) && busy === null;

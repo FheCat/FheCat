@@ -76,6 +76,8 @@ giriş 12 saat geçerli bir oturum açar. Panelde:
   - **Allowlist .txt:** Onaylı waitlist cüzdanlarını ve onaylı collab'ların kazananlarını tekrarsız tek dosyada birleştirir. Gönderilmemiş taslak listeler varsa onları dahil edip etmeyeceğini sorar.
   - **Collab wallets .csv:** Topluluk, çekiliş postu, kazanan, cüzdan ve gönderildi bilgisi.
 - **Arena sekmesi:** Testnet'teki Kör Arena, doğrudan zincirden okunur ve sekme açıkken 30 saniyede bir yenilenir: düello sayısı, açık meydan okumalar (sekmedeki sayı), sonuç bekleyenler, son sonuçlar, haftanın tablosu (puan, galibiyet/mağlubiyet, rozetler, kutu durumu), geçen haftanın tacı ve kademe kanıtları. Taktikler, puanlar ve DNA görünmez; zaten kimse göremez. Oynamak için **Open the arena**, test mint kopyasında doğrudan arena bölümünü açar.
+  - Her kedi listede dövüştüğü haliyle, tam vücut ve nefes alarak durur: açılmış kedi kendisi olarak, diğerleri kendi barkodlu kutusu olarak. Her sonucun yanındaki **Watch** düelloyu mint sitesindeki sahneyle oynatır; admin de bir seyirci gibi kavga bulutunu ve kazananı görür, taktikleri yalnızca iki oyuncu görebilir.
+  - Dövüşçüler ve sahne `admin/mint/arena-game.js`'ten gelir: mint sitesinin oyun motoru, React'siz tek dosya (`cd web && npm run build:admin-copy` ya da yalnızca `npm run build:admin-game`). Koleksiyonun çizimlerini taşıdığı için test mint kopyasıyla aynı klasörde, aynı girişin arkasındadır ve sekme onu giriş yapınca yükler. Yüklenemezse sekme yazıyla çalışmaya devam eder. CI, dosyanın güncel koddan derlendiğini kontrol eder.
 
 Şifreyi değiştirmek için Vercel → Project → Settings → Environment Variables → `ADMIN_PASSWORD`, sonra yeniden
 deploy. Şifre değişince açık oturumlar kapanır.
@@ -140,6 +142,7 @@ python3 -m http.server 8080   # sonra http://localhost:8080
 | `index.html` | Sayfanın metinleri ve bölümleri |
 | `waitlist.html` | Waitlist sayfası (beş adım) |
 | `css/styles.css` | Piksel tasarım sistemi ve animasyonlar |
+| `css/fight.css` | Kör Arena'nın dövüş sahnesi ve dövüşçüleri (mint sitesi ve admin Arena sekmesi ortak kullanır) |
 | `js/pixel.js` | Metin halindeki piksel çizimleri keskin SVG'ye çeviren küçük yardımcı |
 | `js/sprites.js` | Tüm piksel çizimler: logo, "FheCat" yazısı, kediler, fener, sandık, makine, zarf, ikonlar |
 | `js/scene.js` | Gece sahneleri (giriş ve kapanış), yıldızlar ve bulut şeritleri |
@@ -150,7 +153,8 @@ python3 -m http.server 8080   # sonra http://localhost:8080
 | `admin.html`, `js/admin.js` | Admin paneli: inceleme ve dışa aktarma |
 | `js/admin-collab.js`, `js/admin-arena.js` | Admin panelinin Collabs ve Arena sekmeleri |
 | `api/admin.js` | Admin API'si: şifreyle giriş, liste, durum değiştirme, collab'lar ve arena |
-| `api/_arena.js` | Testnet'teki Kör Arena'yı zincirden okur (Arena sekmesi için) |
+| `api/_arena.js` | Testnet'teki Kör Arena'yı zincirden okur (Arena sekmesi için): sonuçlar, tablo ve gösterilen her kedinin kutusu, barkod handle'ı ve açılmışsa DNA'sı |
+| `admin/mint/` | Test mint kopyası ve `arena-game.js` (Arena sekmesinin dövüşçüleri ve sahnesi); `web/`'den üretilir, yalnızca admin girişiyle açılır |
 | `package.json` | Fonksiyonun tek bağımlılığı (`@neondatabase/serverless`) |
 | `assets/` | Favicon'lar, paylaşım görseli (`og.png`, 1200×630), orijinal logo ve banner |
 | `fonts/` | Tiny5, Silkscreen, Press Start 2P (SIL Open Font License) |

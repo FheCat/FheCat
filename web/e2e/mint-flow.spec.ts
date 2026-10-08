@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Runs against the local stack (e2e/stack.sh): Hardhat + CoFHE mocks + dev wallet.
@@ -197,6 +198,54 @@ test('every fight is choreographed to its result and stays on the stage', async 
     return out;
   });
   expect(problems).toEqual([]);
+});
+
+test("the admin's arena tab draws the same fighters and plays the same fight", async ({ page }) => {
+  // landing/admin/mint/arena-game.js as committed, on a page of its own like admin.html.
+  const landing = (path: string) => readFileSync(new URL(`../../landing/${path}`, import.meta.url), 'utf8');
+  await page.setContent('<!doctype html><html><head></head><body></body></html>');
+  await page.addStyleTag({ content: landing('css/styles.css') + landing('css/fight.css') });
+  await page.addScriptTag({ content: landing('js/pixel.js') });
+  await page.addScriptTag({ content: landing('admin/mint/arena-game.js') });
+  const drawn = await page.evaluate(() => {
+    const G = (window as unknown as { FheCat: { arenaGame: { fighter: (cat: unknown, scale?: number, label?: string) => HTMLCanvasElement } } }).FheCat.arenaGame;
+    const box = G.fighter({ state: 0, handle: '0x' + '9f'.repeat(32) }, 2);
+    const cat = G.fighter({ state: 3, dna: '0x9c4a2e71b05d8f36' }, 1, '#7 as it fights');
+    document.body.append(box, cat);
+    const painted = (c: HTMLCanvasElement) => c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data.filter((v, i) => i % 4 === 3 && v > 0).length;
+    return { box: painted(box), cat: painted(cat), size: box.style.width, label: cat.getAttribute('aria-label') };
+  });
+  expect(drawn.box).toBeGreaterThan(300);
+  expect(drawn.cat).toBeGreaterThan(300);
+  expect(drawn).toMatchObject({ size: '80px', label: '#7 as it fights' });
+
+  // Watching a duel: what any spectator sees, the tactics sealed.
+  const watch = page.getByRole('button', { name: 'Watch duel 7' });
+  await page.evaluate(() => {
+    const b = Object.assign(document.createElement('button'), { textContent: 'Watch duel 7' });
+    b.addEventListener('click', () =>
+      (window as unknown as { FheCat: { arenaGame: { watch: (bout: unknown) => void } } }).FheCat.arenaGame.watch({
+        id: 7,
+        ids: [3, 9],
+        cats: [{ state: 0, handle: '0x01' }, { state: 3, dna: '0x9c4a2e71b05d8f36' }],
+        winner: 1,
+        sealed: false,
+      }),
+    );
+    document.body.append(b);
+  });
+  await watch.click();
+  const scene = page.getByRole('dialog', { name: 'Blind Arena · Duel #7' });
+  await expect(scene).toBeVisible();
+  await expect(scene.locator('.fight-tactic')).toHaveText(['Ready', 'Ready']);
+  await scene.getByRole('button', { name: 'Skip' }).click();
+  await expect(scene.locator('.fight-banner')).toHaveText('#9 wins');
+  await expect(scene.locator('.fight-tactic')).toHaveText(['Secret', 'Secret']);
+  await expect(scene.locator('.fight-pts')).toHaveText(['+1', '+3']);
+  await expect(scene.getByRole('button', { name: 'Replay' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(scene).toHaveCount(0);
+  await expect(watch).toBeFocused();
 });
 
 test('the owner runs the sale from the site', async ({ page }) => {

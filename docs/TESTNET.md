@@ -68,7 +68,7 @@ Gizli site push'tan sonra kendini yeniden derler.
 
 ## Admin panelinden kendin test et
 
-1. fhecat.com/admin'de admin şifresiyle giriş yap ve **Open the test mint**'e bas. **Open the arena** doğrudan arena bölümünü açar; paneldeki **Arena** sekmesi de arenanın canlı durumunu gösterir.
+1. fhecat.com/admin'de admin şifresiyle giriş yap ve **Open the test mint**'e bas. **Open the arena** doğrudan arena bölümünü açar; paneldeki **Arena** sekmesi de arenanın canlı durumunu gösterir: kediler tam vücut dövüşçüleriyle durur, her sonuç **Watch** ile izlenir.
 2. Cüzdanını (MetaMask, Rabby vb.) Arbitrum Sepolia ağında bağla. Test ETH'si için sitedeki **Testnet ETH faucet** linkini kullan ya da Claude'dan iste.
 3. Satış Public aşamada açık: cüzdan başına en fazla 3 kedi, kedi başına 0,00115 ETH.
 4. Deneyebileceklerin: mint, gizlice bakma (peek), kendi kanıtınla reveal, kutuyu herkese açma, kediyi başka cüzdana gönderme, Kör Arena (şifreli taktikle düello, haftalık tablo, rozetler ve kademe kanıtı). Düello kabul edilince dövüş sahnede canlı oynar; sonuçlardaki **Watch** her düelloyu yeniden oynatır. Kartlardaki **Full body** kedinin dövüşçü halini gösterir.

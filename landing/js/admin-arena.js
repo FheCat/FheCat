@@ -2,7 +2,11 @@
  * fhecat.com/admin, the Arena tab: the Blind Arena on the testnet, live from the
  * chain (GET /api/admin?view=arena). Open challenges, duels waiting for a result,
  * the latest results, this week's table and tier proofs; refreshed every 30
- * seconds while the tab is open. Playing happens in the test mint copy
+ * seconds while the tab is open. Every cat stands there as it fights, full body,
+ * and every result can be watched, as any spectator sees it: the tactics stay
+ * sealed. The fighters and fights come from admin/mint/arena-game.js (the mint
+ * site's own engine), which holds the art and so loads only once signed in;
+ * without it the tab still works, in text. Playing happens in the test mint copy
  * (admin/mint/#arena), with a wallet.
  * Uses js/admin.js for the session and helpers (window.FheCat.admin).
  */
@@ -22,6 +26,31 @@
   };
 
   var av = { data: null, offset: 0, timer: 0, loading: null };
+  var game = null; // loading admin/mint/arena-game.js
+
+  /** A play triangle, for watching a fight. */
+  var PLAY = ['X...', 'XX..', 'XXX.', 'XXXX', 'XXX.', 'XX..', 'X...'];
+
+  /** The arena game (window.FheCat.arenaGame), loaded once, after sign-in; null if it cannot load. */
+  function loadGame() {
+    if (NS.arenaGame) return Promise.resolve(NS.arenaGame);
+    if (!game) {
+      game = new Promise(function (resolve) {
+        var s = document.createElement('script');
+        s.src = 'admin/mint/arena-game.js';
+        s.onload = function () {
+          resolve(NS.arenaGame || null);
+        };
+        s.onerror = function () {
+          s.remove();
+          game = null; // try again next time the tab opens
+          resolve(null);
+        };
+        document.head.appendChild(s);
+      });
+    }
+    return game;
+  }
 
   // ---------------------------------------------------------------------------
   // time
@@ -88,13 +117,21 @@
   // ---------------------------------------------------------------------------
   // render
   // ---------------------------------------------------------------------------
+  /** A cat: as it fights, full body (once the game is in), and its number. */
   function cat(id) {
-    return el('b', 'adm-a-cat', '#' + id);
+    var b = el('b', 'adm-a-cat', '#' + id);
+    var G = NS.arenaGame;
+    var look = av.data && av.data.looks ? av.data.looks[id] : undefined;
+    if (!G || !look) return b;
+    var span = el('span', 'adm-a-fcat');
+    span.appendChild(G.fighter(look, 1));
+    span.appendChild(b);
+    return span;
   }
   function chip(box) {
     return box ? el('span', 'adm-a-chip is-' + box.toLowerCase(), box) : null;
   }
-  function row(cls, parts, meta) {
+  function row(cls, parts, meta, action) {
     var li = el('li', 'adm-a-row' + (cls ? ' ' + cls : ''));
     var main = el('span', 'adm-a-main');
     parts.forEach(function (p) {
@@ -102,8 +139,35 @@
       main.appendChild(typeof p === 'string' ? document.createTextNode(p) : p);
     });
     li.appendChild(main);
-    if (meta) li.appendChild(el('span', 'adm-a-meta', meta));
+    if (meta || action) {
+      var end = el('span', 'adm-a-end');
+      if (meta) end.appendChild(el('span', 'adm-a-meta', meta));
+      if (action) end.appendChild(action);
+      li.appendChild(end);
+    }
     return li;
+  }
+
+  /** Watch a settled duel: the fight cloud and who comes out of it. */
+  function watchButton(d) {
+    var G = NS.arenaGame;
+    if (!G) return null;
+    var b = el('button', 'adm-a-watch');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Watch duel ' + d.id + ': #' + d.winner + ' against #' + d.loser);
+    b.appendChild(NS.pixel.svg(PLAY));
+    b.appendChild(document.createTextNode('Watch'));
+    b.addEventListener('click', function () {
+      var looks = av.data.looks || {};
+      G.watch({
+        id: d.id,
+        ids: [d.challenger, d.opponent],
+        cats: [looks[d.challenger], looks[d.opponent]],
+        winner: d.winner === d.challenger ? 0 : 1,
+        sealed: d.sealed
+      });
+    });
+    return b;
   }
   function list(id, items, empty) {
     var ol = $(id);
@@ -182,7 +246,7 @@
     list(
       '#admArenaResults',
       r.results.map(function (d) {
-        return row('is-win', [cat(d.winner), ' beat ', cat(d.loser), d.sealed ? el('em', 'adm-a-sealed', 'sealed') : null], ago(d.foughtAt));
+        return row('is-win', [cat(d.winner), ' beat ', cat(d.loser), d.sealed ? el('em', 'adm-a-sealed', 'sealed') : null], ago(d.foughtAt), watchButton(d));
       }),
       'No results yet.'
     );
@@ -207,10 +271,13 @@
   // hooks for js/admin.js and js/admin-collab.js
   // ---------------------------------------------------------------------------
   NS.adminArena = {
-    /** The tab is open: read the chain now, then keep it fresh. */
+    /** The tab is open: read the chain now, then keep it fresh; the fighters join when the game is in. */
     show: function () {
       load();
       tick();
+      loadGame().then(function (G) {
+        if (G && av.data) render();
+      });
     },
     /** The panel is on screen: read once, for the open-challenge count on the tab. */
     shown: function () {

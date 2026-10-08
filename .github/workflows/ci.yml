@@ -40,6 +40,9 @@ jobs:
         working-directory: web
       - run: npm run build
         working-directory: web
+      - name: The admin's arena game is built from the current code
+        run: npm run build:admin-game && git diff --exit-code ../landing/admin/mint/arena-game.js
+        working-directory: web
       - run: npx playwright install --with-deps chromium
         working-directory: web
       - name: End-to-end (local chain + CoFHE mocks)

@@ -1,6 +1,6 @@
 # Mainnet'e geçiş planı (21 Ekim 2026)
 
-Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet'ine taşımak için yapılacakları sıralar. Durum bilgileri 7 Ekim 2026 tarihlidir; zincir kontrolü 8 Ekim'de yenilendi.
+Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet'ine taşımak için yapılacakları sıralar. Durum bilgileri 7 Ekim 2026 tarihlidir; zincir kontrolü 8 ve 16 Ekim'de yenilendi.
 
 ## Bugünkü durum
 
@@ -18,12 +18,13 @@ Bu belge FheCat'i önce testnet'te eksiksiz prova edip 21 Ekim'de Fhenix mainnet
 
   8 Ekim'de yeniden okundu: testnet TaskManager'ı açık (`isEnabled: true`, erişim listesi kapalı). Mainnet TaskManager'ı hâlâ kapalı (`isEnabled: false`) ve erişim listesi açık (`accessListEnabled: true`).
 
+- **16 Ekim, zincirden okundu (Arbitrum One TaskManager'ı):** Fhenix CoFHE'yi **13 Ekim 12:17 UTC'de açtı** (`EnabledSet(true)`, [işlem](https://arbiscan.io/tx/0xfc3a8a60822f86ccbe07339ea9ae979c72170ffb5cb3fb73e6dfe719ac713550)). **Erişim listesi hâlâ açık** (`accessListEnabled: true`) ve listeye şu ana dek **9 kontrat** alındı: 13 Ekim'de kaynağı doğrulanmamış 1 kontrat ([işlem](https://arbiscan.io/tx/0xc7f09a58075f666186bd9f64ef8b1d25987472aed98b3197d32f1135664e4523)), 14 Ekim'de Fhenix'in kendi 8 gizli token kontratı (fBTC, fUSDS, fARB, fUNI, fUSDT, fUSDC, fLINK, fETH; hepsinin sahibi TaskManager'ın sahibiyle aynı adres, [işlem](https://arbiscan.io/tx/0x5ce0906cec4ec1a2ce5c003c8a0a43382f9738b00ea7ee95cda9afa71a25f92a)). Listeye ekleme işlemlerinin hepsi aynı Fhenix operatör adresinden geldi. Yani liste gerçek, işliyor ve bugün FheCat'in mint'i `NotOnAccessList(address)` ile reddediliyor (fork testi). Listenin lansmanda (21 Ekim) kapatılıp kapatılmayacağı zincirde yazmıyor: `disableAccessList()` çağrılırsa `AccessListEnabledSet(false)` olayı görünür.
 - Mainnet TaskManager'ında kontrat bazlı bir **erişim listesi** var: listede olmayan bir kontratın FHE işlemi `NotOnAccessList(address)` hatası alıyor. Bu listenin lansmandan sonra kalıp kalmayacağı ve nasıl başvurulacağı herkese açık bir belgede yazmıyor.
 - **8 Ekim, Arbitrum One'ın bir kopyasında (fork) denendi** (`npx hardhat run scripts/access-list-fork.ts`, `COFHE_SKIP_MOCKS_DEPLOY=1 FORK=arbitrum`). Fhenix'in yönetici anahtarı taklit edilerek TaskManager'ın kendi fonksiyonlarıyla:
 
   | Durum | FheCat mint'i |
   |---|---|
-  | Bugünkü gibi: CoFHE kapalı | `CofheIsUnavailable()` ile reddediliyor |
+  | 8 Ekim'deki gibi: CoFHE kapalı | `CofheIsUnavailable()` ile reddediliyor |
   | `enable()`: CoFHE açık, liste açık, FheCat listede yok | `NotOnAccessList(address)` ile reddediliyor |
   | `addToAccessList([FheCat])` | çalışıyor |
   | `disableAccessList()`: liste tamamen kapalı | çalışıyor |

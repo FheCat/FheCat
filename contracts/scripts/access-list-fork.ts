@@ -52,7 +52,8 @@ async function main() {
     }
   };
 
-  await tryMint('1. as today (CoFHE off)');
+  const now = `CoFHE ${(await tm.isEnabled()) ? 'on' : 'off'}, list ${(await tm.accessListEnabled()) ? 'on' : 'off'}`;
+  await tryMint(`1. the chain as it is now (${now}), FheCat not on the list`);
 
   // Fhenix's admin, as on chain
   const adminAddress: string = await tm.defaultAdmin();
@@ -62,8 +63,8 @@ async function main() {
   const role = await tm.ACCESS_LIST_MANAGER_ROLE();
   if (!(await tm.hasRole(role, adminAddress))) await (await admin.grantRole(role, adminAddress)).wait();
 
-  await (await admin.enable()).wait();
-  console.log(`after enable(): isEnabled ${await tm.isEnabled()}, accessListEnabled ${await tm.accessListEnabled()}, FheCat on the list ${await tm.accessList(cat)}`);
+  if (!(await tm.isEnabled())) await (await admin.enable()).wait();
+  console.log(`CoFHE on: isEnabled ${await tm.isEnabled()}, accessListEnabled ${await tm.accessListEnabled()}, FheCat on the list ${await tm.accessList(cat)}`);
   await tryMint('2. CoFHE on, list on, FheCat not on it');
 
   await (await admin.addToAccessList([cat])).wait();

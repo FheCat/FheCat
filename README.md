@@ -10,6 +10,8 @@ Her FheCat, mint anında DNA'sını Fhenix'in **FHE (tam homomorfik şifreleme) 
 
 <p align="center"><img src="docs/collection.png" alt="Örnek FheCat'ler" /></p>
 
+> **Her şeyin tek yerde anlatıldığı rehber:** [`docs/PROJECT_GUIDE.md`](docs/PROJECT_GUIDE.md): proje, Fhenix'in bir ağ olmadığı, neden Arbitrum Sepolia, nasıl denenir, mainnet durumu.
+
 - [Nasıl çalışır](#nasıl-çalışır)
 - [Koleksiyon](#koleksiyon)
 - [Ağlar](#ağlar)
@@ -190,7 +192,7 @@ cd web && npm run build    # çıktı: web/dist
 art/         Sprite'lar, özellik/nadirlik tabloları, TypeScript SVG render'ı (tek doğruluk kaynağı) ve arenanın tam vücut dövüşçüleri
 contracts/   Hardhat: FheCat.sol, FheCatRenderer.sol, FheCatArena.sol, üretilen FheCatArt.sol, testler, deploy ve yönetim komutları
 web/         Mint sitesi (İngilizce, ana sayfanın piksel tasarımıyla): Vite + React 19 + wagmi 3 + @cofhe/sdk, Playwright E2E; src/arena: dövüş sahnesi ve koreografi
-docs/        README görselleri, testnet/mainnet adımları ve Kör Arena el kitabı
+docs/        Proje rehberi, README görselleri, testnet/mainnet adımları ve Kör Arena el kitabı
 ```
 
 Kullanılan sürümler: `@fhenixprotocol/cofhe-contracts` 1.0.0, `@cofhe/sdk` / `@cofhe/hardhat-plugin` 0.8.0 (Ethereum ve Arbitrum One mainnet'ini tanıyan ilk kararlı sürüm), OpenZeppelin 5.4, Solidity 0.8.28 (cancun).

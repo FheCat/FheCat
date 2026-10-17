@@ -257,4 +257,4 @@ Arenanın ilk işlemleri, şifreli sabitleri bir kez oluşturduğu için daha pa
 - Haftalık tablo: #5 ve #6 4'er puan, #3 ve #11 1'er puan.
 - Bu dört işlemin toplam ücreti 0,00024 ETH.
 
-**Şu anki durum:** 18 kedi var (#16–#18 proje sahibinin). Satış, proje sahibinin kendi testleri için Public aşamada açık. Sahiplik `owner` cüzdanında.
+**Şu anki durum (17 Ekim):** 27 kedi var. Satış Public aşamada açık ve site herkese açık (`fhecat.com/testnet/`). Arenada test cüzdanlarının bıraktığı 3 açık meydan okuma var. Sahiplik `owner` cüzdanında.

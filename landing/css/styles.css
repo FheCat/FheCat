@@ -2675,9 +2675,18 @@ h2 {
 .cb-raffle .wl-field {
   margin: 0;
 }
+.cb-raffle-item + .cb-raffle-item {
+  margin-top: 24px;
+}
 .cb-raffle-done {
   margin: 0 0 24px;
   color: var(--muted);
+}
+.cb-raffle-done p {
+  margin: 0;
+}
+.cb-raffle-done p:not([hidden]) ~ p:not([hidden]) {
+  margin-top: 6px;
 }
 .cb-raffle-done .link {
   display: inline;

@@ -7,7 +7,8 @@
  * a post about FheCat on X, and signs it with a wallet. The team approves it
  * with a number of spots and a deadline; the manager then raffles the spots in
  * a post on X, adds the winners' wallets and submits them, with the post's
- * link, before the deadline. The admin can close the applications.
+ * link (and the AlphaBot raffle's, when it ran there), before the deadline.
+ * The admin can close the applications.
  */
 
 export const KINDS = { dao: 'DAO', guild: 'Guild', alpha: 'Alpha group', nft: 'NFT project', other: 'Other' };
@@ -65,6 +66,8 @@ export function ensureSchema(sql) {
     // Added after the first release: the link to the raffle post on X, then the application's own post.
     await run(() => sql`ALTER TABLE collabs ADD COLUMN IF NOT EXISTS tweet text NOT NULL DEFAULT ''`);
     await run(() => sql`ALTER TABLE collabs ADD COLUMN IF NOT EXISTS apply_post text NOT NULL DEFAULT ''`);
+    // And the link to the raffle on AlphaBot, when the manager ran it there.
+    await run(() => sql`ALTER TABLE collabs ADD COLUMN IF NOT EXISTS alphabot text NOT NULL DEFAULT ''`);
     await run(() => sql`CREATE UNIQUE INDEX IF NOT EXISTS collabs_x_handle ON collabs (lower(x_handle))`);
     await run(() => sql`CREATE INDEX IF NOT EXISTS collabs_manager ON collabs (manager)`);
     await run(() => sql`CREATE INDEX IF NOT EXISTS collabs_contact_x ON collabs (lower(contact_x))`);
@@ -124,6 +127,23 @@ export function postOf(raw) {
   if (!s) return '';
   const m = s.length <= 300 && POST.exec(s);
   return m ? `https://x.com/${m[1] || 'i'}/status/${m[2]}` : null;
+}
+
+/** A link on alphabot.app as https://<host>/<path>; "" when empty, null when it is not one (the bare home page isn't a raffle). */
+export function alphabotOf(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  if (s.length > 300 || /\s/.test(s)) return null;
+  let url;
+  try {
+    url = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.toLowerCase();
+  if (host !== 'alphabot.app' && !host.endsWith('.alphabot.app')) return null;
+  if (url.username || url.password || url.port || url.pathname.length < 2) return null;
+  return `https://${host}${url.pathname}${url.search}`;
 }
 
 function whole(raw, min, max) {
@@ -202,6 +222,7 @@ export function managerView(r) {
     createdAt: iso(r.created_at),
     winners: Array.isArray(r.winners) ? r.winners : [],
     tweet: r.tweet || '',
+    alphabot: r.alphabot || '',
     post: r.apply_post || ''
   };
 }

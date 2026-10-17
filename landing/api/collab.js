@@ -15,13 +15,13 @@
  *   POST {action: 'signout'}
  *   GET                                        my collabs
  *   POST {action: 'apply', ...}                a new community (pending review), while applications are open
- *   POST {action: 'save', id, winners, tweet}  winners and the raffle post so far (until submitted)
- *   POST {action: 'submit', id, winners, tweet} final winners and the raffle post; locks the list
+ *   POST {action: 'save', id, winners, tweet, alphabot}   winners, the raffle post and its AlphaBot link so far (until submitted)
+ *   POST {action: 'submit', id, winners, tweet, alphabot} final winners and raffle post; locks the list (the AlphaBot link is optional)
  */
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { getAddress, isAddress, verifyMessage } from 'viem';
-import { MAX_COLLABS, MAX_PER_X, collabOpen, ensureSchema, managerView, postOf, readApplication, readWinners } from './_collab.js';
+import { MAX_COLLABS, MAX_PER_X, alphabotOf, collabOpen, ensureSchema, managerView, postOf, readApplication, readWinners } from './_collab.js';
 
 const COOKIE = 'fhecat_collab';
 const SESSION_TTL = 7 * 24 * 60 * 60; // seconds
@@ -206,10 +206,14 @@ export default async function handler(req, res) {
       const tweet = body.tweet === undefined ? row.tweet || '' : postOf(body.tweet);
       if (tweet === null) return res.status(400).json({ error: "That isn't a link to a post on X (x.com/name/status/...).", field: 'tweet' });
       if (submit && !tweet) return res.status(400).json({ error: 'Add the link to your raffle post on X first.', field: 'tweet' });
+      // The AlphaBot raffle: optional, kept as it is when the page doesn't send it, cleared when sent empty.
+      const alphabot = body.alphabot === undefined ? row.alphabot || '' : alphabotOf(body.alphabot);
+      if (alphabot === null) return res.status(400).json({ error: "That isn't an AlphaBot link (alphabot.app/...).", field: 'alphabot' });
       const saved = await sql`
         UPDATE collabs
         SET winners = ${JSON.stringify(list.winners)}::jsonb,
             tweet = ${tweet},
+            alphabot = ${alphabot},
             submitted_at = CASE WHEN ${submit}::boolean THEN now() ELSE NULL END
         WHERE id = ${id} AND manager = ${wallet} AND status = 'approved' AND submitted_at IS NULL AND deadline > now()
         RETURNING id`;

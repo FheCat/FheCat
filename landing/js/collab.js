@@ -25,6 +25,7 @@
   var MAX_COLLABS = 2; // applications per wallet (and per X account), as api/_collab.js
   var WALLET = /^0x[0-9a-fA-F]{40}$/;
   var POST = /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x|twitter)\.com\/(?:[A-Za-z0-9_]{1,15}|i(?:\/web)?)\/status(?:es)?\/\d{1,20}(?:[/?#].*)?$/i;
+  var ALPHA = /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)*alphabot\.app\/\S+$/i;
   var APPLY_FIELDS = ['name', 'kind', 'members', 'x', 'contactX', 'contactDiscord', 'role', 'post', 'pitch', 'company'];
 
   var $ = function (sel, root) {
@@ -44,7 +45,8 @@
     signin: false, // signed out, and asked to sign in rather than apply
     offset: 0, // server clock minus this clock, ms
     drafts: {}, // unsaved winner rows per collab id
-    tweets: {} // unsaved raffle post links per collab id
+    tweets: {}, // unsaved raffle post links per collab id
+    alphas: {} // unsaved AlphaBot links per collab id
   };
 
   // ---------------------------------------------------------------------------
@@ -253,6 +255,7 @@
         st.signin = true;
         st.drafts = {};
         st.tweets = {};
+        st.alphas = {};
         render();
       });
   });
@@ -459,10 +462,16 @@
   function tweetOf(c) {
     return st.tweets[c.id] !== undefined ? st.tweets[c.id] : c.tweet || '';
   }
+  function alphaOf(c) {
+    return st.alphas[c.id] !== undefined ? st.alphas[c.id] : c.alphabot || '';
+  }
   function dirty() {
     if (Object.keys(st.drafts).length) return true;
     return st.collabs.some(function (c) {
-      return st.tweets[c.id] !== undefined && st.tweets[c.id].trim() !== (c.tweet || '');
+      return (
+        (st.tweets[c.id] !== undefined && st.tweets[c.id].trim() !== (c.tweet || '')) ||
+        (st.alphas[c.id] !== undefined && st.alphas[c.id].trim() !== (c.alphabot || ''))
+      );
     });
   }
 
@@ -486,10 +495,19 @@
     tweet.value = tweetOf(c);
     tweet.classList.remove('bad');
     $('#cbTweetError').textContent = '';
-    $('#cbRaffleDone').hidden = open || !c.tweet;
+    var alpha = $('#cbAlpha');
+    alpha.value = alphaOf(c);
+    alpha.classList.remove('bad');
+    $('#cbAlphaError').textContent = '';
+    $('#cbRaffleDone').hidden = open || (!c.tweet && !c.alphabot);
+    $('#cbTweetDone').hidden = !c.tweet;
+    $('#cbAlphaDone').hidden = !c.alphabot;
     var link = $('#cbTweetLink');
     link.href = c.tweet || '#';
     link.textContent = (c.tweet || '').replace(/^https:\/\//, '');
+    var alink = $('#cbAlphaLink');
+    alink.href = c.alphabot || '#';
+    alink.textContent = (c.alphabot || '').replace(/^https:\/\//, '');
 
     var list = $('#cbRows');
     list.textContent = '';
@@ -633,12 +651,21 @@
     $('#cbTweetError').textContent = text;
   }
 
+  function badAlpha(text) {
+    var input = $('#cbAlpha');
+    input.classList.add('bad');
+    input.focus();
+    $('#cbAlphaError').textContent = text;
+  }
+
   function send(action) {
     var c = current();
     if (!c) return;
     var error = $('#cbWinError');
     $('#cbTweet').classList.remove('bad');
     $('#cbTweetError').textContent = '';
+    $('#cbAlpha').classList.remove('bad');
+    $('#cbAlphaError').textContent = '';
     error.textContent = check();
     if (error.textContent) return;
     var rows = readRows();
@@ -647,6 +674,8 @@
     }).length;
     var tweet = $('#cbTweet').value.trim();
     if (tweet && !POST.test(tweet)) return badTweet("That isn't a link to a post on X (x.com/name/status/...).");
+    var alpha = $('#cbAlpha').value.trim();
+    if (alpha && !ALPHA.test(alpha)) return badAlpha("That isn't an AlphaBot link (alphabot.app/...).");
     if (action === 'submit') {
       if (!filled) {
         error.textContent = 'Add at least one winner first.';
@@ -660,10 +689,11 @@
     buttons.forEach(function (b) {
       b.disabled = true;
     });
-    call('POST', null, { action: action, id: c.id, winners: rows, tweet: tweet })
+    call('POST', null, { action: action, id: c.id, winners: rows, tweet: tweet, alphabot: alpha })
       .then(function (s) {
         delete st.drafts[c.id];
         delete st.tweets[c.id];
+        delete st.alphas[c.id];
         take(s);
         render();
         toast(action === 'submit' ? 'Submitted · ' + plural(filled, 'wallet', 'wallets') : 'Saved · ' + plural(filled, 'wallet', 'wallets'));
@@ -671,6 +701,7 @@
       .catch(function (err) {
         if (err.status === 401) return signedOut();
         if (err.field === 'tweet') return badTweet(err.message);
+        if (err.field === 'alphabot') return badAlpha(err.message);
         error.textContent = err.message;
         if (typeof err.row === 'number') {
           var li = $$('#cbRows .cb-row')[err.row];
@@ -694,6 +725,12 @@
     this.classList.remove('bad');
     $('#cbTweetError').textContent = '';
     if (c) st.tweets[c.id] = this.value;
+  });
+  $('#cbAlpha').addEventListener('input', function () {
+    var c = current();
+    this.classList.remove('bad');
+    $('#cbAlphaError').textContent = '';
+    if (c) st.alphas[c.id] = this.value;
   });
   $('#cbSubmit').addEventListener('click', function () {
     send('submit');

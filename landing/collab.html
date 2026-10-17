@@ -210,14 +210,27 @@
                   <span class="cb-badge" id="cbBadge"></span>
                 </div>
                 <div class="cb-raffle" id="cbRaffle">
-                  <label class="wl-field">
-                    <span>Your raffle post on X</span>
-                    <input id="cbTweet" name="tweet" inputmode="url" maxlength="300" placeholder="https://x.com/yourcommunity/status/…" autocomplete="off" spellcheck="false" />
-                  </label>
-                  <p class="cb-fine">Post the raffle on your community's X (the guide has a post ready), then paste its link. You can't submit without it.</p>
-                  <p class="wl-error" id="cbTweetError" role="alert"></p>
+                  <div class="cb-raffle-item">
+                    <label class="wl-field">
+                      <span>Your raffle post on X</span>
+                      <input id="cbTweet" name="tweet" inputmode="url" maxlength="300" placeholder="https://x.com/yourcommunity/status/…" autocomplete="off" spellcheck="false" />
+                    </label>
+                    <p class="cb-fine">Post the raffle on your community's X (the guide has a post ready), then paste its link. You can't submit without it.</p>
+                    <p class="wl-error" id="cbTweetError" role="alert"></p>
+                  </div>
+                  <div class="cb-raffle-item">
+                    <label class="wl-field">
+                      <span>Your AlphaBot raffle <i>optional</i></span>
+                      <input id="cbAlpha" name="alphabot" inputmode="url" maxlength="300" placeholder="https://www.alphabot.app/yourcommunity" autocomplete="off" spellcheck="false" />
+                    </label>
+                    <p class="cb-fine">Ran the raffle on AlphaBot? Paste its link too, so we can check the winners there.</p>
+                    <p class="wl-error" id="cbAlphaError" role="alert"></p>
+                  </div>
                 </div>
-                <p class="cb-raffle-done" id="cbRaffleDone" hidden>Raffle post: <a class="link" id="cbTweetLink" href="#" target="_blank" rel="noopener"></a></p>
+                <div class="cb-raffle-done" id="cbRaffleDone" hidden>
+                  <p id="cbTweetDone" hidden>Raffle post: <a class="link" id="cbTweetLink" href="#" target="_blank" rel="noopener"></a></p>
+                  <p id="cbAlphaDone" hidden>AlphaBot raffle: <a class="link" id="cbAlphaLink" href="#" target="_blank" rel="noopener"></a></p>
+                </div>
                 <div class="cb-sub">
                   <span id="cbWinWhat">Add your WL winners</span>
                   <span id="cbLeft"></span>
@@ -256,7 +269,7 @@
           <li><span><b>Get your spots.</b> Once approved, this page shows how many FheCat allowlist (WL) spots you have and a timer to hand them out.</span></li>
           <li><span><b>Post your raffle</b> on your community's X. Use the post below or your own, with @FheCat in it.</span></li>
           <li><span><b>Add the winners</b> here: a name (Discord or X) and an EVM wallet (0x…) per person. Save as you go.</span></li>
-          <li><span><b>Submit</b> with the link to your raffle post, before the timer ends. Submitted wallets go on the FheCat allowlist for the mainnet mint.</span></li>
+          <li><span><b>Submit</b> with the link to your raffle post (and your AlphaBot link, if you ran it there), before the timer ends. Submitted wallets go on the FheCat allowlist for the mainnet mint.</span></li>
         </ol>
         <h3 class="cb-guide-h">Rules</h3>
         <ul class="cb-rules">

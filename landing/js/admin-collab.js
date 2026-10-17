@@ -183,6 +183,10 @@
   function raffle(x) {
     return x.tweet ? post(x.tweet, [x.x], "not the community's account") : 'Not added yet';
   }
+  /** The AlphaBot raffle, when the manager ran it there (it is optional). */
+  function alphabot(x) {
+    return x.alphabot ? link('AlphaBot raffle', x.alphabot) : 'None';
+  }
 
   function card(x) {
     var li = el('li', 'adm-collab is-' + x.status);
@@ -231,6 +235,7 @@
       progress += x.submittedAt ? ' · submitted ' + A.when(x.submittedAt) : isOpen(x) ? ' · ' + left(x) + ' left' : " · time's up, not submitted";
       facts.appendChild(fact('Winners', progress));
       facts.appendChild(fact('Raffle post', raffle(x)));
+      facts.appendChild(fact('AlphaBot', alphabot(x)));
     }
     li.appendChild(facts);
     li.appendChild(el('p', 'adm-c-pitch', x.pitch));
@@ -441,11 +446,11 @@
         var rows = [];
         approved().forEach(function (x) {
           x.winners.forEach(function (w) {
-            rows.push([x.id, x.name, 'https://x.com/' + x.x, KIND_NAME[x.kind] || x.kind, x.tweet || '', w.name, w.wallet, x.submittedAt ? 'yes' : 'no', x.submittedAt || '']);
+            rows.push([x.id, x.name, 'https://x.com/' + x.x, KIND_NAME[x.kind] || x.kind, x.tweet || '', x.alphabot || '', w.name, w.wallet, x.submittedAt ? 'yes' : 'no', x.submittedAt || '']);
           });
         });
         if (!rows.length) return A.toast('No collab winners yet');
-        var head = ['collab', 'community', 'community_x', 'type', 'raffle_post', 'winner', 'wallet', 'submitted', 'submitted_utc'];
+        var head = ['collab', 'community', 'community_x', 'type', 'raffle_post', 'alphabot', 'winner', 'wallet', 'submitted', 'submitted_utc'];
         A.save('fhecat-collab-wallets-' + stamp() + '.csv', A.csv([head].concat(rows)), 'text/csv');
         A.toast(A.fmt(rows.length) + ' collab wallets exported');
       })

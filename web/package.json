@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:admin-copy": "node scripts/build-admin-copy.mjs",
+    "build:testnet-copy": "node scripts/build-admin-copy.mjs --public",
     "build:admin-game": "node scripts/build-admin-game.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b",

@@ -52,7 +52,7 @@ Not: Kontratların kurucuları FHE çağrısı yapmaz. Yani erişim listesi içi
 
 ## 2. Testnet provası (şimdi)
 
-Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Claude provayı atılabilir test cüzdanlarıyla yürütür. Prova gizlidir: site yalnızca Vercel girişiyle ya da fhecat.com/admin'deki **Testnet mint** kopyasından admin girişiyle açılır ve kaynak kodu explorer'da doğrulanmaz. Adımlar, test listesi ve sonuçlar `docs/TESTNET.md` dosyasında.
+Prova, mainnet'in birebir kopyası olarak Arbitrum Sepolia'da yapılır: gerçek çizimler, aynı `launch.json`, aynı satış akışı ve aynı site. Claude provayı atılabilir test cüzdanlarıyla yürütür. Prova artık herkese açık denenebilir: site `fhecat.com/testnet/` adresinde giriş istemeden açık (17 Ekim'den beri; çizimler sitenin JS dosyalarında okunabilir). Admin kopyası (`fhecat.com/admin/mint/`) ve Vercel'deki `fhecat-mint` projesi ise girişle açılır. Kontratların kaynak kodu explorer'da doğrulanmaz. Adımlar, test listesi ve sonuçlar `docs/TESTNET.md` dosyasında.
 
 ## 3. Lansman günü
 

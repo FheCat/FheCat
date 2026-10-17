@@ -160,6 +160,7 @@ python3 -m http.server 8080   # sonra http://localhost:8080
 | `api/admin.js` | Admin API'si: şifreyle giriş, liste, durum değiştirme, collab'lar ve arena |
 | `api/_arena.js` | Testnet'teki Kör Arena'yı zincirden okur (Arena sekmesi için): sonuçlar, tablo ve gösterilen her kedinin kutusu, barkod handle'ı ve açılmışsa DNA'sı |
 | `admin/mint/` | Test mint kopyası ve `arena-game.js` (Arena sekmesinin dövüşçüleri ve sahnesi); `web/`'den üretilir, yalnızca admin girişiyle açılır |
+| `testnet/` | Aynı mint sitesinin herkese açık testnet kopyası (`fhecat.com/testnet/`, giriş yok, `noindex`); `cd web && npm run build:testnet-copy` ile üretilir |
 | `package.json` | Fonksiyonun tek bağımlılığı (`@neondatabase/serverless`) |
 | `assets/` | Favicon'lar, paylaşım görseli (`og.png`, 1200×630), orijinal logo ve banner |
 | `fonts/` | Tiny5, Silkscreen, Press Start 2P (SIL Open Font License) |

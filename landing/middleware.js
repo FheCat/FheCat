@@ -1,10 +1,15 @@
 /*
  * Routing Middleware for fhecat.com/admin/mint/: a copy of the mint site on the
- * testnet, where the team tests the whole sale with their own wallets before
- * launch. The copy holds the collection's art, so every file under it (the page
- * and its scripts alike) is served only with a signed-in admin session: the
- * cookie api/admin sets, signed with ADMIN_PASSWORD. Anyone else is sent to the
- * sign-in page. `npm run build:admin-copy` in web/ writes the copy.
+ * testnet for the admin panel, together with the arena game its Arena tab
+ * plays. Every file under it (the page and its scripts alike) is served only
+ * with a signed-in admin session: the cookie api/admin sets, signed with
+ * ADMIN_PASSWORD. Anyone else is sent to the sign-in page. `npm run
+ * build:admin-copy` in web/ writes the copy.
+ *
+ * The same site is also open to everyone at fhecat.com/testnet/ (the owner
+ * opened it on 17 October 2026 so anyone can try the system), without a
+ * session; `npm run build:testnet-copy` writes that one, and no middleware
+ * touches it. To close it again, delete landing/testnet/.
  */
 import { next } from '@vercel/functions';
 

@@ -25,9 +25,19 @@ Bu prova, mainnet'te yapılacak işin birebir kopyasıdır. Tek fark ağdır: Ar
   - `dave` siteyi gerçek bir kullanıcı gibi dener.
   - Anahtarlar yalnızca çalışma oturumunun geçici klasöründe durur; ne repoda ne de başka bir yerde bulunur.
 - **Kaynak kodu doğrulaması:** Kaynak kodu explorer'da (Arbiscan) doğrulanmaz, çünkü doğrulanırsa çizimler herkesin okuyabileceği hale gelir. Mainnet'te doğrulanır.
-- **Site:** Vercel'deki `fhecat-mint` projesinde gizli tutulur. Her adres Vercel girişi ister ve özel alan adı bağlanmaz.
+- **Site:** Herkese açık: `fhecat.com/testnet/` (17 Ekim'den beri, bkz. aşağıdaki bölüm). Vercel'deki `fhecat-mint` projesi ise hâlâ gizli: her adres Vercel girişi ister ve özel alan adı bağlanmaz.
 
-## Prova nasıl gizli kalır
+## Herkese açık testnet (17 Ekim)
+
+Proje sahibinin isteğiyle testnet sitesi herkesin deneyebilmesi için **`fhecat.com/testnet/`** adresinde, giriş istemeden açıldı.
+
+- Ana sayfadan link verilmez; adresi paylaşanlar bilir. Sayfa arama motorlarına kapalıdır (`noindex`), başlığı ve paylaşım önizlemesi "Testnet" der, yani gerçek mint sanılmaz.
+- **Çizimler artık herkese açık:** koleksiyonun bütün trait'leri ve sprite'ları sitenin JS dosyalarında okunabilir. Bu, bilinçli bir karardır: eskiden yalnızca admin girişi arkasındaydı.
+- Kopya `cd web && npm run build:testnet-copy` ile derlenir ve `landing/testnet/` commit'lenir; admin kopyasıyla aynı siteyi, aynı kontratlarla gösterir. Kapatmak için `landing/testnet/` klasörünü silip push etmek yeter. Bir kez görülen çizimler geri alınamaz.
+- Satış Public aşamada açık: cüzdan başına en fazla 3 kedi, kedi başına 0,00115 test ETH'si; toplam 4444. Testçiler test ETH'sini sitedeki faucet linkinden alır.
+- Arena'da rakip bulunsun diye test cüzdanları birkaç açık meydan okuma bırakır (her biri bir kez kabul edilir; 3 gün açık kalır).
+
+## Prova nasıl gizli kalırdı (17 Ekim'e kadar)
 
 - **Mint:** Proje sahibinin kendi testleri süresince satış Public aşamada açık kalır; testler bitince Owner bölümünden kapatılır. Allowlist'te yalnızca test cüzdanları vardır.
 - **Site:** İki yoldan açılır:
@@ -76,7 +86,7 @@ Gizli site push'tan sonra kendini yeniden derler.
    - Kendi kedinle dövüşemezsin; ikinci bir cüzdan ya da başka bir oyuncu gerekir.
 5. Owner bölümü yalnızca kontratın sahibi olan cüzdanda görünür. Testnet'te sahip, Claude'un test cüzdanıdır. Sahip araçlarını da denemek istersen sahiplik iki adımda senin cüzdanına devredilebilir.
 
-Kopya, mint sitesinin kodundan derlenir. Site değişince `cd web && npm run build:admin-copy` ile yeniden derlenip `landing/admin/mint/` commit'lenir.
+Kopya, mint sitesinin kodundan derlenir. Site değişince `cd web && npm run build:admin-copy` (admin kopyası, `landing/admin/mint/`) ve `npm run build:testnet-copy` (herkese açık kopya, `landing/testnet/`) ile yeniden derlenip commit'lenir.
 
 ## Test listesi
 

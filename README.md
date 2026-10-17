@@ -120,7 +120,7 @@ bash e2e/stack.sh                          # Hardhat + CoFHE mock'ları + yerel 
 
 ## Testnet'e yayınlama
 
-Gizli, mainnet'in birebir kopyası olan prova için adımlar ve anahtar kuralları [`docs/TESTNET.md`](docs/TESTNET.md) dosyasındadır. Kısaca:
+Mainnet'in birebir kopyası olan prova için adımlar ve anahtar kuralları [`docs/TESTNET.md`](docs/TESTNET.md) dosyasındadır. Prova siteyi herkes `fhecat.com/testnet/` adresinde deneyebilir. Kısaca:
 
 1. Yeni bir cüzdan oluşturun ve testnet ETH alın (ör. [Arbitrum Sepolia faucet](https://www.alchemy.com/faucets/arbitrum-sepolia)).
 2. `contracts/launch.json` dosyasında `owner` alanına kendi cüzdanınızı yazın. Deploy anahtarı `PRIVATE_KEY` ortam değişkeninden okunur. Yerelde `contracts/.env` de kullanılabilir, ama bu dosya asla commit'lenmez.

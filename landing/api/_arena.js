@@ -7,11 +7,11 @@
  * keeps it on this site.
  */
 import { createPublicClient, http, parseAbi } from 'viem';
-import { arbitrumSepolia } from 'viem/chains';
+import { sepolia } from 'viem/chains';
 
 /** The testnet collection (web/src/config/deployments.json); FheCat.arena() names the arena. */
-const FHECAT = '0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24';
-const RPC = process.env.ARBITRUM_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc';
+const FHECAT = '0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5';
+const RPC = process.env.SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
 
 const catAbi = parseAbi([
   'struct CatView { uint256 tokenId; address owner; bytes32 dnaHandle; uint8 state; bool peeked; bool opened; bool revealed; uint64 dna; }',
@@ -53,7 +53,7 @@ const num = (v) => Number(v);
 
 let client;
 function chain() {
-  client ??= createPublicClient({ chain: arbitrumSepolia, transport: http(RPC, { timeout: 8000, retryCount: 1 }) });
+  client ??= createPublicClient({ chain: sepolia, transport: http(RPC, { timeout: 8000, retryCount: 1 }) });
   return client;
 }
 
@@ -69,7 +69,7 @@ export async function arenaView() {
   const read = (address, abi) => (functionName, args) => ({ address, abi, functionName, args });
   const cat = read(FHECAT, catAbi);
   const [arena, supply] = await c.multicall({ contracts: [cat('arena'), cat('totalSupply')], allowFailure: false });
-  if (/^0x0{40}$/i.test(arena)) return { network: arbitrumSepolia.name, fheCat: FHECAT, arena: null };
+  if (/^0x0{40}$/i.test(arena)) return { network: sepolia.name, fheCat: FHECAT, arena: null };
 
   const at = read(arena, arenaAbi);
   const [duelCount, claimCount, week, openFor, block] = await Promise.all([
@@ -139,8 +139,8 @@ export async function arenaView() {
   }
 
   return {
-    network: arbitrumSepolia.name,
-    chainId: arbitrumSepolia.id,
+    network: sepolia.name,
+    chainId: sepolia.id,
     fheCat: FHECAT,
     arena,
     now,

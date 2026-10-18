@@ -27,20 +27,27 @@ interface ChainInfo {
   chain: Chain;
   cofhe: CofheChain;
   faucet?: string;
+  /** RPC the site reads through, when viem's default for the chain is unreliable. */
+  rpc?: string;
 }
 
-// Fhenix mainnets first, so a mainnet deployment is the default chain wherever it exists.
+// Fhenix mainnets first, so a mainnet deployment is the default chain wherever it exists; Ethereum leads.
 const KNOWN: ChainInfo[] = [
-  { chain: arbitrum, cofhe: cofheChains.arbitrum },
   { chain: mainnet, cofhe: cofheChains.ethereum },
+  { chain: arbitrum, cofhe: cofheChains.arbitrum },
+  {
+    chain: sepolia,
+    cofhe: cofheChains.sepolia,
+    faucet: 'https://www.alchemy.com/faucets/ethereum-sepolia',
+    rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
+  },
   { chain: arbitrumSepolia, cofhe: cofheChains.arbSepolia, faucet: 'https://www.alchemy.com/faucets/arbitrum-sepolia' },
   { chain: baseSepolia, cofhe: cofheChains.baseSepolia, faucet: 'https://www.alchemy.com/faucets/base-sepolia' },
-  { chain: sepolia, cofhe: cofheChains.sepolia, faucet: 'https://www.alchemy.com/faucets/ethereum-sepolia' },
   { chain: hardhat, cofhe: cofheChains.hardhat },
 ];
 
-/** Before launch the site still needs a chain to talk to; Arbitrum Sepolia is the default home. */
-const HOME = KNOWN.find((c) => c.chain.id === arbitrumSepolia.id)!;
+/** Before launch the site still needs a chain to talk to; Ethereum Sepolia is the default home. */
+const HOME = KNOWN.find((c) => c.chain.id === sepolia.id)!;
 
 /** Chains the collection is deployed on, in the order above. */
 export const LIVE: ChainInfo[] = KNOWN.filter((c) => DEPLOYMENTS[c.chain.id]);

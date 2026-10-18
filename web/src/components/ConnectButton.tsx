@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useConnect, useConnection, useConnectors, useDisconnect, useSwitchChain } from 'wagmi';
-import { DEFAULT_CHAIN, chainInfo } from '../config/chains';
+import { DEFAULT_CHAIN, chainLabel } from '../config/chains';
 import { useViewChain } from '../lib/hooks';
 import { shortAddress } from '../lib/format';
 
@@ -35,11 +35,11 @@ export function ConnectButton({ size }: { size?: 'sm' | 'wide' }) {
       return (
         <button
           className={`btn btn-warn ${btn}`}
-          title={`Switch to ${DEFAULT_CHAIN.name}`}
+          title={`Switch to ${chainLabel(DEFAULT_CHAIN.id)}`}
           onClick={() => switchChain.mutate({ chainId: DEFAULT_CHAIN.id })}
         >
           {/* The top bar has no room for a chain name. */}
-          <span>{size === 'sm' ? 'Switch network' : `Switch to ${DEFAULT_CHAIN.name}`}</span>
+          <span>{size === 'sm' ? 'Switch network' : `Switch to ${chainLabel(DEFAULT_CHAIN.id)}`}</span>
         </button>
       );
     }
@@ -51,7 +51,7 @@ export function ConnectButton({ size }: { size?: 'sm' | 'wide' }) {
         </button>
         {open && (
           <div className="menu box">
-            <p className="menu-note">{chainInfo(chainId)?.chain.name}</p>
+            <p className="menu-note">{chainLabel(chainId)}</p>
             <button
               className="menu-item"
               onClick={() => {

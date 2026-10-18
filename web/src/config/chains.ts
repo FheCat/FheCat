@@ -29,6 +29,8 @@ interface ChainInfo {
   faucet?: string;
   /** RPC the site reads through, when viem's default for the chain is unreliable. */
   rpc?: string;
+  /** The name shown on the site, when viem's is not clear enough. */
+  label?: string;
 }
 
 // Fhenix mainnets first, so a mainnet deployment is the default chain wherever it exists; Ethereum leads.
@@ -37,6 +39,7 @@ const KNOWN: ChainInfo[] = [
   { chain: arbitrum, cofhe: cofheChains.arbitrum },
   {
     chain: sepolia,
+    label: 'Ethereum Sepolia',
     cofhe: cofheChains.sepolia,
     faucet: 'https://www.alchemy.com/faucets/ethereum-sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
@@ -66,6 +69,12 @@ export const COFHE_CHAINS: CofheChain[] = SERVED.map((c) => c.cofhe);
 
 export function chainInfo(chainId: number | undefined): ChainInfo | undefined {
   return KNOWN.find((c) => c.chain.id === chainId);
+}
+
+/** A chain's name for the site: "Ethereum Sepolia" rather than viem's "Sepolia". */
+export function chainLabel(chainId: number | undefined): string | undefined {
+  const info = chainInfo(chainId);
+  return info?.label ?? info?.chain.name;
 }
 
 export function explorerUrl(chainId: number, kind: 'address' | 'tx' | 'token', value: string): string | undefined {

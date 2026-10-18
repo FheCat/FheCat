@@ -9,7 +9,7 @@ import { Arena } from './components/Arena';
 import { Traits } from './components/Traits';
 import { Finale, Footer } from './components/Footer';
 import { OwnerPanel } from './components/OwnerPanel';
-import { chainInfo } from './config/chains';
+import { chainLabel } from './config/chains';
 import { useCollection, useOwnership } from './lib/hooks';
 import { Clouds } from './pixel/Sky';
 import { Ticker, type TickerItem } from './pixel/Ticker';
@@ -21,7 +21,7 @@ export function App() {
   const col = useCollection();
   const ownership = useOwnership();
   const live = col.deployment;
-  const chain = chainInfo(col.chainId)?.chain.name ?? '';
+  const chain = chainLabel(col.chainId) ?? '';
   const supply = `${col.totalSupply}/${col.maxSupply}`;
   const soldOut = col.loaded && col.maxSupply > 0n && col.totalSupply >= col.maxSupply;
 

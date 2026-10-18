@@ -63,7 +63,7 @@ async function main() {
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
   const local = chainId === LOCAL_CHAIN_ID;
   if ((chainId === 1 || chainId === 42161) && process.env.CONFIRM_MAINNET !== 'yes') {
-    throw new Error('This is a mainnet deployment with real funds. Re-run with CONFIRM_MAINNET=yes once docs/MAINNET.md is done.');
+    throw new Error('This is a mainnet deployment with real funds. Re-run with CONFIRM_MAINNET=yes when the mainnet checklist in README.md is done.');
   }
 
   const launch = launchSettings(local);

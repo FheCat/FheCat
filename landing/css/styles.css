@@ -539,6 +539,13 @@ h2 {
     -4px 0 0 0 var(--cyan-dim),
     4px 0 0 0 var(--cyan-dim);
 }
+a.hero-date {
+  text-decoration: none;
+}
+a.hero-date:hover {
+  background: var(--cyan);
+  color: var(--ink);
+}
 .os-mark {
   flex: none;
   width: 24px;

@@ -28,7 +28,7 @@ The **Blind Arena** lets holders fight with their cats while they are still seal
 | | |
 |---|---|
 | Supply | 4,444 |
-| Chain | Arbitrum One (mainnet), Arbitrum Sepolia (testnet) |
+| Chain | Ethereum (mainnet), Ethereum Sepolia (testnet) |
 | Standards | ERC-721, ERC-2981 (5% royalty), ERC-4906 |
 | Art | 32×32 pixel SVG, rendered on-chain; 8 traits, 93 options |
 | Encryption | [Fhenix CoFHE](https://cofhe-docs.fhenix.zone/) |
@@ -37,17 +37,17 @@ The **Blind Arena** lets holders fight with their cats while they are still seal
 
 ## Fhenix is a coprocessor, not a chain
 
-FheCat contracts live on **Arbitrum**. Fhenix CoFHE is an FHE coprocessor that plugs into existing EVM chains: the contracts import Fhenix's Solidity library, each encrypted operation is recorded by Fhenix's TaskManager contract on the same chain, the computation runs off-chain in the coprocessor, and Fhenix's threshold network decrypts only for whoever is allowed. Tokens, balances and gas all stay on Arbitrum; minting needs nothing but ETH.
+FheCat contracts live on **Ethereum**. Fhenix CoFHE is an FHE coprocessor that plugs into existing EVM chains: the contracts import Fhenix's Solidity library, each encrypted operation is recorded by Fhenix's TaskManager contract on the same chain, the computation runs off-chain in the coprocessor, and Fhenix's threshold network decrypts only for whoever is allowed. Tokens, balances and gas all stay on Ethereum; minting needs nothing but ETH.
 
 | Layer | Where | Role |
 |---|---|---|
-| FheCat, FheCatArena, FheCatRenderer | Arbitrum | NFTs, game logic, on-chain art |
-| TaskManager + ACL | Arbitrum (Fhenix contract) | Records FHE tasks and who may use each ciphertext |
+| FheCat, FheCatArena, FheCatRenderer | Ethereum | NFTs, game logic, on-chain art |
+| TaskManager + ACL | Ethereum (Fhenix contract) | Records FHE tasks and who may use each ciphertext |
 | CoFHE coprocessor | Off-chain (Fhenix) | Computes on ciphertexts |
 | Threshold network | Off-chain (Fhenix) | Decrypts for authorized parties and signs the result |
 | Browser | User | Encrypts inputs, decrypts the holder's own data, draws the cat |
 
-Arbitrum Sepolia is Arbitrum One's test network, so the testnet deployment is a one-to-one rehearsal of mainnet: same contracts, same settings, same site.
+Ethereum Sepolia is Ethereum's test network, so the testnet deployment is a one-to-one rehearsal of mainnet: same contracts, same settings, same site. The same contracts also run on Arbitrum, where the first testnet rehearsal took place.
 
 ## How it works
 
@@ -120,7 +120,7 @@ A summary for reviewers of how FheCat uses CoFHE. Built against the stable relea
 
 Nothing else is ever decrypted: no ciphertext the contracts hold is made public except a revealed cat's DNA, a duel's winner and a tier answer. Constructors make no FHE calls. Contracts calling FHE: `FheCat`, `FheCatArena` (the renderer does not).
 
-**Verified on:** the CoFHE mocks (55 contract tests, 6 browser tests), forks of the live Arbitrum Sepolia TaskManager (`npm run test:fork`), and the live Arbitrum Sepolia deployment through the site, including encrypted arena inputs and threshold network decryptions.
+**Verified on:** the CoFHE mocks (55 contract tests, 6 browser tests), forks of the live Arbitrum Sepolia TaskManager (`npm run test:fork`), the live Arbitrum Sepolia deployment through the site, including encrypted arena inputs and threshold network decryptions, and the live Ethereum Sepolia deployment (encrypted mint, private peek, public reveal).
 
 ## Collection
 
@@ -151,7 +151,7 @@ bash e2e/stack.sh                          # local chain + CoFHE mocks + deploy 
 ```
 
 - `npm run test:e2e` (in `web/`): mint → peek → reveal, opening a box, a blind duel between two wallets with its live fight and replays, every fight choreography, the admin's arena view and the owner panel.
-- `npm run test:fork` (in `contracts/`): runs the production contract against the live CoFHE TaskManager on a fork of a testnet (`FORK=arb-sepolia`, `base-sepolia`, `eth-sepolia`) or mainnet (`FORK=arbitrum`). Nothing is sent to the real chain.
+- `npm run test:fork` (in `contracts/`): runs the production contract against the live CoFHE TaskManager on a fork of a testnet (`FORK=arb-sepolia`, `base-sepolia`, `eth-sepolia`) or mainnet (`FORK=ethereum`, `arbitrum`). Nothing is sent to the real chain.
 
 CoFHE mocks cannot produce encrypted randomness, so the local chain deploys `FheCatLocal` and `FheCatArenaLocal`, which replace only the random draw. They refuse to deploy to any chain other than 31337. The real `FHE.randomEuint64()` path is covered by the fork tests and the testnet.
 
@@ -161,15 +161,23 @@ To change the art, edit `art/src/sprites/*`, then regenerate the on-chain librar
 
 | Network | Chain ID | Hardhat network | Status |
 |---|---|---|---|
-| Arbitrum Sepolia | 421614 | `arb-sepolia` | Live (default) |
+| Ethereum Sepolia | 11155111 | `eth-sepolia` | Live (default) |
+| Arbitrum Sepolia | 421614 | `arb-sepolia` | Live (first rehearsal) |
 | Base Sepolia | 84532 | `base-sepolia` | Supported |
-| Ethereum Sepolia | 11155111 | `eth-sepolia` | Supported |
-| Arbitrum One | 42161 | `arbitrum` | Mainnet target |
-| Ethereum | 1 | `ethereum` | Supported |
+| Ethereum | 1 | `ethereum` | Mainnet target |
+| Arbitrum One | 42161 | `arbitrum` | Supported |
 
 FHE.sol finds the TaskManager through the CoFHEAddressBook (`0xC0F4e00E531a2B086492Ae3DCC1515038307196b`), which lives at the same address on every chain.
 
-**Testnet deployment (Arbitrum Sepolia)**
+**Testnet deployment (Ethereum Sepolia)**
+
+| Contract | Address |
+|---|---|
+| FheCat | [`0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5`](https://sepolia.etherscan.io/address/0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5) |
+| FheCatRenderer | [`0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24`](https://sepolia.etherscan.io/address/0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24) |
+| FheCatArena | [`0x398C06370F021798962BC3Ed43CA0c2d1d828A23`](https://sepolia.etherscan.io/address/0x398C06370F021798962BC3Ed43CA0c2d1d828A23) |
+
+**First rehearsal (Arbitrum Sepolia)**
 
 | Contract | Address |
 |---|---|
@@ -177,7 +185,7 @@ FHE.sol finds the TaskManager through the CoFHEAddressBook (`0xC0F4e00E531a2B086
 | FheCatRenderer | [`0x363fF5772cfA089e2A16D64a27087Ff54fC02F0C`](https://sepolia.arbiscan.io/address/0x363fF5772cfA089e2A16D64a27087Ff54fC02F0C) |
 | FheCatArena | [`0x2c72A0cdBB5685A0461989964C9574eAc202c2c7`](https://sepolia.arbiscan.io/address/0x2c72A0cdBB5685A0461989964C9574eAc202c2c7) |
 
-**Measured gas (Arbitrum Sepolia, real CoFHE):** mint ≈174k, peek ≈106k, open ≈88k, reveal ≈62k, transfer ≈43k, enter arena ≈85k, challenge ≈0.6–1.0M, accept and fight ≈1.7–2.3M, settle ≈211k. A whole duel cost about 0.0003 ETH at 0.09 gwei. There is no separate FHE fee.
+**Measured gas (Arbitrum Sepolia, real CoFHE):** mint ≈174k, peek ≈106k, open ≈88k, reveal ≈62k, transfer ≈43k, enter arena ≈85k, challenge ≈0.6–1.0M, accept and fight ≈1.7–2.3M, settle ≈211k. A whole duel cost about 0.0003 ETH at 0.09 gwei. There is no separate FHE fee. On Ethereum the gas units are similar; the cost follows the L1 gas price.
 
 ## Deployment
 
@@ -185,9 +193,9 @@ Collection settings live in `contracts/launch.json` and are shared by testnet an
 
 ```bash
 cd contracts
-npm run deploy:arb-sepolia                       # writes contracts/deployments/<network>.json and web/src/config/deployments.json
-npx hardhat fhecat:allowlist allowlist/arb-sepolia.txt --network arb-sepolia
-npx hardhat fhecat:phase allowlist --network arb-sepolia
+npm run deploy:eth-sepolia                       # writes contracts/deployments/<network>.json and web/src/config/deployments.json
+npx hardhat fhecat:allowlist allowlist/eth-sepolia.txt --network eth-sepolia
+npx hardhat fhecat:phase allowlist --network eth-sepolia
 ```
 
 If `owner` in `launch.json` differs from the deployer, ownership is offered to it and accepted from the site's Owner panel (Ownable2Step). Every owner action is also available in that panel.
@@ -195,10 +203,10 @@ If `owner` in `launch.json` differs from the deployer, ownership is offered to i
 **Mainnet checklist**
 
 1. Fhenix must allow the contracts on mainnet: the mainnet TaskManager can restrict FHE calls to an access list. `FheCat` and `FheCatArena` call FHE; the renderer does not. Constructors make no FHE calls, so the contracts can be deployed first and their addresses shared.
-2. `FORK=arbitrum npm run test:fork` passes (it reports `CofheIsUnavailable` or `NotOnAccessList` otherwise).
-3. Update the price in `launch.json`, then `CONFIRM_MAINNET=yes npm run deploy:arbitrum` with `PRIVATE_KEY`, `ETHERSCAN_API_KEY` and `ARBITRUM_RPC_URL` set. Prefer a fresh deployer wallet and a Safe as `owner`.
+2. `FORK=ethereum npm run test:fork` passes (it reports `CofheIsUnavailable` or `NotOnAccessList` otherwise).
+3. Update the price in `launch.json`, then `CONFIRM_MAINNET=yes npm run deploy:ethereum` with `PRIVATE_KEY`, `ETHERSCAN_API_KEY` and `ETHEREUM_RPC_URL` set. Prefer a fresh deployer wallet and a Safe as `owner`.
 4. Build the allowlist, write it with `fhecat:allowlist <file> --write-only`, commit `deployments.json` and `allowlist.json`, publish the site, then set the root from the Owner panel.
-5. Open the sale: Allowlist, then Public. OpenSea indexes Arbitrum One collections automatically; reveals emit `MetadataUpdate` (ERC-4906).
+5. Open the sale: Allowlist, then Public. OpenSea indexes Ethereum collections automatically; reveals emit `MetadataUpdate` (ERC-4906).
 
 ## Admin tasks
 

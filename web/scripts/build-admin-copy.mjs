@@ -36,12 +36,12 @@ try {
     swap('<title>Mint · FheCat · Pixel cats, born encrypted</title>', '<title>Testnet · FheCat · Try the sale and the Blind Arena</title>');
     swap(
       'content="Mint a FheCat: a pixel cat whose DNA is born encrypted with Fhenix FHE. Keep it sealed, peek in private or open it for everyone."',
-      'content="Try FheCat on the Arbitrum Sepolia testnet: mint a pixel cat whose DNA is born encrypted with Fhenix FHE, peek in private and fight in the Blind Arena. Free test ETH, no real money."',
+      'content="Try FheCat on the Ethereum Sepolia testnet: mint a pixel cat whose DNA is born encrypted with Fhenix FHE, peek in private and fight in the Blind Arena. Free test ETH, no real money."',
     );
     swap('<meta property="og:title" content="Mint · FheCat" />', '<meta property="og:title" content="FheCat testnet · try the sale and the Blind Arena" />');
     swap(
       'content="Pixel cats, born encrypted. Keep yours sealed, peek in private or open it for everyone."',
-      'content="A practice run on the Arbitrum Sepolia testnet: free test ETH, no real money. Mint, peek in private, fight."',
+      'content="A practice run on the Ethereum Sepolia testnet: free test ETH, no real money. Mint, peek in private, fight."',
     );
     writeFileSync(page, html);
   } else {

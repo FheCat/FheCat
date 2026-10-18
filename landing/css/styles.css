@@ -1573,6 +1573,10 @@ h2 {
 /* ---------- responsive ---------- */
 
 @media (max-width: 1100px) {
+  /* no room beside Waitlist and X: the hero carries the testnet link */
+  .bar-testnet {
+    display: none;
+  }
   .split {
     grid-template-columns: minmax(0, 1fr);
     gap: 56px;

@@ -5,7 +5,7 @@
 //                                the admin's Arena tab gets its fighters and fights from the same folder
 //                                (arena-game.js, scripts/build-admin-game.mjs)
 //   npm run build:testnet-copy   fhecat.com/testnet/     open to everyone, for anyone to try the sale and the
-//                                arena on the testnet; not indexed by search engines
+//                                arena on the testnet; linked from the homepage and open to search engines
 //
 // Then commit the folder it wrote (landing/admin/mint/ or landing/testnet/).
 import { execFileSync } from 'node:child_process';
@@ -26,7 +26,7 @@ try {
   execFileSync('npx', ['tsc', '-b'], { stdio: 'inherit' });
   execFileSync('npx', ['vite', 'build', '--base', base, '--outDir', outDir, '--emptyOutDir'], { stdio: 'inherit' });
   if (open) {
-    // A link shared from here must not read as the real mint, and search engines have no business with a test net.
+    // A link shared from here (or found in a search) must not read as the real mint.
     const page = `${outDir}/index.html`;
     let html = readFileSync(page, 'utf8');
     const swap = (from, to) => {
@@ -43,7 +43,6 @@ try {
       'content="Pixel cats, born encrypted. Keep yours sealed, peek in private or open it for everyone."',
       'content="A practice run on the Arbitrum Sepolia testnet: free test ETH, no real money. Mint, peek in private, fight."',
     );
-    swap('<meta name="theme-color"', '<meta name="robots" content="noindex, nofollow" />\n    <meta name="theme-color"');
     writeFileSync(page, html);
   } else {
     // The arena game for the admin's Arena tab lives in the same folder, behind the same sign-in.

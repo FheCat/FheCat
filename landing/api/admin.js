@@ -13,7 +13,7 @@
  *   GET  ?view=collabs                         every collab (community applications) + counts, and whether
  *                                              applications are open
  *   POST {action: 'collabOpen', open}          open or close collab applications (fhecat.com/collab)
- *   POST {action: 'collab', id, status, spots?, hours?, reopen?}
+ *   POST {action: 'collab', id, status, spots?, hours? (default 48), reopen?}
  *                                              approve with spots and a deadline `hours` from now,
  *                                              reject, or back to pending; `reopen` unlocks a submitted list
  *   GET  ?view=arena                           the Blind Arena on the testnet, read from the chain
@@ -22,7 +22,7 @@
  */
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
-import { MAX_HOURS, MAX_SPOTS, STATUSES as COLLAB_STATUSES, adminView, collabOpen, ensureSchema, setCollabOpen } from './_collab.js';
+import { MAX_HOURS, MAX_SPOTS, SUBMIT_HOURS, STATUSES as COLLAB_STATUSES, adminView, collabOpen, ensureSchema, setCollabOpen } from './_collab.js';
 import { arenaView } from './_arena.js';
 
 const COOKIE = 'fhecat_admin';
@@ -124,7 +124,7 @@ async function collabs(sql) {
   return { now: new Date().toISOString(), collabs: rows, counts, open: await collabOpen(sql) };
 }
 
-/** Approve (spots + a deadline `hours` from now), reject or send back to pending one collab. */
+/** Approve (spots + a deadline `hours` from now, 48 unless the review says otherwise), reject or send back to pending one collab. */
 async function reviewCollab(sql, body, res) {
   await ensureSchema(sql);
   const id = Number(body.id);
@@ -138,7 +138,7 @@ async function reviewCollab(sql, body, res) {
   let rows;
   if (status === 'approved') {
     const spots = Number(body.spots);
-    const hours = Number(body.hours);
+    const hours = body.hours === undefined || body.hours === null || body.hours === '' ? SUBMIT_HOURS : Number(body.hours);
     if (!Number.isInteger(spots) || spots < 1 || spots > MAX_SPOTS) return res.status(400).json({ error: `Give 1 to ${MAX_SPOTS} spots.` });
     if (!Number.isInteger(hours) || hours < 1 || hours > MAX_HOURS) return res.status(400).json({ error: `Give 1 to ${MAX_HOURS} hours to submit.` });
     const saved = Array.isArray(cur.winners) ? cur.winners.length : 0;

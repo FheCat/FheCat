@@ -253,13 +253,13 @@
     hours.type = 'number';
     hours.min = '1';
     hours.max = '720';
-    hours.value = '48';
+    hours.value = '48'; // SUBMIT_HOURS in api/_collab.js
     hours.setAttribute('aria-label', 'Hours to submit for ' + x.name);
     var spotsLabel = el('label', 'adm-c-field');
     spotsLabel.appendChild(el('span', '', SPOT + ' spots'));
     spotsLabel.appendChild(spots);
     var hoursLabel = el('label', 'adm-c-field');
-    hoursLabel.appendChild(el('span', '', x.status === 'approved' ? 'New deadline in (h)' : 'Hours to submit'));
+    hoursLabel.appendChild(el('span', '', x.status === 'approved' ? 'New deadline in (h)' : 'Hours to submit (48)'));
     hoursLabel.appendChild(hours);
     act.appendChild(spotsLabel);
     act.appendChild(hoursLabel);

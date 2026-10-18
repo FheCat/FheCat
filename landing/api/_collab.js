@@ -18,6 +18,8 @@ export const STATUSES = ['pending', 'approved', 'rejected'];
 export const MAX_COLLABS = 2;
 export const MAX_PER_X = 2;
 export const MAX_SPOTS = 500;
+/** Time a manager gets to submit winners once approved, in hours; the clock starts at approval. */
+export const SUBMIT_HOURS = 48;
 /** Longest submission window the review can give, in hours (30 days). */
 export const MAX_HOURS = 720;
 

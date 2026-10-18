@@ -97,6 +97,31 @@ sequenceDiagram
 
 Nothing is staked: no cat changes hands, there are no prizes or fees beyond gas.
 
+## Fhenix integration
+
+A summary for reviewers of how FheCat uses CoFHE. Built against the stable releases: `@fhenixprotocol/cofhe-contracts` 1.0.1 (TaskManager resolved through the CoFHEAddressBook) and `@cofhe/sdk` 1.0.0.
+
+**Encrypted state and who is on each ACL**
+
+| Ciphertext | Type | Created by | ACL |
+|---|---|---|---|
+| Cat DNA | `euint64` | `FHE.randomEuint64()` at mint | FheCat (`allowThis`); the holder after `peek` (`allow`); the arena after `enterArena` (`allow`); everyone after `open` (`allowPublic`) |
+| Arena tactic | `euint8` | `FHE.asEuint8(externalEuint8, proof)`: an input encrypted in the browser, verified for that wallet and the arena | Arena; its player; the rival after the fight |
+| Instincts, power | `euint64` | Derived from the DNA once per cat (`and`, `shr`, `add`) | Arena only |
+| Duel luck | `euint64` | `FHE.randomEuint64()` per fight | Arena only |
+| Duel outcome | `euint64` | `gt`, `select` on both scores | Arena; public (`allowPublic`) |
+| Tier answer | `ebool` | `FHE.gte(power, threshold)` | Arena; public (`allowPublic`) |
+
+**FHE operations used:** `randomEuint64`, `asEuint8` (verified input), `asEuint64` (trivial constants, cached), `and`, `shr`, `shl`, `add`, `lt`, `gt`, `gte`, `select`, `allow`, `allowThis`, `allowPublic`, `isAllowed`, `verifyDecryptResultSafe`.
+
+**Decryption paths**
+- **Private:** the holder signs a self ACP (EIP-712) and calls `decryptForView`; plaintext stays in the browser (peek, instincts, both tactics after a fight).
+- **Public:** `decryptForTx(...).withoutACP()` on a handle made public with `allowPublic`; the plaintext and the threshold network's signature go back on-chain and are checked with `FHE.verifyDecryptResultSafe` (reveal, duel settle, tier settle). Wrong values and signatures for another handle are rejected.
+
+Nothing else is ever decrypted: no ciphertext the contracts hold is made public except a revealed cat's DNA, a duel's winner and a tier answer. Constructors make no FHE calls. Contracts calling FHE: `FheCat`, `FheCatArena` (the renderer does not).
+
+**Verified on:** the CoFHE mocks (55 contract tests, 6 browser tests), forks of the live Arbitrum Sepolia TaskManager (`npm run test:fork`), and the live Arbitrum Sepolia deployment through the site, including encrypted arena inputs and threshold network decryptions.
+
 ## Collection
 
 - **8 traits, 93 options:** background (10), fur (12), pattern (10), eyes (16), mouth (10), headwear (16), accessory (12), aura (7). Each DNA byte picks one trait; rarity weights are public and fixed in the contract (`art/src/traits.ts`).
@@ -114,7 +139,7 @@ landing/     fhecat.com: static site, waitlist, collab and admin (Vercel functio
 tools/       Pixel font generator for the landing page
 ```
 
-Stack: Solidity 0.8.28 (cancun), OpenZeppelin 5.4, `@fhenixprotocol/cofhe-contracts` 1.0.0, `@cofhe/sdk` and `@cofhe/hardhat-plugin` 0.8.0, Node.js 20+ (22 recommended).
+Stack: Solidity 0.8.28 (cancun), OpenZeppelin 5.4, `@fhenixprotocol/cofhe-contracts` 1.0.1, `@cofhe/sdk` and `@cofhe/hardhat-plugin` 1.0.0, Node.js 20+ (22 recommended).
 
 ## Getting started
 

@@ -20,9 +20,9 @@
     "export:abi": "ts-node scripts/export-abi.ts"
   },
   "devDependencies": {
-    "@cofhe/hardhat-plugin": "0.8.0",
-    "@cofhe/sdk": "0.8.0",
-    "@fhenixprotocol/cofhe-contracts": "1.0.0",
+    "@cofhe/hardhat-plugin": "1.0.0",
+    "@cofhe/sdk": "1.0.0",
+    "@fhenixprotocol/cofhe-contracts": "1.0.1",
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.1.2",

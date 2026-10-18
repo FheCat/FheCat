@@ -39,15 +39,19 @@ export async function deployFixture() {
   return { nft, renderer, owner, alice, bob, carol, treasury };
 }
 
-const clients = new Map<string, Promise<CofheClient>>();
+const clients = new Map<string, { client: Promise<CofheClient>; at: number }>();
 
-/** A connected CoFHE client (with a self ACP) for `signer`, created once per test run. */
-export function cofheFor(signer: HardhatEthersSigner): Promise<CofheClient> {
-  let client = clients.get(signer.address);
-  if (!client) {
-    client = hre.cofhe.createClientWithBatteries(signer);
-    clients.set(signer.address, client);
-  }
+/**
+ * A connected CoFHE client (with a self ACP) for `signer`, reused while the chain's clock moves forward.
+ * An ACP carries its creation time, and the revoker treats an ACP from the future as revoked, so a
+ * fixture that rewinds the chain to before the ACP was signed needs a fresh one.
+ */
+export async function cofheFor(signer: HardhatEthersSigner): Promise<CofheClient> {
+  const now = (await ethers.provider.getBlock('latest'))!.timestamp;
+  const cached = clients.get(signer.address);
+  if (cached && cached.at <= now) return cached.client;
+  const client = hre.cofhe.createClientWithBatteries(signer);
+  clients.set(signer.address, { client, at: now });
   return client;
 }
 

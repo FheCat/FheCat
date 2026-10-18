@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useConnection, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi';
 import { fheCatAbi } from '../config/abi';
-import { DEFAULT_CHAIN, X_URL, chainInfo, explorerUrl } from '../config/chains';
+import { DEFAULT_CHAIN, X_URL, chainInfo, chainLabel, explorerUrl } from '../config/chains';
 import { useAllowlistProof, useViewChain, type Collection } from '../lib/hooks';
 import { failure, formatEth, shortAddress } from '../lib/format';
 import { REDUCED_MOTION } from '../pixel/fc';
@@ -179,7 +179,7 @@ export function MintPanel({ n, col }: { n: string; col: Collection }) {
         </div>
         <div>
           <dt>Network</dt>
-          <dd>{chain?.chain.name}</dd>
+          <dd>{chainLabel(col.chainId)}</dd>
         </div>
       </dl>
 
@@ -202,7 +202,7 @@ export function MintPanel({ n, col }: { n: string; col: Collection }) {
         <ConnectButton size="wide" />
       ) : walletOnWrongChain ? (
         <button className="btn btn-warn btn-wide" onClick={() => switchChain.mutate({ chainId: DEFAULT_CHAIN.id })}>
-          <span>Switch to {DEFAULT_CHAIN.name}</span>
+          <span>Switch to {chainLabel(DEFAULT_CHAIN.id)}</span>
         </button>
       ) : blocked ? (
         <button className="btn btn-wide" disabled>

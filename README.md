@@ -97,9 +97,20 @@ sequenceDiagram
 
 Nothing is staked: no cat changes hands, there are no prizes or fees beyond gas.
 
+## Launchpad
+
+FheCat also runs a launchpad for **dual-mode tokens**: one ERC-20 address with a public balance and an FHE-encrypted (shielded) balance per holder. It is live on Ethereum Sepolia in the Launchpad section of the testnet site.
+
+- **Launch:** anyone launches a token for a **$1 launch fee**, paid in ETH at the Chainlink ETH/USD price (`launchFeeWei()`). They set the supply, the share for sale, soft and hard caps, a wallet limit and how long the sale runs.
+- **Sale:** a fair, pro-rata sale. Buyers send ETH; when the sale ends (or fills), each buyer gets `saleSupply × their ETH / total ETH`. They can claim it to their public balance or **straight into their shielded balance**. If the soft cap is missed, everyone takes their ETH back.
+- **Fees:** a successful sale pays a **2% platform fee** on the ETH raised. **Half of it goes to FheCat holders** through `FheCatRewards`: each deposit is split equally between the cats minted at that moment, and the share follows the cat (whoever holds it claims it). The other half and the launch fee go to the platform treasury. The creator gets the rest of the ETH and the unsold share of the supply.
+- **Shielded balances:** `shield` moves tokens into the encrypted balance. `transferShielded` sends an encrypted amount, so nobody sees how much (asking for more than you hold moves an encrypted zero). `unshield` takes an encrypted amount out and makes only that amount decryptable; `finishUnshield` credits it with the threshold network's proof. Only the holder can decrypt their shielded balance (`decryptForView`).
+
+Contracts: `contracts/launchpad/` (`FheLaunchpad`, `FheLaunchToken`, `FheCatRewards`), tests in `test/Launchpad.test.ts`, deploy with `npx hardhat run scripts/deploy-launchpad.ts --network eth-sepolia`.
+
 ## Fhenix integration
 
-A summary for reviewers of how FheCat uses CoFHE. Built against the stable releases: `@fhenixprotocol/cofhe-contracts` 1.0.1 (TaskManager resolved through the CoFHEAddressBook) and `@cofhe/sdk` 1.0.0.
+A summary for reviewers of how FheCat uses CoFHE. Built against the stable releases: `@fhenixprotocol/cofhe-contracts` 1.0.1 (TaskManager resolved through the CoFHEAddressBook) and `@cofhe/sdk` 1.0.1.
 
 **Encrypted state and who is on each ACL**
 
@@ -120,7 +131,7 @@ A summary for reviewers of how FheCat uses CoFHE. Built against the stable relea
 
 Nothing else is ever decrypted: no ciphertext the contracts hold is made public except a revealed cat's DNA, a duel's winner and a tier answer. Constructors make no FHE calls. Contracts calling FHE: `FheCat`, `FheCatArena` (the renderer does not).
 
-**Verified on:** the CoFHE mocks (55 contract tests, 6 browser tests), forks of the live Arbitrum Sepolia TaskManager (`npm run test:fork`), the live Arbitrum Sepolia deployment through the site, including encrypted arena inputs and threshold network decryptions, and the live Ethereum Sepolia deployment (encrypted mint, private peek, public reveal).
+**Verified on:** the CoFHE mocks (72 contract tests, 6 browser tests), forks of the live Arbitrum Sepolia TaskManager (`npm run test:fork`), the live Arbitrum Sepolia deployment through the site, including encrypted arena inputs and threshold network decryptions, and the live Ethereum Sepolia deployment (encrypted mint, private peek, public reveal).
 
 ## Collection
 
@@ -139,12 +150,12 @@ landing/     fhecat.com: static site, waitlist, collab and admin (Vercel functio
 tools/       Pixel font generator for the landing page
 ```
 
-Stack: Solidity 0.8.28 (cancun), OpenZeppelin 5.4, `@fhenixprotocol/cofhe-contracts` 1.0.1, `@cofhe/sdk` and `@cofhe/hardhat-plugin` 1.0.0, Node.js 20+ (22 recommended).
+Stack: Solidity 0.8.28 (cancun), OpenZeppelin 5.4, `@fhenixprotocol/cofhe-contracts` 1.0.1, `@cofhe/sdk` and `@cofhe/hardhat-plugin` 1.0.1, Node.js 20+ (22 recommended).
 
 ## Getting started
 
 ```bash
-cd contracts && npm install && npm test   # 55 tests against the CoFHE mocks
+cd contracts && npm install && npm test   # 72 tests against the CoFHE mocks
 cd ../web && npm install
 bash e2e/stack.sh                          # local chain + CoFHE mocks + deploy + site
 # open http://localhost:5173 → Connect wallet → Dev wallet
@@ -176,6 +187,8 @@ FHE.sol finds the TaskManager through the CoFHEAddressBook (`0xC0F4e00E531a2B086
 | FheCat | [`0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5`](https://sepolia.etherscan.io/address/0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5) |
 | FheCatRenderer | [`0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24`](https://sepolia.etherscan.io/address/0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24) |
 | FheCatArena | [`0x398C06370F021798962BC3Ed43CA0c2d1d828A23`](https://sepolia.etherscan.io/address/0x398C06370F021798962BC3Ed43CA0c2d1d828A23) |
+| FheLaunchpad | [`0xFf55827d880ab9FEac379Cb0E2F1A7Ab58926670`](https://sepolia.etherscan.io/address/0xFf55827d880ab9FEac379Cb0E2F1A7Ab58926670) |
+| FheCatRewards | [`0x4948cBd6E5D606D241F049eE43ede923CEF26BDB`](https://sepolia.etherscan.io/address/0x4948cBd6E5D606D241F049eE43ede923CEF26BDB) |
 
 **First rehearsal (Arbitrum Sepolia)**
 

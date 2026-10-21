@@ -9,6 +9,7 @@ import { Arena } from './components/Arena';
 import { Traits } from './components/Traits';
 import { Finale, Footer } from './components/Footer';
 import { OwnerPanel } from './components/OwnerPanel';
+import { Launchpad } from './components/Launchpad';
 import { chainLabel } from './config/chains';
 import { useCollection, useOwnership } from './lib/hooks';
 import { Clouds } from './pixel/Sky';
@@ -32,6 +33,7 @@ export function App() {
     { id: 'owner', label: 'Owner', on: Boolean(live && ownership.role) },
     { id: 'cats', label: 'My cats', on: Boolean(live) },
     { id: 'arena', label: 'Arena', on: Boolean(live && col.arena) },
+    { id: 'launch', label: 'Launchpad', on: Boolean(live?.launchpad && live.rewards) },
     { id: 'how', label: 'How it works', on: true },
     { id: 'latest', label: 'Latest', on: Boolean(live && col.totalSupply > 0n) },
     { id: 'traits', label: 'Traits', on: true },
@@ -99,6 +101,12 @@ export function App() {
           <>
             <Clouds seed={2} />
             <Arena n={n('arena')} chainId={col.chainId} contract={live.fheCat} arena={col.arena} totalSupply={col.totalSupply} />
+          </>
+        )}
+        {live?.launchpad && live.rewards && (
+          <>
+            <Clouds seed={7} />
+            <Launchpad n={n('launch')} chainId={col.chainId} deployment={live} totalSupply={col.loaded ? col.totalSupply : undefined} />
           </>
         )}
         <Clouds seed={3} />

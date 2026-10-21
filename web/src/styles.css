@@ -1311,3 +1311,129 @@ select.field option {
     display: none;
   }
 }
+
+/* ---------- launchpad ---------- */
+.lp-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+.lp-form select.field {
+  width: 100%;
+}
+.lp-list-head {
+  margin: 56px 0 24px;
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lp-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+.lp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+.lp-card .spec-data {
+  margin: 0;
+}
+.lp-loading {
+  color: var(--muted);
+}
+.lp-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.lp-card-head h4 {
+  margin: 4px 0 0;
+  font-size: 24px;
+  line-height: 32px;
+  overflow-wrap: anywhere;
+}
+.lp-symbol {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 8px;
+  line-height: 16px;
+}
+.lp-status {
+  flex: none;
+  padding: 4px 8px;
+  font: 8px/16px var(--f-label);
+  text-transform: uppercase;
+  background: var(--cloud);
+  color: var(--white);
+}
+.lp-status.is-live {
+  background: var(--cyan);
+  color: var(--ink);
+}
+.lp-status.is-succeeded {
+  background: var(--cyan-dim);
+}
+.lp-status.is-failed {
+  background: var(--red, #e2526a);
+}
+.lp-info {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.lp-mine {
+  margin: 0;
+  color: var(--cyan);
+}
+.lp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lp-row .field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.lp-wallet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 4px solid var(--cloud);
+}
+.lp-grid {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+.lp-raised {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin: 0;
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.lp-raised b {
+  color: var(--white);
+  font-size: 8px;
+  line-height: 16px;
+}
+@media (max-width: 860px) {
+  .lp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .lp-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lp-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

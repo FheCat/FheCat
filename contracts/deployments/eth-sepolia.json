@@ -7,5 +7,8 @@
   "contract": "FheCat",
   "deployer": "0x80DE5a3e00Eb3A11bB8109FE71BC7362F377E0D9",
   "deployBlock": 11941590,
-  "deployedAt": "2026-10-18T14:13:25.235Z"
+  "deployedAt": "2026-10-18T14:13:25.235Z",
+  "launchpad": "0xFf55827d880ab9FEac379Cb0E2F1A7Ab58926670",
+  "rewards": "0x4948cBd6E5D606D241F049eE43ede923CEF26BDB",
+  "launchpadBlock": 11964614
 }

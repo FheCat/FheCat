@@ -14,6 +14,10 @@ export interface Deployment {
   renderer: string;
   /** FheCatArena, once deployed (FheCat.arena points at it). */
   arena?: string;
+  /** FheLaunchpad and the FheCatRewards vault its holder fees go to, once deployed. */
+  launchpad?: string;
+  rewards?: string;
+  launchpadBlock?: number;
   contract: 'FheCat' | 'FheCatLocal';
   deployer: string;
   deployBlock: number;
@@ -30,7 +34,13 @@ export function saveDeployment(d: Deployment) {
 
   const file = join(WEB_CONFIG, d.chainId === LOCAL_CHAIN_ID ? 'deployments.local.json' : 'deployments.json');
   const web = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
-  web[String(d.chainId)] = { fheCat: d.fheCat, renderer: d.renderer, arena: d.arena, deployBlock: d.deployBlock };
+  web[String(d.chainId)] = {
+    fheCat: d.fheCat,
+    renderer: d.renderer,
+    arena: d.arena,
+    deployBlock: d.deployBlock,
+    ...(d.launchpad ? { launchpad: d.launchpad, rewards: d.rewards, launchpadBlock: d.launchpadBlock } : {}),
+  };
   mkdirSync(WEB_CONFIG, { recursive: true });
   writeFileSync(file, JSON.stringify(web, null, 2) + '\n');
 }

@@ -8,6 +8,10 @@ export interface Deployment {
   renderer: `0x${string}`;
   arena?: `0x${string}`;
   deployBlock: number;
+  /** FheLaunchpad and the FheCatRewards vault its holder fees go to. */
+  launchpad?: `0x${string}`;
+  rewards?: `0x${string}`;
+  launchpadBlock?: number;
 }
 
 // deployments.local.json is written by `npm run deploy:local` and git-ignored.

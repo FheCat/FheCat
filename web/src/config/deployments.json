@@ -3,6 +3,9 @@
     "fheCat": "0xf0c277E06cBcd18Ab25F8E97bBE1eD4ce935Bff5",
     "renderer": "0xd4F8521c8F4dBd22fe8E0877beF1Fd91A0691b24",
     "arena": "0x398C06370F021798962BC3Ed43CA0c2d1d828A23",
-    "deployBlock": 11941590
+    "deployBlock": 11941590,
+    "launchpad": "0xFf55827d880ab9FEac379Cb0E2F1A7Ab58926670",
+    "rewards": "0x4948cBd6E5D606D241F049eE43ede923CEF26BDB",
+    "launchpadBlock": 11964614
   }
 }

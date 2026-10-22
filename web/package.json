@@ -32,6 +32,7 @@
     "vite": "^8.3.1"
   },
   "overrides": {
-    "viem": "$viem"
+    "viem": "$viem",
+    "uuid": "^11.1.1"
   }
 }

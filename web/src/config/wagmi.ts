@@ -7,7 +7,7 @@ import { DEPLOYMENTS, WAGMI_CHAINS, chainInfo } from './chains';
  * `?dev=1` picks the second, so two tabs can play each other in the arena.
  */
 const DEV_ACCOUNTS = ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'] as const;
-export const DEV_WALLET = import.meta.env.VITE_DEV_WALLET === 'true' && Boolean(DEPLOYMENTS[hardhat.id]);
+const DEV_WALLET = import.meta.env.VITE_DEV_WALLET === 'true' && Boolean(DEPLOYMENTS[hardhat.id]);
 const DEV_ACCOUNT = DEV_ACCOUNTS[new URLSearchParams(globalThis.location?.search ?? '').get('dev') === '1' ? 1 : 0];
 
 export const wagmiConfig = createConfig({

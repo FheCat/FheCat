@@ -10,7 +10,7 @@ import type { Script, Side } from './stage';
  * click; whether it is muted is remembered.
  */
 
-export interface SoundInfo {
+interface SoundInfo {
   /** 0 when the challenger won, 1 when the opponent did, null while the arena decides. */
   winner: Side | null;
   /** The winner was a sealed box. */
@@ -19,7 +19,7 @@ export interface SoundInfo {
   mine?: Side | null;
 }
 
-export interface ArenaSound {
+interface ArenaSound {
   muted(): boolean;
   setMuted(muted: boolean): void;
   /** A new fight, or the same one with a new script (a result, or the tactics, came in). */

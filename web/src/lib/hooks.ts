@@ -176,7 +176,7 @@ export function useOwnership() {
 }
 
 /** The chain's TaskManager, looked up in the CoFHEAddressBook (it never changes for a session). */
-export function useTaskManager(): `0x${string}` | undefined {
+function useTaskManager(): `0x${string}` | undefined {
   const { chainId } = useViewChain();
   const q = useReadContract({
     address: COFHE_ADDRESS_BOOK,
@@ -228,7 +228,7 @@ export type Duel = {
   winner: bigint;
 };
 export type TierClaim = { id: bigint; tokenId: bigint; tier: number; reached: `0x${string}`; settled: boolean; result: boolean };
-export type ArenaRecord = {
+type ArenaRecord = {
   wins: number;
   losses: number;
   sealedWins: number;

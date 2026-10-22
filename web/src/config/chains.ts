@@ -57,7 +57,7 @@ const KNOWN: ChainInfo[] = [
 const HOME = KNOWN.find((c) => c.chain.id === sepolia.id)!;
 
 /** Chains the collection is deployed on, in the order above. */
-export const LIVE: ChainInfo[] = KNOWN.filter((c) => DEPLOYMENTS[c.chain.id]);
+const LIVE: ChainInfo[] = KNOWN.filter((c) => DEPLOYMENTS[c.chain.id]);
 
 export const IS_LAUNCHED = LIVE.length > 0;
 

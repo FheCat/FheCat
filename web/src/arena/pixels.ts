@@ -123,9 +123,9 @@ function line(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number,
   }
 }
 
-export type Puff = readonly [x: number, y: number, r: number];
+type Puff = readonly [x: number, y: number, r: number];
 
-export interface Smoke {
+interface Smoke {
   outline: string;
   shade: string;
   body: string;
@@ -137,7 +137,7 @@ export const SMOKE: Smoke = { outline: '#5e7b9d', shade: '#9fb7cf', body: '#e6f2
 export const TRICK_SMOKE: Smoke = { outline: '#3c2f73', shade: '#8a74d6', body: '#d4cbf5' };
 
 /** Smoke and dust: overlapping puffs, outlined as one shape, shaded underneath. */
-export function drawPuffs(ctx: CanvasRenderingContext2D, puffs: readonly Puff[], smoke: Smoke = SMOKE) {
+function drawPuffs(ctx: CanvasRenderingContext2D, puffs: readonly Puff[], smoke: Smoke = SMOKE) {
   for (const [x, y, r] of puffs) if (r >= 0) disc(ctx, x, y, r + 1, smoke.outline);
   for (const [x, y, r] of puffs) if (r >= 0) disc(ctx, x, y, r, smoke.shade);
   for (const [x, y, r] of puffs) if (r >= 1) disc(ctx, x - 1, y - 1, r - 1, smoke.body);

@@ -13,14 +13,14 @@ export function dnaHex(dna: bigint): string {
   return '0x' + dna.toString(16).padStart(16, '0');
 }
 
-export function isUserRejection(e: unknown): boolean {
+function isUserRejection(e: unknown): boolean {
   if (e instanceof BaseError && e.walk((x) => x instanceof UserRejectedRequestError)) return true;
   const text = String((e as { message?: string })?.message ?? e);
   return /user (rejected|denied)|rejected the request|ACTION_REJECTED/i.test(text);
 }
 
 /** A short, human-readable reason: the contract's custom error name when there is one. */
-export function errorMessage(e: unknown, fallback: string): string {
+function errorMessage(e: unknown, fallback: string): string {
   if (e instanceof BaseError) {
     const revert = e.walk((x) => x instanceof ContractFunctionRevertedError);
     if (revert instanceof ContractFunctionRevertedError && revert.data?.errorName) return revert.data.errorName;

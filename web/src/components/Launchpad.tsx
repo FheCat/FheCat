@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { decodeEventLog, formatEther, formatUnits, parseEther, parseUnits, type Hash } from 'viem';
+import { decodeEventLog, parseEther, parseUnits, type Hash } from 'viem';
 import { useBalance, useConnection, usePublicClient, useReadContract, useReadContracts, useWriteContract } from 'wagmi';
 import { Encryptable, FheTypes } from '@cofhe/sdk';
 import { fheCatRewardsAbi, fheLaunchTokenAbi, fheLaunchpadAbi } from '../config/abi';
@@ -27,6 +27,11 @@ const DURATIONS: [string, number][] = [
 export const SEPOLIA_FAUCET = 'https://www.alchemy.com/faucets/ethereum-sepolia';
 
 type Note = { ok: boolean; text: string } | null;
+
+/** How many tokens one ETH buys: `units` (base units) for `wei`. Easier to read than a price like 1e-9 ETH. */
+function perEth(units: bigint, wei: bigint): string {
+  return tokens((units * 10n ** 18n) / wei);
+}
 
 /** Re-renders every second, for countdowns. */
 function useClock() {
@@ -201,8 +206,8 @@ export function CreatePanel({ chainId, pad, fee, feeBps, holderBps, onDone }: { 
             <dd>{ready ? tokens(keepTokens * 10n ** BigInt(DECIMALS)) : '-'}</dd>
           </div>
           <div>
-            <dt>Price if full</dt>
-            <dd>{ready && saleTokens > 0n ? `${(Number(formatEther(hard)) / Number(saleTokens)).toPrecision(3)} ETH` : '-'}</dd>
+            <dt>Tokens per ETH if full</dt>
+            <dd>{ready && hard > 0n ? perEth(saleTokens * 10n ** BigInt(DECIMALS), hard) : '-'}</dd>
           </div>
           <div>
             <dt>Launch fee now</dt>
@@ -402,10 +407,11 @@ function LaunchCard({ l, chainId, pad, onChange }: { l: Launch; chainId: number;
   };
   const phase = phaseOf(l);
   const end = Number(l.end);
+  // The contract answers 0 once claimed; the share itself is the same arithmetic.
+  const share = l.raised > 0n ? (l.saleSupply * contributed) / l.raised : 0n;
   const pct = Number((l.raised * 1000n) / l.hardCap) / 10;
   const lit = Number((l.raised * BigInt(CELLS) + l.hardCap - 1n) / l.hardCap);
   const softMet = l.raised >= l.softCap;
-  const price = l.raised > 0n ? Number(formatEther(l.raised)) / Number(formatUnits(l.saleSupply, DECIMALS)) : 0;
   const room = l.hardCap - l.raised;
   const walletRoom = l.maxPerWallet > 0n ? l.maxPerWallet - contributed : room;
   const canSend = room < walletRoom ? room : walletRoom;
@@ -479,8 +485,8 @@ function LaunchCard({ l, chainId, pad, onChange }: { l: Launch; chainId: number;
           </div>
         )}
         <div>
-          <dt>Price per token</dt>
-          <dd>{price ? `${price.toPrecision(3)} ETH` : '-'}</dd>
+          <dt>Tokens per ETH</dt>
+          <dd>{l.raised > 0n ? perEth(l.saleSupply, l.raised) : '-'}</dd>
         </div>
         <div>
           <dt>Creator</dt>
@@ -507,7 +513,7 @@ function LaunchCard({ l, chainId, pad, onChange }: { l: Launch; chainId: number;
           {contributed > 0n && (
             <p className="lp-mine">
               You sent {formatEth(contributed)} ETH
-              {phase !== 'failed' && (claimable > 0n || claimed) ? ` · ${phase === 'succeeded' ? 'your share' : 'your share now'} ${tokens(claimable)} $${l.symbol}` : ''}
+              {phase !== 'failed' && share > 0n ? ` · ${phase === 'succeeded' ? 'your share' : 'your share now'} ${tokens(share)} $${l.symbol}` : ''}
               {claimed ? ' · claimed' : ''}
             </p>
           )}

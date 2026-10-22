@@ -7,9 +7,11 @@
 //   npm run build:testnet-copy   fhecat.com/testnet/     open to everyone, for anyone to try the sale and the
 //                                arena on the testnet; linked from the homepage and open to search engines
 //
+// Both also get launchpad/index.html, the launchpad's own page (same app, its own title and preview).
+//
 // Then commit the folder it wrote (landing/admin/mint/ or landing/testnet/).
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
@@ -44,7 +46,22 @@ try {
       'content="A practice run on the Ethereum Sepolia testnet: free test ETH, no real money. Mint, peek in private, fight."',
     );
     writeFileSync(page, html);
-  } else {
+  }
+  // The launchpad has its own page; the same app shows it from launchpad/ (src/main.tsx).
+  {
+    let html = readFileSync(`${outDir}/index.html`, 'utf8');
+    const meta = (re, text) => {
+      if (!re.test(html)) throw new Error(`index.html has no ${re}`);
+      html = html.replace(re, (_, head) => `${head}${text}"`);
+    };
+    html = html.replace(/<title>[^<]*<\/title>/, () => '<title>Launchpad · FheCat · Launch tokens with private balances</title>');
+    meta(/(<meta\s+name="description"\s+content=")[^"]*"/, 'Launch a token for $1 on Ethereum Sepolia. Fair pro-rata sales, balances you can shield with Fhenix FHE, and half the platform fee to FheCat holders.');
+    meta(/(<meta property="og:title" content=")[^"]*"/, 'FheCat Launchpad · launch tokens with private balances');
+    meta(/(<meta property="og:description" content=")[^"]*"/, 'Launch for $1. Fair sales, shielded balances, half the fee to FheCat holders. On the Ethereum Sepolia testnet.');
+    mkdirSync(`${outDir}/launchpad`, { recursive: true });
+    writeFileSync(`${outDir}/launchpad/index.html`, html);
+  }
+  if (!open) {
     // The arena game for the admin's Arena tab lives in the same folder, behind the same sign-in.
     execFileSync('node', ['scripts/build-admin-game.mjs'], { stdio: 'inherit' });
   }

@@ -4045,3 +4045,55 @@ a.adm-handle:hover {
     display: none;
   }
 }
+
+/* ---------- launchpad chapter ---------- */
+.lp-points {
+  margin-top: 40px;
+}
+.lp-home {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin: 0 0 40px;
+  padding: 32px;
+}
+.lp-home-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, auto));
+  gap: 24px 48px;
+  margin: 0;
+}
+.lp-home-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lp-home-stats dt {
+  color: var(--muted);
+  font: 16px/24px var(--f-label);
+  text-transform: uppercase;
+}
+.lp-home-stats dd {
+  margin: 0;
+  color: var(--white);
+  font: 24px/32px var(--f-text);
+}
+.lp-home-cta {
+  margin: 0;
+}
+@media (max-width: 860px) {
+  .lp-home-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .lp-home {
+    padding: 24px;
+  }
+  .lp-home-stats dd {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}

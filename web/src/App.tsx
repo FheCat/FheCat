@@ -9,7 +9,7 @@ import { Arena } from './components/Arena';
 import { Traits } from './components/Traits';
 import { Finale, Footer } from './components/Footer';
 import { OwnerPanel } from './components/OwnerPanel';
-import { Launchpad } from './components/Launchpad';
+import { LaunchpadTeaser } from './components/Launchpad';
 import { chainLabel } from './config/chains';
 import { useCollection, useOwnership } from './lib/hooks';
 import { Clouds } from './pixel/Sky';
@@ -106,7 +106,7 @@ export function App() {
         {live?.launchpad && live.rewards && (
           <>
             <Clouds seed={7} />
-            <Launchpad n={n('launch')} chainId={col.chainId} deployment={live} totalSupply={col.loaded ? col.totalSupply : undefined} />
+            <LaunchpadTeaser n={n('launch')} chainId={col.chainId} deployment={live} href="launchpad/" />
           </>
         )}
         <Clouds seed={3} />

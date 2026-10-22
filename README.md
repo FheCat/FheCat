@@ -15,6 +15,11 @@
   <a href="https://x.com/FheCat">X / Twitter</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/FheCat/FheCat/actions/workflows/ci.yml"><img src="https://github.com/FheCat/FheCat/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+</p>
+
 ---
 
 ## Overview
@@ -34,6 +39,14 @@ The **Blind Arena** lets holders fight with their cats while they are still seal
 | Encryption | [Fhenix CoFHE](https://cofhe-docs.fhenix.zone/) |
 
 <p align="center"><img src="docs/collection.png" alt="Sample FheCats" /></p>
+
+**Highlights**
+
+- Encrypted DNA: each cat's 64-bit DNA is drawn with `FHE.randomEuint64()` and stays a ciphertext until its holder chooses to peek (privately) or open (publicly). Nobody can snipe rarity at mint.
+- Fully on-chain art: a Solidity renderer draws 32x32 SVGs; a TypeScript twin renders byte-for-byte the same image in the browser for private peeks.
+- Blind Arena: PvP duels where tactics are encrypted in the browser, scored under FHE, and only the winner is made public.
+- Launchpad: dual-mode ERC-20 tokens with a public balance and an FHE-shielded balance, fair pro-rata sales and a fee share for cat holders.
+- Tested end to end: 72 contract tests on the CoFHE mocks, fork tests against the live CoFHE TaskManager, and Playwright browser tests on a local chain.
 
 ## Fhenix is a coprocessor, not a chain
 
@@ -257,3 +270,7 @@ All tasks run in `contracts/` with `--network <name>`.
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Built by Furkan Akdogan ([@furkan3152](https://github.com/furkan3152)).

@@ -26,7 +26,7 @@ import {
  */
 
 export const STAGE_W = 160;
-export const STAGE_H = 90;
+const STAGE_H = 90;
 /** The fighters' feet stand on this row. */
 export const GROUND = 78;
 /** Fighter frames are 48×48 with the feet on their row 45. */
@@ -210,7 +210,7 @@ function drawCrowd(ctx: CanvasRenderingContext2D, t: number, cheering: boolean) 
 // Rendering
 // ---------------------------------------------------------------------------
 
-export interface Cast {
+interface Cast {
   looks: [FighterLook, FighterLook];
 }
 

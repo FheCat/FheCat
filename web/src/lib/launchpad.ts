@@ -8,9 +8,8 @@ const POLL = { refetchInterval: 12_000 };
 const MAX_SHOWN = 60n;
 
 export const DECIMALS = 6;
-export const STATUS = ['Live', 'Succeeded', 'Failed'] as const;
 
-export interface LaunchView {
+interface LaunchView {
   creator: `0x${string}`;
   token: `0x${string}`;
   saleSupply: bigint;

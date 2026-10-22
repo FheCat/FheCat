@@ -24,7 +24,7 @@ export interface FightPlan {
 }
 
 /** Where the fighters stand, and where they run in from (centre x). */
-export const HOME: readonly [number, number] = [52, 108];
+const HOME: readonly [number, number] = [52, 108];
 const ENTER: readonly [number, number] = [-26, 186];
 const MID = 80;
 /** Centre to centre when a paw lands, and when it lands on a shield. */

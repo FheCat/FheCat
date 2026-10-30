@@ -6,8 +6,8 @@
  * ADMIN_PASSWORD. Anyone else is sent to the sign-in page. `npm run
  * build:admin-copy` in web/ writes the copy.
  *
- * The same site is also open to everyone at fhecat.com/testnet/ (the owner
- * opened it on 17 October 2026 so anyone can try the system), without a
+ * The same site is also open to everyone at fhecat.com/testnet/ (public since
+ * 17 October 2026, so anyone can try the sale and the arena), without a
  * session; `npm run build:testnet-copy` writes that one, and no middleware
  * touches it. To close it again, delete landing/testnet/.
  */

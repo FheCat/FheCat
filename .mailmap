@@ -1,0 +1,8 @@
+# Map this author's name/email variants to one canonical identity.
+# Affects commit attribution only (git shortlog, git log --use-mailmap,
+# blame); it does not rewrite history.
+Furkan Akdoğan <70746444+furkan3152@users.noreply.github.com>
+Furkan Akdoğan <70746444+furkan3152@users.noreply.github.com> Akdoin <70746444+furkan3152@users.noreply.github.com>
+Furkan Akdoğan <70746444+furkan3152@users.noreply.github.com> AkdoganCoin <70746444+furkan3152@users.noreply.github.com>
+Furkan Akdoğan <70746444+furkan3152@users.noreply.github.com> furkan3152 <70746444+furkan3152@users.noreply.github.com>
+Furkan Akdoğan <70746444+furkan3152@users.noreply.github.com> Furkan Akdogan <70746444+furkan3152@users.noreply.github.com>

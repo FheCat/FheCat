@@ -1,0 +1,21 @@
+# Editor defaults matching the existing code: https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{sol,py}]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Generated or third-party files: leave them exactly as produced.
+[{landing/testnet/**,landing/admin/mint/**,landing/js/pixelfont.js,contracts/contracts/art/FheCatArt.sol,**/allowlist.json,**/OFL-*.txt}]
+insert_final_newline = unset
+trim_trailing_whitespace = unset

@@ -95,13 +95,18 @@ behind the source: `contracts/art/FheCatArt.sol` (from `art/src`) and
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs two jobs on Node 22:
+`.github/workflows/ci.yml` runs three jobs on Node 22:
 
 - **contracts** — `npm ci`, `hardhat compile`, a check that the generated art
   library is up to date (`npm run art:sol` leaves no diff), then `npm test`.
 - **web** — builds the contracts and the site, checks the admin arena game is
   built from the current code (no diff), installs Chromium and runs the
   Playwright end-to-end suite against a local chain and the CoFHE mocks.
+- **landing** — syntax-checks the site scripts, `middleware.js` and the Vercel
+  functions in `api/` with `node --check`.
+
+Dependabot (`.github/dependabot.yml`) proposes weekly updates for the three npm
+lockfiles and for the SHA-pinned workflow actions.
 
 ## Chains
 

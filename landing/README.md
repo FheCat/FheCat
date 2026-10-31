@@ -81,3 +81,7 @@ build scripts:
   served only to a signed-in admin.
 
 To close the public testnet again, delete `landing/testnet/`.
+
+Both folders are committed because Vercel serves them as static files. The
+admin sign-in only hides the `/admin/mint/` URL: the files themselves are
+public in this repository, so never put anything there that must stay private.

@@ -35,7 +35,9 @@ const taskManagerAbi = [
   'function decryptResultSigner() view returns (address)',
 ];
 
-describeFork(`FheCat on a fork of ${process.env.FORK}`, () => {
+const forkTitle = process.env.FORK ? `FheCat on a fork of ${process.env.FORK}` : 'FheCat on a fork (skipped: set FORK to run)';
+
+describeFork(forkTitle, () => {
   // Mainnet CoFHE is gated: tasks fail with CofheIsUnavailable() before launch, and with
   // NotOnAccessList(contract) for contracts Fhenix has not admitted. Report that and skip.
   before(async function () {

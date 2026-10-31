@@ -4,8 +4,8 @@
   "type": "module",
   "description": "fhecat.com: static pixel site plus the waitlist API (Vercel function in api/)",
   "dependencies": {
-    "@neondatabase/serverless": "1.1.0",
-    "@vercel/functions": "3.9.11",
-    "viem": "2.56.9"
+    "@neondatabase/serverless": "1.2.0",
+    "@vercel/functions": "3.10.4",
+    "viem": "2.57.12"
   }
 }

@@ -273,4 +273,4 @@ All tasks run in `contracts/` with `--network <name>`.
 
 ---
 
-Built by Furkan Akdoğan (Akdoin) ([@furkan3152](https://github.com/furkan3152)).
+Built by Furkan Akdoğan ([@furkan3152](https://github.com/furkan3152)).

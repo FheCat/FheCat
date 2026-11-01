@@ -59,6 +59,13 @@ img.pixel {
 .nav a:hover {
   color: var(--cyan);
 }
+/* a separate app (the launchpad), set apart from the section links */
+.bar-app {
+  flex: none;
+}
+.hero-app {
+  margin-top: 16px;
+}
 
 /* wallet menu */
 .wallet {
@@ -1202,7 +1209,8 @@ select.field option {
 /* ---------- responsive ---------- */
 
 @media (max-width: 1100px) {
-  .nav {
+  .nav,
+  .bar-app {
     display: none;
   }
   .brand {
@@ -1348,13 +1356,6 @@ select.field option {
   margin: 0;
   color: var(--white);
   font: 24px/32px var(--f-text);
-}
-.lp-teaser-box {
-  padding: 24px;
-}
-.lp-teaser-cta {
-  justify-content: flex-start;
-  margin-top: 32px;
 }
 .lp-create {
   display: grid;

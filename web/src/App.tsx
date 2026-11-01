@@ -9,7 +9,6 @@ import { Arena } from './components/Arena';
 import { Traits } from './components/Traits';
 import { Finale, Footer } from './components/Footer';
 import { OwnerPanel } from './components/OwnerPanel';
-import { LaunchpadTeaser } from './components/Launchpad';
 import { chainLabel } from './config/chains';
 import { useCollection, useOwnership } from './lib/hooks';
 import { Clouds } from './pixel/Sky';
@@ -33,11 +32,12 @@ export function App() {
     { id: 'owner', label: 'Owner', on: Boolean(live && ownership.role) },
     { id: 'cats', label: 'My cats', on: Boolean(live) },
     { id: 'arena', label: 'Arena', on: Boolean(live && col.arena) },
-    { id: 'launch', label: 'Launchpad', on: Boolean(live?.launchpad && live.rewards) },
     { id: 'how', label: 'How it works', on: true },
     { id: 'latest', label: 'Latest', on: Boolean(live && col.totalSupply > 0n) },
     { id: 'traits', label: 'Traits', on: true },
   ].filter((c) => c.on);
+  // The launchpad is its own app (launchpad/), not a chapter of the mint.
+  const launchpad = live?.launchpad && live.rewards ? 'launchpad/' : undefined;
   const n = (id: string) => String(chapters.findIndex((c) => c.id === id) + 1).padStart(2, '0');
 
   // A link to a chapter (admin/mint/#arena) can arrive before the chapter is on the page,
@@ -79,9 +79,12 @@ export function App() {
       <a className="skip" href="#mint">
         Skip to the mint
       </a>
-      <Header links={chapters.filter((c) => c.id !== 'latest').map((c): [string, string] => [`#${c.id}`, c.label])} />
+      <Header
+        links={chapters.filter((c) => c.id !== 'latest').map((c): [string, string] => [`#${c.id}`, c.label])}
+        app={launchpad ? [launchpad, 'Launchpad'] : undefined}
+      />
       <main>
-        <Hero status={status} />
+        <Hero status={status} launchpad={launchpad} />
         <Ticker items={ticker} />
         {/* A mint bumps totalSupply, which refetches the holder's cats below. */}
         <MintPanel n={n('mint')} col={col} />
@@ -101,12 +104,6 @@ export function App() {
           <>
             <Clouds seed={2} />
             <Arena n={n('arena')} chainId={col.chainId} contract={live.fheCat} arena={col.arena} totalSupply={col.totalSupply} />
-          </>
-        )}
-        {live?.launchpad && live.rewards && (
-          <>
-            <Clouds seed={7} />
-            <LaunchpadTeaser n={n('launch')} chainId={col.chainId} deployment={live} href="launchpad/" />
           </>
         )}
         <Clouds seed={3} />

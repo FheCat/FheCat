@@ -3,7 +3,7 @@ import { Sprite } from '../pixel/Sprite';
 import { SceneCat, Wordmark, useNightScene } from '../pixel/Sky';
 
 /** The banner, alive: the same night scene as the homepage, with the mint one click away. */
-export function Hero({ status }: { status: string }) {
+export function Hero({ status, launchpad }: { status: string; launchpad?: string }) {
   const ref = useRef<HTMLElement>(null);
   const scene = useNightScene(ref, { moon: 'left', tapPaws: true });
   return (
@@ -31,6 +31,12 @@ export function Hero({ status }: { status: string }) {
           <i className="blink-dot" aria-hidden="true" />
           {status}
         </p>
+        {launchpad && (
+          <a className="hero-date hero-app" href={launchpad}>
+            Launchpad live · testnet
+            <Sprite name="i-arrow" />
+          </a>
+        )}
       </div>
       <SceneCat scene={scene} />
       <p className="sky-hint" aria-hidden="true">

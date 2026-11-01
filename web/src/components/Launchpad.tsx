@@ -3,15 +3,13 @@ import { decodeEventLog, parseEther, parseUnits, type Hash } from 'viem';
 import { useBalance, useConnection, usePublicClient, useReadContract, useReadContracts, useWriteContract } from 'wagmi';
 import { Encryptable, FheTypes } from '@cofhe/sdk';
 import { fheCatRewardsAbi, fheLaunchTokenAbi, fheLaunchpadAbi } from '../config/abi';
-import { explorerUrl, type Deployment } from '../config/chains';
+import { explorerUrl } from '../config/chains';
 import { ensurePermit, useCofhe } from '../lib/cofhe';
 import { useMyCats } from '../lib/hooks';
 import { failure, formatEth, retry, shortAddress } from '../lib/format';
 import { DECIMALS, PHASE_LABEL, eth, phaseOf, timeLeft, tokens, useLaunchpad, type Launch, type Phase } from '../lib/launchpad';
 import { Sprite } from '../pixel/Sprite';
-import { Stars } from '../pixel/Sky';
 import { useToast } from '../pixel/Toast';
-import { ChapterHead } from './Chapter';
 import { ConnectButton } from './ConnectButton';
 
 const POLL = { refetchInterval: 12_000 };
@@ -708,36 +706,6 @@ function Wallet(props: { chainId: number; token: `0x${string}`; symbol: string; 
       <p className="owner-note">Shielded amounts stay encrypted on-chain; only you can read yours. Sending more than you hold moves nothing. Unshielding takes two transactions.</p>
       {note && <p className={`note ${note.ok ? 'ok' : 'error'}`}>{note.text}</p>}
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// the mint site's pointer to the launchpad
-// ---------------------------------------------------------------------------
-
-export function LaunchpadTeaser({ n, chainId, deployment, href }: { n: string; chainId: number; deployment: Deployment; href: string }) {
-  const lp = useLaunchpad(deployment.launchpad!, chainId);
-  return (
-    <section className="chapter" id="launch">
-      <Stars density={0.5} seed={88} />
-      <div className="wrap split">
-        <ChapterHead n={n} label="Launchpad" title="Launch in the dark.">
-          <p>
-            Launch a token for $1. Buyers get their share in the open or straight into a shielded balance only they can read. Half of the 2%
-            platform fee from every successful sale goes to FheCat holders.
-          </p>
-          <div className="hero-cta lp-teaser-cta">
-            <a className="btn" href={href}>
-              <span>Open the launchpad</span>
-              <Sprite name="i-arrow" />
-            </a>
-          </div>
-        </ChapterHead>
-        <div className="box lp-teaser-box">
-          <LaunchStats stats={lp.stats} feeBps={lp.feeBps} holderBps={lp.holderBps} />
-        </div>
-      </div>
-    </section>
   );
 }
 

@@ -3,8 +3,11 @@ import { Sprite } from '../pixel/Sprite';
 import { Wordmark } from '../pixel/Sky';
 import { ConnectButton } from './ConnectButton';
 
-/** The homepage's top bar: see-through over the hero, solid once the page scrolls. */
-export function Header({ links }: { links: [href: string, label: string][] }) {
+/**
+ * The homepage's top bar: see-through over the hero, solid once the page scrolls.
+ * `app` is a separate app (the launchpad), shown as a button apart from the section links.
+ */
+export function Header({ links, app }: { links: [href: string, label: string][]; app?: [href: string, label: string] }) {
   const [solid, setSolid] = useState(false);
   useEffect(() => {
     const update = () => setSolid(window.scrollY > 24);
@@ -27,6 +30,11 @@ export function Header({ links }: { links: [href: string, label: string][] }) {
             </a>
           ))}
         </nav>
+        {app && (
+          <a className="btn btn-sm btn-ghost bar-app" href={app[0]}>
+            <span>{app[1]}</span>
+          </a>
+        )}
         <ConnectButton size="sm" />
       </div>
     </header>
